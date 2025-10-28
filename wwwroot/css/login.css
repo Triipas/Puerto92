@@ -1,0 +1,152 @@
+/* === BASE === */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(180deg, #ECFEFF 0%, #EFF6FF 50%, #F0FDFA 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    color: #2c3e50;
+}
+
+.login-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+/* === HEADER === */
+.header-container {
+    text-align: center;
+}
+
+.icon-circle {
+    width: 80px;
+    height: 80px;
+    background-color: #0092B8;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 32px;
+    margin: 0 auto 1rem;
+}
+
+.system-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0092B8;
+}
+
+.system-subtitle {
+    font-size: 15px;
+    color: #555;
+}
+
+.system-tagline {
+    font-size: 14px;
+    color: #E67E22;
+    margin-top: 0.3rem;
+}
+
+/* === CARD === */
+.form-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+    padding: 2.2rem 2rem;
+    width: 100%;
+    max-width: 420px;
+}
+
+/* === FORM === */
+.form-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.form-subtitle {
+    font-size: 14px;
+    color: #7f8c8d;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.2rem;
+}
+
+label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #34495e;
+    margin-bottom: 6px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 14px;
+    border: 1.8px solid #e0e6ed;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #0092B8;
+    box-shadow: 0 0 0 3px rgba(0, 146, 184, 0.1);
+}
+
+/* === BOTÓN === */
+.btn-login {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(90deg, #0092B8, #007595);
+    border: none;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0, 117, 149, 0.3);
+}
+
+/* === FOOTER === */
+.login-footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 12px;
+    color: #95a5a6;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 480px) {
+    .form-card {
+        margin: 0 16px;
+        padding: 1.8rem 1.5rem;
+    }
+
+    .system-title {
+        font-size: 24px;
+    }
+}
+
+.text-danger:empty {
+    display: none;
+}
