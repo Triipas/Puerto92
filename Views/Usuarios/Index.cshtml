@@ -1,0 +1,173 @@
+@model IEnumerable<Puerto92.ViewModels.UsuarioViewModel>
+@{
+    ViewData["Title"] = "Gestión de Usuarios";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+<link rel="stylesheet" href="~/css/admin.css" />
+<div class="page-header">
+    <h1 class="page-title">Gestión de Usuarios</h1>
+    <p class="page-subtitle">Crear, editar y administrar usuarios del sistema</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@Model.Count()</h3>
+            <p>Total Usuarios</p>
+            <small style="color: #64748B;">En el sistema</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon success">
+            <i class="fa-solid fa-user-check"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@Model.Count(u => u.Activo)</h3>
+            <p>Usuarios Activos</p>
+            <small style="color: #64748B;">Con acceso al sistema</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon danger">
+            <i class="fa-solid fa-user-slash"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@Model.Count(u => !u.Activo)</h3>
+            <p>Usuarios Inactivos</p>
+            <small style="color: #64748B;">Sin acceso</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon warning">
+            <i class="fa-solid fa-clock"></i>
+        </div>
+        <div class="stat-content">
+            <h3>0</h3>
+            <p>Cambio Requerido</p>
+            <small style="color: #64748B;">Contraseñas temporales</small>
+        </div>
+    </div>
+</div>
+
+<!-- Content Card -->
+<div class="content-card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Lista de Usuarios</h2>
+            <p style="font-size: 13px; color: #64748B; margin-top: 4px;">
+                @Model.Count() usuario(s) encontrado(s)
+            </p>
+        </div>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="fa-solid fa-user-plus"></i>
+            Crear Usuario
+        </a>
+    </div>
+
+    <div class="card-body">
+        <!-- Buscador -->
+        <div style="margin-bottom: 1.5rem;">
+            <input type="text" id="searchInput" class="form-control" placeholder="🔍 Buscar usuarios..." style="max-width: 400px;" />
+        </div>
+
+        <!-- Tabla -->
+        <div class="table-responsive">
+            <table class="table" id="usuariosTable">
+                <thead>
+                    <tr>
+                        <th>Nombre Completo</th>
+                        <th>Usuario</th>
+                        <th>Rol</th>
+                        <th>Local</th>
+                        <th>Estado</th>
+                        <th>Email</th>
+                        <th style="text-align: center;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var usuario in Model)
+                    {
+                        <tr>
+                            <td style="font-weight: 500;">@usuario.NombreCompleto</td>
+                            <td>@usuario.UserName</td>
+                            <td>
+                                <span class="badge badge-success">@usuario.NombreRol</span>
+                            </td>
+                            <td>@usuario.NombreLocal</td>
+                            <td>
+                                @if (usuario.Activo)
+                                {
+                                    <span class="badge badge-success">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-danger">Inactivo</span>
+                                }
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(usuario.UserName))
+                                {
+                                    <span>@(usuario.UserName.ToLower())@@puerto92.com</span>
+                                }
+                            </td>
+                            <td style="text-align: center;">
+                                <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                                    <a asp-action="Edit" asp-route-id="@usuario.Id" class="btn btn-sm" style="background: #3B82F6; color: white;" title="Editar">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                    <form asp-action="ToggleStatus" asp-route-id="@usuario.Id" method="post" style="display: inline;">
+                                        @if (usuario.Activo)
+                                        {
+                                            <button type="submit" class="btn btn-sm btn-danger" title="Desactivar" onclick="return confirm('¿Desactivar este usuario?')">
+                                                <i class="fa-solid fa-ban"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="btn btn-sm btn-success" title="Activar" onclick="return confirm('¿Activar este usuario?')">
+                                                <i class="fa-solid fa-check"></i>
+                                            </button>
+                                        }
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Buscador en tiempo real
+        document.getElementById('searchInput').addEventListener('keyup', function() {
+            const searchValue = this.value.toLowerCase();
+            const table = document.getElementById('usuariosTable');
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+            for (let i = 0; i < rows.length; i++) {
+                const rowText = rows[i].textContent.toLowerCase();
+                rows[i].style.display = rowText.includes(searchValue) ? '' : 'none';
+            }
+        });
+
+        // Marcar nav-link activo
+        document.addEventListener('DOMContentLoaded', function() {
+            const links = document.querySelectorAll('.nav-link');
+            links.forEach(link => {
+                if (link.href === window.location.href) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+}
