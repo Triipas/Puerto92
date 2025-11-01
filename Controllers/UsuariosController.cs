@@ -72,19 +72,20 @@ namespace Puerto92.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(UsuarioViewModel model)
         {
+            // Remover validación de contraseña (se generará automáticamente)
+            ModelState.Remove("Password");
+
             if (!ModelState.IsValid)
             {
-                await CargarListasDesplegables();
-                return View(model);
+                return RedirectToAction(nameof(Index));
             }
 
             // Verificar si el usuario ya existe
             var existingUser = await _userManager.FindByNameAsync(model.UserName);
             if (existingUser != null)
             {
-                ModelState.AddModelError("UserName", "El nombre de usuario ya existe");
-                await CargarListasDesplegables();
-                return View(model);
+                TempData["Error"] = "El nombre de usuario ya existe";
+                return RedirectToAction(nameof(Index));
             }
 
             // Crear nuevo usuario
@@ -94,11 +95,14 @@ namespace Puerto92.Controllers
                 NombreCompleto = model.NombreCompleto,
                 LocalId = model.LocalId,
                 Activo = model.Activo,
-                EsPrimerIngreso = false,
+                EsPrimerIngreso = true, // Forzar cambio de contraseña
                 FechaCreacion = DateTime.Now
             };
 
-            var result = await _userManager.CreateAsync(usuario, model.Password!);
+            // Generar contraseña temporal
+            string passwordTemporal = $"Temp{DateTime.Now.Year}!";
+
+            var result = await _userManager.CreateAsync(usuario, passwordTemporal);
 
             if (result.Succeeded)
             {
@@ -110,17 +114,13 @@ namespace Puerto92.Controllers
                 }
 
                 _logger.LogInformation($"Usuario {usuario.UserName} creado por {User.Identity!.Name}");
-                TempData["Success"] = "Usuario creado exitosamente";
+                TempData["Success"] = $"Usuario creado. Contraseña temporal: {passwordTemporal}";
                 return RedirectToAction(nameof(Index));
             }
 
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-
-            await CargarListasDesplegables();
-            return View(model);
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            TempData["Error"] = $"Error al crear usuario: {errors}";
+            return RedirectToAction(nameof(Index));
         }
 
         // POST: Usuarios/ToggleStatus/5
@@ -166,104 +166,173 @@ namespace Puerto92.Controllers
         }
 
         // GET: Usuarios/Edit/5
-public async Task<IActionResult> Edit(string id)
-{
-    if (string.IsNullOrEmpty(id))
-    {
-        return NotFound();
-    }
-
-    var usuario = await _userManager.FindByIdAsync(id);
-    if (usuario == null)
-    {
-        return NotFound();
-    }
-
-    var roles = await _userManager.GetRolesAsync(usuario);
-    var roleName = roles.FirstOrDefault();
-    var role = roleName != null ? await _roleManager.FindByNameAsync(roleName) : null;
-
-    var model = new UsuarioViewModel
-    {
-        Id = usuario.Id,
-        NombreCompleto = usuario.NombreCompleto,
-        UserName = usuario.UserName!,
-        LocalId = usuario.LocalId,
-        RolId = role?.Id ?? string.Empty,
-        Activo = usuario.Activo
-    };
-
-    await CargarListasDesplegables();
-    return View(model);
-}
-
-// POST: Usuarios/Edit/5
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> Edit(string id, UsuarioViewModel model)
-{
-    if (id != model.Id)
-    {
-        return NotFound();
-    }
-
-    // Remover validación de contraseña si está vacía
-    if (string.IsNullOrEmpty(model.Password))
-    {
-        ModelState.Remove("Password");
-    }
-
-    if (!ModelState.IsValid)
-    {
-        await CargarListasDesplegables();
-        return View(model);
-    }
-
-    var usuario = await _userManager.FindByIdAsync(id);
-    if (usuario == null)
-    {
-        return NotFound();
-    }
-
-    // Actualizar datos
-    usuario.NombreCompleto = model.NombreCompleto;
-    usuario.UserName = model.UserName;
-    usuario.LocalId = model.LocalId;
-    usuario.Activo = model.Activo;
-
-    var result = await _userManager.UpdateAsync(usuario);
-
-    if (result.Succeeded)
-    {
-        // Actualizar rol
-        var currentRoles = await _userManager.GetRolesAsync(usuario);
-        await _userManager.RemoveFromRolesAsync(usuario, currentRoles);
-
-        var newRole = await _roleManager.FindByIdAsync(model.RolId);
-        if (newRole != null)
+        public async Task<IActionResult> Edit(string id)
         {
-            await _userManager.AddToRoleAsync(usuario, newRole.Name!);
+            if (string.IsNullOrEmpty(id))
+            {
+                return NotFound();
+            }
+
+            var usuario = await _userManager.FindByIdAsync(id);
+            if (usuario == null)
+            {
+                return NotFound();
+            }
+
+            var roles = await _userManager.GetRolesAsync(usuario);
+            var roleName = roles.FirstOrDefault();
+            var role = roleName != null ? await _roleManager.FindByNameAsync(roleName) : null;
+
+            var model = new UsuarioViewModel
+            {
+                Id = usuario.Id,
+                NombreCompleto = usuario.NombreCompleto,
+                UserName = usuario.UserName!,
+                LocalId = usuario.LocalId,
+                RolId = role?.Id ?? string.Empty,
+                Activo = usuario.Activo
+            };
+
+            await CargarListasDesplegables();
+            return View(model);
         }
 
-        // Cambiar contraseña si se proporcionó una nueva
-        if (!string.IsNullOrEmpty(model.Password))
+        // POST: Usuarios/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(string id, UsuarioViewModel model)
         {
-            var token = await _userManager.GeneratePasswordResetTokenAsync(usuario);
-            await _userManager.ResetPasswordAsync(usuario, token, model.Password);
+            if (id != model.Id)
+            {
+                return NotFound();
+            }
+
+            // Remover validación de contraseña si está vacía
+            if (string.IsNullOrEmpty(model.Password))
+            {
+                ModelState.Remove("Password");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                await CargarListasDesplegables();
+                return View(model);
+            }
+
+            var usuario = await _userManager.FindByIdAsync(id);
+            if (usuario == null)
+            {
+                return NotFound();
+            }
+
+            // Actualizar datos
+            usuario.NombreCompleto = model.NombreCompleto;
+            usuario.UserName = model.UserName;
+            usuario.LocalId = model.LocalId;
+            usuario.Activo = model.Activo;
+
+            var result = await _userManager.UpdateAsync(usuario);
+
+            if (result.Succeeded)
+            {
+                // Actualizar rol
+                var currentRoles = await _userManager.GetRolesAsync(usuario);
+                await _userManager.RemoveFromRolesAsync(usuario, currentRoles);
+
+                var newRole = await _roleManager.FindByIdAsync(model.RolId);
+                if (newRole != null)
+                {
+                    await _userManager.AddToRoleAsync(usuario, newRole.Name!);
+                }
+
+                // Cambiar contraseña si se proporcionó una nueva
+                if (!string.IsNullOrEmpty(model.Password))
+                {
+                    var token = await _userManager.GeneratePasswordResetTokenAsync(usuario);
+                    await _userManager.ResetPasswordAsync(usuario, token, model.Password);
+                }
+
+                _logger.LogInformation($"Usuario {usuario.UserName} editado por {User.Identity!.Name}");
+                TempData["Success"] = "Usuario actualizado exitosamente";
+                return RedirectToAction(nameof(Index));
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+
+            await CargarListasDesplegables();
+            return View(model);
+        }
+        // GET: /Usuarios/GetRolesYLocales (Para AJAX)
+        [HttpGet]
+        public async Task<IActionResult> GetRolesYLocales()
+        {
+            var roles = await _roleManager.Roles
+                .Select(r => new { value = r.Id, text = r.Name })
+                .ToListAsync();
+
+            var locales = await _context.Locales
+                .Where(l => l.Activo)
+                .Select(l => new { value = l.Id, text = l.Nombre })
+                .ToListAsync();
+
+            return Json(new { roles, locales });
         }
 
-        _logger.LogInformation($"Usuario {usuario.UserName} editado por {User.Identity!.Name}");
-        TempData["Success"] = "Usuario actualizado exitosamente";
-        return RedirectToAction(nameof(Index));
-    }
+        // GET: /Usuarios/GetUsuario?id=xxx (Para AJAX)
+        [HttpGet]
+        public async Task<IActionResult> GetUsuario(string id)
+        {
+            var usuario = await _userManager.FindByIdAsync(id);
+            if (usuario == null)
+            {
+                return NotFound();
+            }
 
-    foreach (var error in result.Errors)
-    {
-        ModelState.AddModelError(string.Empty, error.Description);
-    }
+            var roles = await _userManager.GetRolesAsync(usuario);
+            var roleName = roles.FirstOrDefault();
+            var role = roleName != null ? await _roleManager.FindByNameAsync(roleName) : null;
 
-    await CargarListasDesplegables();
-    return View(model);
+            var data = new
+            {
+                id = usuario.Id,
+                nombreCompleto = usuario.NombreCompleto,
+                userName = usuario.UserName,
+                rolId = role?.Id ?? string.Empty,
+                localId = usuario.LocalId,
+                activo = usuario.Activo
+            };
+
+            return Json(data);
+        }
+
+        // POST: /Usuarios/Delete/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(string id)
+        {
+            var usuario = await _userManager.FindByIdAsync(id);
+            if (usuario == null)
+            {
+                return NotFound();
+            }
+
+            var result = await _userManager.DeleteAsync(usuario);
+
+            if (result.Succeeded)
+            {
+                _logger.LogInformation($"Usuario {usuario.UserName} eliminado por {User.Identity!.Name}");
+                TempData["Success"] = "Usuario eliminado exitosamente";
+            }
+            else
+            {
+                TempData["Error"] = "Error al eliminar el usuario";
+            }
+
+            return RedirectToAction(nameof(Index));
         }
     }
+
 }

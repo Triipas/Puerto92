@@ -20,6 +20,9 @@ namespace Puerto92.Models
         [StringLength(100)]
         public string? Distrito { get; set; }
 
+        [StringLength(100)]
+        public string? Ciudad { get; set; }
+
         [StringLength(20)]
         public string? Telefono { get; set; }
 

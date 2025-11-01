@@ -3,7 +3,7 @@
     ViewData["Title"] = "Gestión de Usuarios";
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
 }
-<link rel="stylesheet" href="~/css/admin.css" />
+
 <div class="page-header">
     <h1 class="page-title">Gestión de Usuarios</h1>
     <p class="page-subtitle">Crear, editar y administrar usuarios del sistema</p>
@@ -65,10 +65,10 @@
                 @Model.Count() usuario(s) encontrado(s)
             </p>
         </div>
-        <a asp-action="Create" class="btn btn-primary">
+        <button onclick="openCreateModal()" class="btn btn-primary">
             <i class="fa-solid fa-user-plus"></i>
             Crear Usuario
-        </a>
+        </button>
     </div>
 
     <div class="card-body">
@@ -119,23 +119,13 @@
                             </td>
                             <td style="text-align: center;">
                                 <div style="display: flex; gap: 0.5rem; justify-content: center;">
-                                    <a asp-action="Edit" asp-route-id="@usuario.Id" class="btn btn-sm" style="background: #3B82F6; color: white;" title="Editar">
+                                    <button onclick="openEditModal('@usuario.Id')" class="btn btn-sm" style="background: #3B82F6; color: white;" title="Editar">
                                         <i class="fa-solid fa-pen"></i>
-                                    </a>
-                                    <form asp-action="ToggleStatus" asp-route-id="@usuario.Id" method="post" style="display: inline;">
-                                        @if (usuario.Activo)
-                                        {
-                                            <button type="submit" class="btn btn-sm btn-danger" title="Desactivar" onclick="return confirm('¿Desactivar este usuario?')">
-                                                <i class="fa-solid fa-ban"></i>
-                                            </button>
-                                        }
-                                        else
-                                        {
-                                            <button type="submit" class="btn btn-sm btn-success" title="Activar" onclick="return confirm('¿Activar este usuario?')">
-                                                <i class="fa-solid fa-check"></i>
-                                            </button>
-                                        }
-                                    </form>
+                                    </button>
+                                    <button onclick="openDeleteModal('@usuario.Id', '@usuario.NombreCompleto', '@usuario.UserName', '@usuario.NombreRol', '@usuario.NombreLocal')" 
+                                            class="btn btn-sm btn-danger" title="Eliminar">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -146,28 +136,11 @@
     </div>
 </div>
 
+@* Cargar Modales usando Partial Views *@
+<partial name="Modals/_CreateUsuarioModal" />
+<partial name="Modals/_EditUsuarioModal" />
+<partial name="Modals/_DeleteUsuarioModal" />
+
 @section Scripts {
-    <script>
-        // Buscador en tiempo real
-        document.getElementById('searchInput').addEventListener('keyup', function() {
-            const searchValue = this.value.toLowerCase();
-            const table = document.getElementById('usuariosTable');
-            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-
-            for (let i = 0; i < rows.length; i++) {
-                const rowText = rows[i].textContent.toLowerCase();
-                rows[i].style.display = rowText.includes(searchValue) ? '' : 'none';
-            }
-        });
-
-        // Marcar nav-link activo
-        document.addEventListener('DOMContentLoaded', function() {
-            const links = document.querySelectorAll('.nav-link');
-            links.forEach(link => {
-                if (link.href === window.location.href) {
-                    link.classList.add('active');
-                }
-            });
-        });
-    </script>
+    <script src="~/js/usuarios-modals.js" asp-append-version="true"></script>
 }

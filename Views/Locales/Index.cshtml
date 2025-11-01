@@ -1,4 +1,4 @@
-@model IEnumerable<Puerto92.Models.Local>
+@model IEnumerable<Puerto92.ViewModels.LocalViewModel>
 @{
     ViewData["Title"] = "Gestión de Locales";
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
@@ -49,7 +49,7 @@
             <i class="fa-solid fa-users"></i>
         </div>
         <div class="stat-content">
-            <h3>@Model.Sum(l => l.Usuarios.Count)</h3>
+            <h3>@Model.Sum(l => l.CantidadUsuarios)</h3>
             <p>Personal Total</p>
             <small style="color: #64748B;">En todos los locales</small>
         </div>
@@ -65,16 +65,21 @@
                 @Model.Count() local(es) registrado(s)
             </p>
         </div>
-        <a asp-action="Create" class="btn btn-primary">
+        <button onclick="openCreateLocalModal()" class="btn btn-primary">
             <i class="fa-solid fa-plus"></i>
             Crear Local
-        </a>
+        </button>
     </div>
 
     <div class="card-body">
+        <!-- Buscador -->
+        <div style="margin-bottom: 1.5rem;">
+            <input type="text" id="searchInput" class="form-control" placeholder="🔍 Buscar locales..." style="max-width: 400px;" />
+        </div>
+
         <!-- Tabla -->
         <div class="table-responsive">
-            <table class="table">
+            <table class="table" id="localesTable">
                 <thead>
                     <tr>
                         <th>Código</th>
@@ -97,7 +102,7 @@
                             <td>@(local.Distrito ?? "-")</td>
                             <td>@(local.Telefono ?? "-")</td>
                             <td>
-                                <span class="badge badge-success">@local.Usuarios.Count usuario(s)</span>
+                                <span class="badge badge-success">@local.CantidadUsuarios usuario(s)</span>
                             </td>
                             <td>
                                 @if (local.Activo)
@@ -111,23 +116,13 @@
                             </td>
                             <td style="text-align: center;">
                                 <div style="display: flex; gap: 0.5rem; justify-content: center;">
-                                    <a asp-action="Edit" asp-route-id="@local.Id" class="btn btn-sm" style="background: #3B82F6; color: white;" title="Editar">
+                                    <button onclick="openEditLocalModal(@local.Id)" class="btn btn-sm" style="background: #3B82F6; color: white;" title="Editar">
                                         <i class="fa-solid fa-pen"></i>
-                                    </a>
-                                    <form asp-action="ToggleStatus" asp-route-id="@local.Id" method="post" style="display: inline;">
-                                        @if (local.Activo)
-                                        {
-                                            <button type="submit" class="btn btn-sm btn-danger" title="Desactivar" onclick="return confirm('¿Desactivar este local?')">
-                                                <i class="fa-solid fa-ban"></i>
-                                            </button>
-                                        }
-                                        else
-                                        {
-                                            <button type="submit" class="btn btn-sm btn-success" title="Activar" onclick="return confirm('¿Activar este local?')">
-                                                <i class="fa-solid fa-check"></i>
-                                            </button>
-                                        }
-                                    </form>
+                                    </button>
+                                    <button onclick="openDeleteLocalModal(@local.Id, '@local.Codigo', '@local.Nombre', '@(local.Direccion ?? "")', '@(local.Distrito ?? "")', '@(local.Ciudad ?? "")')" 
+                                            class="btn btn-sm btn-danger" title="Desactivar">
+                                        <i class="fa-solid fa-ban"></i>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -138,16 +133,11 @@
     </div>
 </div>
 
+@* Cargar Modales usando Partial Views *@
+<partial name="Modals/_CreateLocalModal" />
+<partial name="Modals/_EditLocalModal" />
+<partial name="Modals/_DeleteLocalModal" />
+
 @section Scripts {
-    <script>
-        // Marcar nav-link activo
-        document.addEventListener('DOMContentLoaded', function() {
-            const links = document.querySelectorAll('.nav-link');
-            links.forEach(link => {
-                if (link.href === window.location.href) {
-                    link.classList.add('active');
-                }
-            });
-        });
-    </script>
+    <script src="~/js/locales-modals.js" asp-append-version="true"></script>
 }
