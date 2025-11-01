@@ -5,14 +5,12 @@ using Puerto92.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllersWithViews();
 
-// Configurar DbContext con MySQL
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+    options.UseSqlite(connectionString);
 });
 
 // Configurar Identity
@@ -56,7 +54,21 @@ builder.Services.AddSession(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// ===== INICIALIZAR BASE DE DATOS =====
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        await DbInitializer.Initialize(services);
+        Console.WriteLine("✅ Base de datos inicializada correctamente");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Error al inicializar la base de datos: {ex.Message}");
+    }
+}
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -75,7 +87,6 @@ app.UseSession();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Account}/{action=Login}/{id?}");
-
 
 app.MapControllerRoute(
     name: "usuarios",

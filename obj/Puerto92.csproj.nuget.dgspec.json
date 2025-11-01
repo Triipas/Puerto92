@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Pilar\\Puerto92\\Puerto92.csproj": {}
+    "C:\\Users\\monke\\OneDrive\\Documentos\\waaa\\Puerto92\\Puerto92.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Pilar\\Puerto92\\Puerto92.csproj": {
+    "C:\\Users\\monke\\OneDrive\\Documentos\\waaa\\Puerto92\\Puerto92.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Pilar\\Puerto92\\Puerto92.csproj",
+        "projectUniqueName": "C:\\Users\\monke\\OneDrive\\Documentos\\waaa\\Puerto92\\Puerto92.csproj",
         "projectName": "Puerto92",
-        "projectPath": "C:\\Users\\Pilar\\Puerto92\\Puerto92.csproj",
-        "packagesPath": "C:\\Users\\Pilar\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Pilar\\Puerto92\\obj\\",
+        "projectPath": "C:\\Users\\monke\\OneDrive\\Documentos\\waaa\\Puerto92\\Puerto92.csproj",
+        "packagesPath": "C:\\Users\\monke\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\monke\\OneDrive\\Documentos\\waaa\\Puerto92\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Pilar\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\monke\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -37,7 +37,8 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        }
+        },
+        "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
         "net8.0": {
@@ -53,13 +54,13 @@
               "target": "Package",
               "version": "[8.0.0, )"
             },
-            "Microsoft.EntityFrameworkCore.Tools": {
-              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
-              "suppressParent": "All",
+            "Microsoft.EntityFrameworkCore.Sqlite": {
               "target": "Package",
               "version": "[8.0.0, )"
             },
-            "Pomelo.EntityFrameworkCore.MySql": {
+            "Microsoft.EntityFrameworkCore.Tools": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
               "target": "Package",
               "version": "[8.0.0, )"
             }
@@ -83,7 +84,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.413/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
