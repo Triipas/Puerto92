@@ -1,8 +1,104 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="page-header">
+    <h1 class="page-title">Dashboard Principal</h1>
+    <p class="page-subtitle">Bienvenido al sistema de gestión Puerto 92</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="stat-content">
+            <h3>0</h3>
+            <p>Usuarios Totales</p>
+            <small style="color: #64748B;">En el sistema</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon success">
+            <i class="fa-solid fa-store"></i>
+        </div>
+        <div class="stat-content">
+            <h3>0</h3>
+            <p>Locales Activos</p>
+            <small style="color: #64748B;">En operación</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon warning">
+            <i class="fa-solid fa-box"></i>
+        </div>
+        <div class="stat-content">
+            <h3>0</h3>
+            <p>Productos</p>
+            <small style="color: #64748B;">En inventario</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon danger">
+            <i class="fa-solid fa-bell"></i>
+        </div>
+        <div class="stat-content">
+            <h3>0</h3>
+            <p>Alertas</p>
+            <small style="color: #64748B;">Pendientes</small>
+        </div>
+    </div>
+</div>
+
+<!-- Content Card -->
+<div class="content-card">
+    <div class="card-header">
+        <h2 class="card-title">Acceso Rápido</h2>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <a asp-controller="Usuarios" asp-action="Index" class="btn btn-primary" style="justify-content: center;">
+                <i class="fa-solid fa-users"></i>
+                Gestionar Usuarios
+            </a>
+            <a asp-controller="Locales" asp-action="Index" class="btn btn-primary" style="justify-content: center;">
+                <i class="fa-solid fa-store"></i>
+                Gestionar Locales
+            </a>
+            <a asp-controller="Home" asp-action="Configuracion" class="btn btn-primary" style="justify-content: center;">
+                <i class="fa-solid fa-gear"></i>
+                Configuración
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="card-header">
+        <h2 class="card-title">Información del Sistema</h2>
+    </div>
+    <div class="card-body">
+        <p>Bienvenido al sistema de gestión de inventario de Puerto 92 - Restaurante de Mariscos</p>
+        <p style="margin-top: 1rem;">
+            <strong>Usuario actual:</strong> @User.Identity!.Name<br />
+            <strong>Rol:</strong> 
+            @if (User.IsInRole("Admin Maestro"))
+            {
+                <span class="badge badge-success">Admin Maestro</span>
+            }
+            else if (User.IsInRole("Administrador Local"))
+            {
+                <span class="badge badge-success">Administrador Local</span>
+            }
+            else
+            {
+                <span class="badge badge-danger">Sin rol asignado</span>
+            }
+        </p>
+    </div>
 </div>

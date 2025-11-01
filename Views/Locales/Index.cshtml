@@ -1,0 +1,153 @@
+@model IEnumerable<Puerto92.Models.Local>
+@{
+    ViewData["Title"] = "Gestión de Locales";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="page-header">
+    <h1 class="page-title">Gestión de Locales</h1>
+    <p class="page-subtitle">Administrar los puntos de venta del restaurante</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="fa-solid fa-store"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@Model.Count()</h3>
+            <p>Total Locales</p>
+            <small style="color: #64748B;">En el sistema</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon success">
+            <i class="fa-solid fa-check-circle"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@Model.Count(l => l.Activo)</h3>
+            <p>Locales Activos</p>
+            <small style="color: #64748B;">En operación</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon danger">
+            <i class="fa-solid fa-times-circle"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@Model.Count(l => !l.Activo)</h3>
+            <p>Locales Inactivos</p>
+            <small style="color: #64748B;">Cerrados temporalmente</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon warning">
+            <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@Model.Sum(l => l.Usuarios.Count)</h3>
+            <p>Personal Total</p>
+            <small style="color: #64748B;">En todos los locales</small>
+        </div>
+    </div>
+</div>
+
+<!-- Content Card -->
+<div class="content-card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Lista de Locales</h2>
+            <p style="font-size: 13px; color: #64748B; margin-top: 4px;">
+                @Model.Count() local(es) registrado(s)
+            </p>
+        </div>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i>
+            Crear Local
+        </a>
+    </div>
+
+    <div class="card-body">
+        <!-- Tabla -->
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nombre</th>
+                        <th>Dirección</th>
+                        <th>Distrito</th>
+                        <th>Teléfono</th>
+                        <th>Personal</th>
+                        <th>Estado</th>
+                        <th style="text-align: center;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var local in Model)
+                    {
+                        <tr>
+                            <td style="font-weight: 600;">@local.Codigo</td>
+                            <td style="font-weight: 500;">@local.Nombre</td>
+                            <td>@(local.Direccion ?? "-")</td>
+                            <td>@(local.Distrito ?? "-")</td>
+                            <td>@(local.Telefono ?? "-")</td>
+                            <td>
+                                <span class="badge badge-success">@local.Usuarios.Count usuario(s)</span>
+                            </td>
+                            <td>
+                                @if (local.Activo)
+                                {
+                                    <span class="badge badge-success">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-danger">Inactivo</span>
+                                }
+                            </td>
+                            <td style="text-align: center;">
+                                <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                                    <a asp-action="Edit" asp-route-id="@local.Id" class="btn btn-sm" style="background: #3B82F6; color: white;" title="Editar">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                    <form asp-action="ToggleStatus" asp-route-id="@local.Id" method="post" style="display: inline;">
+                                        @if (local.Activo)
+                                        {
+                                            <button type="submit" class="btn btn-sm btn-danger" title="Desactivar" onclick="return confirm('¿Desactivar este local?')">
+                                                <i class="fa-solid fa-ban"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="btn btn-sm btn-success" title="Activar" onclick="return confirm('¿Activar este local?')">
+                                                <i class="fa-solid fa-check"></i>
+                                            </button>
+                                        }
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Marcar nav-link activo
+        document.addEventListener('DOMContentLoaded', function() {
+            const links = document.querySelectorAll('.nav-link');
+            links.forEach(link => {
+                if (link.href === window.location.href) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+}
