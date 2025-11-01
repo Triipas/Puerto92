@@ -192,36 +192,25 @@ function generateTemporaryPassword() {
 /**
  * Copiar contraseña al portapapeles (modal de resetear)
  */
-async function copyPassword(e) {
-    console.log('🔍 Intentando copiar contraseña de reseteo...');
-    console.log('📍 Evento recibido:', e);
-    
+async function copyPassword() {
     try {
-        // Leer directamente del DOM en lugar de la variable global
         const passwordElement = document.getElementById('resetPasswordGenerated');
-        console.log('📍 Elemento encontrado:', passwordElement);
         
         if (!passwordElement) {
             throw new Error('Elemento de contraseña no encontrado');
         }
         
         const password = passwordElement.textContent.trim();
-        console.log('🔑 Contraseña a copiar:', password);
         
         if (!password || password === '') {
             throw new Error('Contraseña vacía');
         }
         
-        console.log('📋 Intentando usar Clipboard API...');
         await navigator.clipboard.writeText(password);
-        console.log('✅ Contraseña copiada exitosamente con Clipboard API');
         
         // Cambiar temporalmente el botón para indicar que se copió
-        const button = e ? e.target.closest('button') : null;
-        if (!button) {
-            console.warn('⚠️ Botón no encontrado para feedback visual');
-            return;
-        }
+        const button = document.getElementById('copyResetPasswordBtn');
+        if (!button) return;
         
         const originalHTML = button.innerHTML;
         button.innerHTML = '<i class="fa-solid fa-check"></i>';
@@ -233,50 +222,34 @@ async function copyPassword(e) {
         }, 2000);
         
     } catch (err) {
-        console.error('❌ Error al copiar con Clipboard API:', err);
-        console.log('🔄 Intentando método fallback...');
-        
         // Intentar método alternativo (fallback)
         try {
             const passwordElement = document.getElementById('resetPasswordGenerated');
             const password = passwordElement ? passwordElement.textContent.trim() : '';
             
-            console.log('🔑 Contraseña para fallback:', password);
-            
-            // Crear elemento temporal para copiar
             const tempInput = document.createElement('input');
             tempInput.value = password;
             tempInput.style.position = 'absolute';
             tempInput.style.left = '-9999px';
             document.body.appendChild(tempInput);
             tempInput.select();
-            
-            const success = document.execCommand('copy');
-            console.log('📋 execCommand result:', success);
-            
+            document.execCommand('copy');
             document.body.removeChild(tempInput);
             
-            if (success) {
-                console.log('✅ Contraseña copiada exitosamente con fallback');
+            // Feedback visual
+            const button = document.getElementById('copyResetPasswordBtn');
+            if (button) {
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '<i class="fa-solid fa-check"></i>';
+                button.style.background = '#10B981';
                 
-                // Feedback visual
-                const button = e ? e.target.closest('button') : null;
-                if (button) {
-                    const originalHTML = button.innerHTML;
-                    button.innerHTML = '<i class="fa-solid fa-check"></i>';
-                    button.style.background = '#10B981';
-                    
-                    setTimeout(() => {
-                        button.innerHTML = originalHTML;
-                        button.style.background = '#3B82F6';
-                    }, 2000);
-                }
-            } else {
-                throw new Error('execCommand falló');
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                    button.style.background = '#3B82F6';
+                }, 2000);
             }
         } catch (fallbackErr) {
-            console.error('❌ Método fallback también falló:', fallbackErr);
-            alert('Error al copiar la contraseña.\n\nPor favor:\n1. Seleccione el texto manualmente\n2. Presione Ctrl+C (o Cmd+C en Mac)\n\nLa contraseña está visible en el modal.');
+            alert('Error al copiar la contraseña. Por favor seleccione y copie manualmente (Ctrl+C).');
         }
     }
 }
