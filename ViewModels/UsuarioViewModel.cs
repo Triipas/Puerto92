@@ -16,7 +16,7 @@ namespace Puerto92.ViewModels
         [Display(Name = "Usuario")]
         public string UserName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "La contraseña es obligatoria")]
+        // Contraseña NO es requerida (se genera automáticamente al crear, no se usa al editar)
         [StringLength(100, MinimumLength = 8, ErrorMessage = "Mínimo 8 caracteres")]
         [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$", 
             ErrorMessage = "Debe incluir mayúsculas, minúsculas y números")]

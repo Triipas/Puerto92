@@ -67,7 +67,7 @@ namespace Puerto92.Controllers
             return View();
         }
 
-        // POST: Usuarios/Create
+        // POST: Usuarios/Create (Método de respaldo, el modal usa CreateAjax)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(UsuarioViewModel model)
@@ -88,6 +88,9 @@ namespace Puerto92.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            // Generar contraseña temporal usando el mismo algoritmo que resetear
+            string passwordTemporal = GenerateTemporaryPassword();
+
             // Crear nuevo usuario
             var usuario = new Usuario
             {
@@ -95,12 +98,10 @@ namespace Puerto92.Controllers
                 NombreCompleto = model.NombreCompleto,
                 LocalId = model.LocalId,
                 Activo = model.Activo,
-                EsPrimerIngreso = true, // Forzar cambio de contraseña
+                EsPrimerIngreso = true,     // Es su primera vez
+                PasswordReseteada = false,   // No es un reseteo, es creación
                 FechaCreacion = DateTime.Now
             };
-
-            // Generar contraseña temporal
-            string passwordTemporal = $"Temp{DateTime.Now.Year}!";
 
             var result = await _userManager.CreateAsync(usuario, passwordTemporal);
 
@@ -114,7 +115,9 @@ namespace Puerto92.Controllers
                 }
 
                 _logger.LogInformation($"Usuario {usuario.UserName} creado por {User.Identity!.Name}");
-                TempData["Success"] = $"Usuario creado. Contraseña temporal: {passwordTemporal}";
+
+                // NO mostrar contraseña en TempData (se usa modal ahora)
+                TempData["Success"] = "Usuario creado exitosamente";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -207,16 +210,13 @@ namespace Puerto92.Controllers
                 return NotFound();
             }
 
-            // Remover validación de contraseña si está vacía
-            if (string.IsNullOrEmpty(model.Password))
-            {
-                ModelState.Remove("Password");
-            }
+            // Remover validación de contraseña (no se cambia desde aquí)
+            ModelState.Remove("Password");
 
             if (!ModelState.IsValid)
             {
-                await CargarListasDesplegables();
-                return View(model);
+                TempData["Error"] = "Datos inválidos. Por favor verifica los campos.";
+                return RedirectToAction(nameof(Index));
             }
 
             var usuario = await _userManager.FindByIdAsync(id);
@@ -225,7 +225,7 @@ namespace Puerto92.Controllers
                 return NotFound();
             }
 
-            // Actualizar datos
+            // Actualizar datos (NO se cambia la contraseña desde aquí)
             usuario.NombreCompleto = model.NombreCompleto;
             usuario.UserName = model.UserName;
             usuario.LocalId = model.LocalId;
@@ -245,15 +245,9 @@ namespace Puerto92.Controllers
                     await _userManager.AddToRoleAsync(usuario, newRole.Name!);
                 }
 
-                // Cambiar contraseña si se proporcionó una nueva
-                if (!string.IsNullOrEmpty(model.Password))
-                {
-                    var token = await _userManager.GeneratePasswordResetTokenAsync(usuario);
-                    await _userManager.ResetPasswordAsync(usuario, token, model.Password);
-                }
-
                 _logger.LogInformation($"Usuario {usuario.UserName} editado por {User.Identity!.Name}");
                 TempData["Success"] = "Usuario actualizado exitosamente";
+
                 return RedirectToAction(nameof(Index));
             }
 
@@ -262,8 +256,8 @@ namespace Puerto92.Controllers
                 ModelState.AddModelError(string.Empty, error.Description);
             }
 
-            await CargarListasDesplegables();
-            return View(model);
+            TempData["Error"] = "Error al actualizar el usuario";
+            return RedirectToAction(nameof(Index));
         }
         // GET: /Usuarios/GetRolesYLocales (Para AJAX)
         [HttpGet]
@@ -308,6 +302,95 @@ namespace Puerto92.Controllers
             return Json(data);
         }
 
+        // POST: Usuarios/CreateAjax (AJAX)
+        [HttpPost]
+        public async Task<IActionResult> CreateAjax(UsuarioViewModel model)
+        {
+            try
+            {
+                // Remover validación de contraseña (se generará automáticamente)
+                ModelState.Remove("Password");
+
+                if (!ModelState.IsValid)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Datos inválidos. Por favor verifica los campos."
+                    });
+                }
+
+                // Verificar si el usuario ya existe
+                var existingUser = await _userManager.FindByNameAsync(model.UserName);
+                if (existingUser != null)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "El nombre de usuario ya existe"
+                    });
+                }
+
+                // Generar contraseña temporal usando el mismo algoritmo que resetear
+                string passwordTemporal = GenerateTemporaryPassword();
+
+                // Crear nuevo usuario
+                var usuario = new Usuario
+                {
+                    UserName = model.UserName,
+                    NombreCompleto = model.NombreCompleto,
+                    LocalId = model.LocalId,
+                    Activo = model.Activo,
+                    EsPrimerIngreso = true,     // Es su primera vez
+                    PasswordReseteada = false,   // No es un reseteo, es creación
+                    FechaCreacion = DateTime.Now
+                };
+
+                var result = await _userManager.CreateAsync(usuario, passwordTemporal);
+
+                if (result.Succeeded)
+                {
+                    // Asignar rol
+                    var role = await _roleManager.FindByIdAsync(model.RolId);
+                    string rolNombre = "Sin rol";
+
+                    if (role != null)
+                    {
+                        await _userManager.AddToRoleAsync(usuario, role.Name!);
+                        rolNombre = role.Name!;
+                    }
+
+                    _logger.LogInformation($"Usuario {usuario.UserName} creado por {User.Identity!.Name}");
+
+                    // Retornar JSON con información del usuario y contraseña
+                    return Json(new
+                    {
+                        success = true,
+                        password = passwordTemporal,
+                        nombreCompleto = usuario.NombreCompleto,
+                        userName = usuario.UserName,
+                        rolNombre = rolNombre
+                    });
+                }
+
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                return Json(new
+                {
+                    success = false,
+                    message = $"Error al crear usuario: {errors}"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al crear usuario");
+                return Json(new
+                {
+                    success = false,
+                    message = "Error al crear el usuario. Por favor intenta nuevamente."
+                });
+            }
+        }
+
         // POST: /Usuarios/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -333,6 +416,76 @@ namespace Puerto92.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+        // POST: /Usuarios/ResetPassword/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(string id, [FromForm] string tempPassword)
+        {
+            try
+            {
+                var usuario = await _userManager.FindByIdAsync(id);
+                if (usuario == null)
+                {
+                    TempData["Error"] = "Usuario no encontrado";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Generar token de reseteo de contraseña
+                var token = await _userManager.GeneratePasswordResetTokenAsync(usuario);
+
+                // Si no se proporciona contraseña temporal desde el formulario, generarla
+                if (string.IsNullOrEmpty(tempPassword))
+                {
+                    tempPassword = GenerateTemporaryPassword();
+                }
+
+                // Resetear la contraseña
+                var result = await _userManager.ResetPasswordAsync(usuario, token, tempPassword);
+
+                if (result.Succeeded)
+                {
+                    // Marcar que la contraseña fue reseteada (NO es primer ingreso)
+                    usuario.PasswordReseteada = true;
+                    usuario.EsPrimerIngreso = false; // Ya no es primer ingreso, es un reseteo
+                    await _userManager.UpdateAsync(usuario);
+
+                    _logger.LogWarning($"Contraseña reseteada para usuario {usuario.UserName} por {User.Identity!.Name}");
+
+                    // Mensaje genérico sin mostrar la contraseña (ya está en el modal)
+                    TempData["Success"] = $"Contraseña reseteada exitosamente para {usuario.NombreCompleto}";
+
+                    return RedirectToAction(nameof(Index));
+                }
+                else
+                {
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    TempData["Error"] = $"Error al resetear contraseña: {errors}";
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al resetear contraseña");
+                TempData["Error"] = "Error al resetear la contraseña. Por favor intenta nuevamente.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // Método auxiliar para generar contraseña temporal
+        private string GenerateTemporaryPassword()
+        {
+            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+            var random = new Random();
+            var password = "Puerto92_";
+
+            for (int i = 0; i < 8; i++)
+            {
+                password += chars[random.Next(chars.Length)];
+            }
+
+            return password;
+        }
+
     }
 
 }

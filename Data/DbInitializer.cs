@@ -15,6 +15,7 @@ namespace Puerto92.Data
             // Aplicar migraciones pendientes
             await context.Database.MigrateAsync();
 
+            // ===== 1. CREAR ROLES =====
             string[] rolesNames = new[]
             {
                 "Admin Maestro",
@@ -40,6 +41,7 @@ namespace Puerto92.Data
                 }
             }
 
+            // ===== 2. CREAR LOCAL INICIAL =====
             if (!await context.Locales.AnyAsync())
             {
                 var localPrincipal = new Local
@@ -48,6 +50,7 @@ namespace Puerto92.Data
                     Nombre = "Puerto 92 - Principal",
                     Direccion = "Av. Principal 123",
                     Distrito = "Lima",
+                    Ciudad = "Lima",
                     Telefono = "987654321",
                     Activo = true,
                     FechaCreacion = DateTime.Now
@@ -56,6 +59,7 @@ namespace Puerto92.Data
                 await context.SaveChangesAsync();
             }
 
+            // ===== 3. CREAR USUARIO ADMIN MAESTRO =====
             var adminEmail = "admin";
             var adminUser = await userManager.FindByNameAsync(adminEmail);
 
@@ -63,25 +67,29 @@ namespace Puerto92.Data
             {
                 var primerLocal = await context.Locales.FirstAsync();
 
+                // Generar contraseña usando el mismo algoritmo
+                string adminPassword = GenerateTemporaryPassword();
+
                 adminUser = new Usuario
                 {
                     UserName = "admin",
                     NombreCompleto = "Administrador Maestro",
                     LocalId = primerLocal.Id,
-                    EsPrimerIngreso = false,
+                    EsPrimerIngreso = false, // Admin no necesita cambiar contraseña
+                    PasswordReseteada = false,
                     Activo = true,
                     FechaCreacion = DateTime.Now,
                     EmailConfirmed = true
                 };
 
-                var result = await userManager.CreateAsync(adminUser, "Admin123");
+                var result = await userManager.CreateAsync(adminUser, adminPassword);
 
                 if (result.Succeeded)
                 {
                     await userManager.AddToRoleAsync(adminUser, "Admin Maestro");
                     Console.WriteLine("✅ Usuario Admin Maestro creado exitosamente");
-                    Console.WriteLine("   👤 Usuario: admin");
-                    Console.WriteLine("   🔑 Contraseña: Admin123");
+                    Console.WriteLine($"   👤 Usuario: admin");
+                    Console.WriteLine($"   🔑 Contraseña: {adminPassword}");
                 }
                 else
                 {
@@ -90,10 +98,14 @@ namespace Puerto92.Data
                 }
             }
 
+            // ===== 4. CREAR USUARIO DE EJEMPLO (Opcional) =====
             var usuarioEjemplo = await userManager.FindByNameAsync("mozo1");
             if (usuarioEjemplo == null)
             {
                 var primerLocal = await context.Locales.FirstAsync();
+                
+                // Generar contraseña usando el mismo algoritmo
+                string mozoPassword = GenerateTemporaryPassword();
 
                 usuarioEjemplo = new Usuario
                 {
@@ -101,18 +113,36 @@ namespace Puerto92.Data
                     NombreCompleto = "Juan Mozo Ejemplo",
                     LocalId = primerLocal.Id,
                     EsPrimerIngreso = false,
+                    PasswordReseteada = false,
                     Activo = true,
                     FechaCreacion = DateTime.Now,
                     EmailConfirmed = true
                 };
 
-                var result = await userManager.CreateAsync(usuarioEjemplo, "Mozo123");
+                var result = await userManager.CreateAsync(usuarioEjemplo, mozoPassword);
                 if (result.Succeeded)
                 {
                     await userManager.AddToRoleAsync(usuarioEjemplo, "Mozo");
-                    Console.WriteLine("✅ Usuario Mozo creado: mozo1 / Mozo123");
+                    Console.WriteLine($"✅ Usuario Mozo creado: mozo1 / {mozoPassword}");
                 }
             }
+        }
+
+        /// <summary>
+        /// Genera una contraseña temporal segura usando el mismo algoritmo que el sistema
+        /// </summary>
+        private static string GenerateTemporaryPassword()
+        {
+            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+            var random = new Random();
+            var password = "Puerto92_";
+            
+            for (int i = 0; i < 8; i++)
+            {
+                password += chars[random.Next(chars.Length)];
+            }
+            
+            return password;
         }
     }
 }

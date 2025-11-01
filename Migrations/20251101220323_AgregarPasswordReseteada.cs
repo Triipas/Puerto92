@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Puerto92.Migrations
 {
     /// <inheritdoc />
-    public partial class AgregarCiudadALocal : Migration
+    public partial class AgregarPasswordReseteada : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -74,6 +74,7 @@ namespace Puerto92.Migrations
                     NombreCompleto = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
                     LocalId = table.Column<int>(type: "INTEGER", nullable: false),
                     EsPrimerIngreso = table.Column<bool>(type: "INTEGER", nullable: false),
+                    PasswordReseteada = table.Column<bool>(type: "INTEGER", nullable: false),
                     FechaCreacion = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UltimoAcceso = table.Column<DateTime>(type: "TEXT", nullable: true),
                     Activo = table.Column<bool>(type: "INTEGER", nullable: false),

@@ -244,6 +244,9 @@ namespace Puerto92.Migrations
                     b.Property<string>("PasswordHash")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("PasswordReseteada")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("TEXT");
 

@@ -14,7 +14,15 @@ namespace Puerto92.Models
         
         public Local? Local { get; set; }
 
+        /// <summary>
+        /// Indica si es el primer ingreso del usuario (recién creado, nunca ha iniciado sesión)
+        /// </summary>
         public bool EsPrimerIngreso { get; set; } = true;
+        
+        /// <summary>
+        /// Indica si la contraseña fue reseteada por un administrador
+        /// </summary>
+        public bool PasswordReseteada { get; set; } = false;
         
         public DateTime FechaCreacion { get; set; } = DateTime.Now;
         

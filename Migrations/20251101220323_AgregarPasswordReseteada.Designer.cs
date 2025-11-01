@@ -11,8 +11,8 @@ using Puerto92.Data;
 namespace Puerto92.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251101191808_AgregarCiudadALocal")]
-    partial class AgregarCiudadALocal
+    [Migration("20251101220323_AgregarPasswordReseteada")]
+    partial class AgregarPasswordReseteada
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -246,6 +246,9 @@ namespace Puerto92.Migrations
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("PasswordReseteada")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("TEXT");

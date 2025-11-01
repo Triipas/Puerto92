@@ -122,6 +122,10 @@
                                     <button onclick="openEditModal('@usuario.Id')" class="btn btn-sm" style="background: #3B82F6; color: white;" title="Editar">
                                         <i class="fa-solid fa-pen"></i>
                                     </button>
+                                    <button onclick="openResetPasswordModal('@usuario.Id', '@usuario.NombreCompleto', '@usuario.UserName', '@usuario.NombreRol')" 
+                                            class="btn btn-sm" style="background: #F59E0B; color: white;" title="Resetear Contraseña">
+                                        <i class="fa-solid fa-key"></i>
+                                    </button>
                                     <button onclick="openDeleteModal('@usuario.Id', '@usuario.NombreCompleto', '@usuario.UserName', '@usuario.NombreRol', '@usuario.NombreLocal')" 
                                             class="btn btn-sm btn-danger" title="Eliminar">
                                         <i class="fa-solid fa-trash"></i>
@@ -139,7 +143,9 @@
 @* Cargar Modales usando Partial Views *@
 <partial name="Modals/_CreateUsuarioModal" />
 <partial name="Modals/_EditUsuarioModal" />
+<partial name="Modals/_ResetPasswordUsuarioModal" />
 <partial name="Modals/_DeleteUsuarioModal" />
+<partial name="Modals/_PasswordGeneratedModal" />
 
 @section Scripts {
     <script src="~/js/usuarios-modals.js" asp-append-version="true"></script>

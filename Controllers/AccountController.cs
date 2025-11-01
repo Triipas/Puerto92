@@ -52,15 +52,15 @@ namespace Puerto92.Controllers
 
             // Intentar iniciar sesión
             var result = await _signInManager.PasswordSignInAsync(
-                model.UserName, 
-                model.Password, 
-                model.RememberMe, 
+                model.UserName,
+                model.Password,
+                model.RememberMe,
                 lockoutOnFailure: true);
 
             if (result.Succeeded)
             {
                 var user = await _userManager.FindByNameAsync(model.UserName);
-                
+
                 if (user != null)
                 {
                     // Actualizar último acceso
@@ -68,6 +68,20 @@ namespace Puerto92.Controllers
                     await _userManager.UpdateAsync(user);
 
                     _logger.LogInformation($"Usuario {user.UserName} inició sesión correctamente");
+
+                    // Verificar si debe cambiar contraseña (primer ingreso o reseteo)
+                    if (user.EsPrimerIngreso || user.PasswordReseteada)
+                    {
+                        if (user.EsPrimerIngreso)
+                        {
+                            _logger.LogInformation($"Usuario {user.UserName} - Primer ingreso detectado");
+                        }
+                        else if (user.PasswordReseteada)
+                        {
+                            _logger.LogInformation($"Usuario {user.UserName} - Contraseña reseteada, debe cambiarla");
+                        }
+                        return RedirectToAction(nameof(ChangePassword));
+                    }
 
                     // Redirigir según returnUrl o al Home
                     if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
@@ -107,5 +121,74 @@ namespace Puerto92.Controllers
         {
             return View();
         }
+        // GET: /Account/ChangePassword
+        [HttpGet]
+        public async Task<IActionResult> ChangePassword()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToAction(nameof(Login));
+            }
+
+            // Pasar información a la vista sobre el tipo de cambio requerido
+            ViewBag.EsPrimerIngreso = user.EsPrimerIngreso;
+            ViewBag.PasswordReseteada = user.PasswordReseteada;
+
+            return View();
+        }
+
+        // POST: /Account/ChangePassword
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user != null)
+                {
+                    ViewBag.EsPrimerIngreso = user.EsPrimerIngreso;
+                    ViewBag.PasswordReseteada = user.PasswordReseteada;
+                }
+                return View(model);
+            }
+
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return RedirectToAction(nameof(Login));
+            }
+
+            var result = await _userManager.ChangePasswordAsync(currentUser, model.CurrentPassword, model.NewPassword);
+
+            if (result.Succeeded)
+            {
+                // Limpiar ambas banderas después del cambio exitoso
+                currentUser.EsPrimerIngreso = false;
+                currentUser.PasswordReseteada = false;
+                await _userManager.UpdateAsync(currentUser);
+
+                _logger.LogInformation($"Usuario {currentUser.UserName} cambió su contraseña exitosamente");
+
+                // Re-autenticar al usuario
+                await _signInManager.RefreshSignInAsync(currentUser);
+
+                TempData["Success"] = "Contraseña cambiada exitosamente";
+                return RedirectToAction("Index", "Home");
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+
+            // Volver a cargar información para la vista
+            ViewBag.EsPrimerIngreso = currentUser.EsPrimerIngreso;
+            ViewBag.PasswordReseteada = currentUser.PasswordReseteada;
+
+            return View(model);
+        }
+
     }
 }
