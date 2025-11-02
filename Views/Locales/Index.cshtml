@@ -116,12 +116,18 @@
                             </td>
                             <td style="text-align: center;">
                                 <div style="display: flex; gap: 0.5rem; justify-content: center;">
-                                    <button onclick="openEditLocalModal(@local.Id)" class="btn btn-sm" style="background: #3B82F6; color: white;" title="Editar">
-                                        <i class="fa-solid fa-pen"></i>
+                                    <!-- Botón Editar - Azul -->
+                                    <button onclick="openEditLocalModal(@local.Id)" 
+                                            class="btn-icon btn-icon-edit" 
+                                            title="Editar">
+                                        <i class="fa-solid fa-pen-to-square"></i>
                                     </button>
+                                    
+                                    <!-- Botón Desactivar - Rojo -->
                                     <button onclick="openDeleteLocalModal(@local.Id, '@local.Codigo', '@local.Nombre', '@(local.Direccion ?? "")', '@(local.Distrito ?? "")', '@(local.Ciudad ?? "")')" 
-                                            class="btn btn-sm btn-danger" title="Desactivar">
-                                        <i class="fa-solid fa-ban"></i>
+                                            class="btn-icon btn-icon-delete" 
+                                            title="Desactivar Local">
+                                        <i class="fa-solid fa-circle-xmark"></i>
                                     </button>
                                 </div>
                             </td>

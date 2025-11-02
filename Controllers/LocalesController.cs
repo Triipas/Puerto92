@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Puerto92.Data;
 using Puerto92.Models;
 using Puerto92.ViewModels;
+using Puerto92.Services;
 
 namespace Puerto92.Controllers
 {
@@ -12,11 +13,16 @@ namespace Puerto92.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<LocalesController> _logger;
+        private readonly IAuditService _auditService;
 
-        public LocalesController(ApplicationDbContext context, ILogger<LocalesController> logger)
+        public LocalesController(
+            ApplicationDbContext context, 
+            ILogger<LocalesController> logger,
+            IAuditService auditService)
         {
             _context = context;
             _logger = logger;
+            _auditService = auditService;
         }
 
         // GET: Locales
@@ -97,6 +103,12 @@ namespace Puerto92.Controllers
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation($"Local '{local.Nombre}' ({local.Codigo}) creado por {User.Identity!.Name}");
+                
+                // 🔍 REGISTRAR CREACIÓN DE LOCAL EN AUDITORÍA
+                await _auditService.RegistrarCreacionLocalAsync(
+                    codigoLocal: local.Codigo,
+                    nombreLocal: local.Nombre);
+
                 TempData["Success"] = $"Local '{local.Nombre}' creado exitosamente con código {nuevoCodigo}";
                 
                 return RedirectToAction(nameof(Index));
@@ -104,6 +116,12 @@ namespace Puerto92.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al crear local");
+                
+                // 🔍 REGISTRAR ERROR EN AUDITORÍA
+                await _auditService.RegistrarErrorSistemaAsync(
+                    error: "Error al crear local",
+                    detalles: ex.Message);
+
                 TempData["Error"] = "Error al crear el local. Por favor intenta nuevamente.";
                 return RedirectToAction(nameof(Index));
             }
@@ -182,6 +200,24 @@ namespace Puerto92.Controllers
                     return NotFound();
                 }
 
+                // Detectar cambios para auditoría
+                List<string> cambios = new List<string>();
+                
+                if (local.Nombre != model.Nombre)
+                    cambios.Add($"Nombre: '{local.Nombre}' → '{model.Nombre}'");
+                
+                if (local.Direccion != model.Direccion)
+                    cambios.Add($"Dirección: '{local.Direccion}' → '{model.Direccion}'");
+                
+                if (local.Distrito != model.Distrito)
+                    cambios.Add($"Distrito: '{local.Distrito}' → '{model.Distrito}'");
+                
+                if (local.Telefono != model.Telefono)
+                    cambios.Add($"Teléfono: '{local.Telefono}' → '{model.Telefono}'");
+                
+                if (local.Activo != model.Activo)
+                    cambios.Add($"Estado: {(local.Activo ? "Activo" : "Inactivo")} → {(model.Activo ? "Activo" : "Inactivo")}");
+
                 // Actualizar datos (el código NO se puede cambiar)
                 local.Nombre = model.Nombre;
                 local.Direccion = model.Direccion;
@@ -192,6 +228,16 @@ namespace Puerto92.Controllers
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation($"Local '{local.Nombre}' ({local.Codigo}) editado por {User.Identity!.Name}");
+                
+                // 🔍 REGISTRAR EDICIÓN DE LOCAL EN AUDITORÍA
+                if (cambios.Any())
+                {
+                    await _auditService.RegistrarEdicionLocalAsync(
+                        codigoLocal: local.Codigo,
+                        nombreLocal: local.Nombre,
+                        cambios: string.Join(", ", cambios));
+                }
+
                 TempData["Success"] = "Local actualizado exitosamente";
                 
                 return RedirectToAction(nameof(Index));
@@ -207,6 +253,12 @@ namespace Puerto92.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al editar local");
+                
+                // 🔍 REGISTRAR ERROR EN AUDITORÍA
+                await _auditService.RegistrarErrorSistemaAsync(
+                    error: "Error al editar local",
+                    detalles: ex.Message);
+
                 TempData["Error"] = "Error al actualizar el local. Por favor intenta nuevamente.";
                 return RedirectToAction(nameof(Index));
             }
@@ -241,6 +293,12 @@ namespace Puerto92.Controllers
                 await _context.SaveChangesAsync();
 
                 _logger.LogWarning($"Local '{local.Nombre}' ({local.Codigo}) DESACTIVADO por {User.Identity!.Name}");
+                
+                // 🔍 REGISTRAR DESACTIVACIÓN DE LOCAL EN AUDITORÍA
+                await _auditService.RegistrarDesactivacionLocalAsync(
+                    codigoLocal: local.Codigo,
+                    nombreLocal: local.Nombre);
+
                 TempData["Success"] = $"Local '{local.Nombre}' desactivado exitosamente";
                 
                 return RedirectToAction(nameof(Index));
@@ -248,6 +306,12 @@ namespace Puerto92.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al desactivar local");
+                
+                // 🔍 REGISTRAR ERROR EN AUDITORÍA
+                await _auditService.RegistrarErrorSistemaAsync(
+                    error: "Error al desactivar local",
+                    detalles: ex.Message);
+
                 TempData["Error"] = "Error al desactivar el local. Por favor intenta nuevamente.";
                 return RedirectToAction(nameof(Index));
             }

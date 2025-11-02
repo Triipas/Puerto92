@@ -26,6 +26,29 @@ namespace Puerto92.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AuditLogs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Accion = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Descripcion = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    UsuarioAccion = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    UsuarioId = table.Column<string>(type: "TEXT", nullable: true),
+                    UsuarioAfectado = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    DireccionIP = table.Column<string>(type: "TEXT", maxLength: 45, nullable: true),
+                    FechaHora = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    Resultado = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    DatosAdicionales = table.Column<string>(type: "TEXT", nullable: true),
+                    Modulo = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true),
+                    NivelSeveridad = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AuditLogs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Locales",
                 columns: table => new
                 {
@@ -232,6 +255,26 @@ namespace Puerto92.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_AuditLogs_Accion",
+                table: "AuditLogs",
+                column: "Accion");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AuditLogs_FechaHora",
+                table: "AuditLogs",
+                column: "FechaHora");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AuditLogs_Modulo",
+                table: "AuditLogs",
+                column: "Modulo");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AuditLogs_UsuarioAccion",
+                table: "AuditLogs",
+                column: "UsuarioAccion");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Locales_Codigo",
                 table: "Locales",
                 column: "Codigo",
@@ -255,6 +298,9 @@ namespace Puerto92.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "AuditLogs");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

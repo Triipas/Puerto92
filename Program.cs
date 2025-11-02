@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Puerto92.Data;
 using Puerto92.Models;
+using Puerto92.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +52,10 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
+
+// Registrar servicios personalizados
+builder.Services.AddHttpContextAccessor(); // Necesario para obtener IP y usuario actual
+builder.Services.AddScoped<IAuditService, AuditService>();
 
 var app = builder.Build();
 

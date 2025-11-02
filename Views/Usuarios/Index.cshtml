@@ -119,26 +119,37 @@
 
                             <td style="text-align: center;">
                                 <div style="display: flex; gap: 0.5rem; justify-content: center;">
-                                    <button onclick="openEditModal('@usuario.Id')" class="btn btn-sm" style="background: #3B82F6; color: white;" title="Editar">
-                                        <i class="fa-solid fa-pen"></i>
+                                    <!-- Botón Editar - Azul Outline -->
+                                    <button onclick="openEditModal('@usuario.Id')" 
+                                            class="btn-icon btn-icon-edit" 
+                                            title="Editar usuario">
+                                        <i class="fa-regular fa-pen-to-square"></i>
                                     </button>
+                                    
+                                    <!-- Botón Resetear Contraseña - Naranja Outline -->
                                     <button onclick="openResetPasswordModal('@usuario.Id', '@usuario.NombreCompleto', '@usuario.UserName', '@usuario.NombreRol')" 
-                                            class="btn btn-sm" style="background: #F59E0B; color: white;" title="Resetear Contraseña">
-                                        <i class="fa-solid fa-key"></i>
+                                            class="btn-icon btn-icon-reset" 
+                                            title="Resetear contraseña">
+                                        <i class="fa-solid fa-rotate-right"></i>
                                     </button>
+                                    
                                     @* Solo mostrar botón de eliminar si NO es Admin Maestro *@
                                     @if (usuario.NombreRol != "Admin Maestro")
                                     {
+                                        <!-- Botón Desactivar - Rojo Outline -->
                                         <button onclick="openDeleteModal('@usuario.Id', '@usuario.NombreCompleto', '@usuario.UserName', '@usuario.NombreRol', '@usuario.NombreLocal')" 
-                                                class="btn btn-sm btn-danger" title="Eliminar">
-                                            <i class="fa-solid fa-trash"></i>
+                                                class="btn-icon btn-icon-delete" 
+                                                title="Desactivar usuario">
+                                            <i class="fa-regular fa-trash-can"></i>
                                         </button>
                                     }
                                     else
                                     {
-                                        @* Botón deshabilitado con tooltip para Admin Maestro *@
-                                        <button class="btn btn-sm" style="background: #D1D5DB; color: #9CA3AF; cursor: not-allowed;" title="El usuario Admin Maestro no puede ser eliminado" disabled>
-                                            <i class="fa-solid fa-shield-halved"></i>
+                                        <!-- Botón Protegido - Gris Outline -->
+                                        <button class="btn-icon btn-icon-protected" 
+                                                title="Usuario protegido" 
+                                                disabled>
+                                            <i class="fa-solid fa-shield"></i>
                                         </button>
                                     }
                                 </div>
