@@ -550,32 +550,6 @@ body {
     box-shadow: -3px 0 0 var(--color-primary);
 }
 
-/* Animación de entrada para filas */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.table tbody tr {
-    animation: fadeInUp 0.3s ease forwards;
-}
-
-.table tbody tr:nth-child(1) { animation-delay: 0.05s; }
-.table tbody tr:nth-child(2) { animation-delay: 0.1s; }
-.table tbody tr:nth-child(3) { animation-delay: 0.15s; }
-.table tbody tr:nth-child(4) { animation-delay: 0.2s; }
-.table tbody tr:nth-child(5) { animation-delay: 0.25s; }
-
-.table tbody tr:hover {
-    background: var(--bg-light);
-}
-
 /* === BADGES === */
 .badge {
     display: inline-block;
@@ -655,48 +629,76 @@ body {
     border-left: 3px solid var(--color-danger);
 }
 
+/* ========================================
+   🔧 MODALES - VERSIÓN ARREGLADA
+   ======================================== */
 
-/* === MODALES === */
 .modal-overlay {
-    display: none !important;
-    /* Oculto por defecto */
+    display: none; /* Oculto por defecto */
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 9999;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 99999 !important; /* Por encima de todo */
     align-items: center;
     justify-content: center;
     opacity: 0;
     transition: opacity 0.2s ease;
+    overflow-y: auto; /* Scroll vertical si es necesario */
 }
 
 .modal-overlay.active {
     display: flex !important;
-    /* Mostrar cuando está activo */
     opacity: 1;
 }
 
+/* Contenedor interno del modal */
 .modal-container {
     background: white;
     border-radius: 12px;
     max-width: 500px;
-    width: 90%;
+    width: 90%; /* Responsive */
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    transform: translateY(0);
-    transition: transform 0.3s ease;
-}
-
-.modal-overlay:not(.active) .modal-container {
-    transform: translateY(30px);
+    transform: scale(0.9) translateY(-20px);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    margin: auto; /* Centrar */
 }
 
 .modal-overlay.active .modal-container {
-    transform: translateY(0);
+    transform: scale(1) translateY(0);
+}
+
+/* Asegurar que el overlay esté por encima del sidebar */
+.sidebar {
+    z-index: 1000;
+}
+
+.main-content {
+    z-index: 1;
+}
+
+/* El contenedor de modales debe estar al nivel más alto */
+#modals-container {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    pointer-events: none !important; /* No bloquear interacciones cuando no hay modales */
+    z-index: 99998 !important;
+}
+
+#modals-container > .modal-overlay {
+    pointer-events: auto !important; /* Habilitar interacciones en los modales */
 }
 
 .modal-header {
@@ -704,7 +706,13 @@ body {
     border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    border-radius: 12px 12px 0 0;
 }
 
 .modal-title {
@@ -734,6 +742,7 @@ body {
     justify-content: center;
     border-radius: 6px;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 
 .modal-close:hover {
@@ -751,6 +760,11 @@ body {
     display: flex;
     gap: 0.75rem;
     justify-content: flex-end;
+    position: sticky;
+    bottom: 0;
+    background: white;
+    z-index: 10;
+    border-radius: 0 0 12px 12px;
 }
 
 /* Modal de Eliminación */
@@ -932,10 +946,32 @@ body {
     line-height: 1.4;
 }
 
-/* Responsive */
+/* Responsive para modales */
 @media (max-width: 768px) {
+    .modal-overlay {
+        padding: 10px;
+    }
+    
     .modal-container {
-        width: 95%;
+        width: 100%;
+        max-width: 100%;
         max-height: 95vh;
+    }
+    
+    .modal-header {
+        padding: 1rem;
+    }
+    
+    .modal-body {
+        padding: 1rem;
+    }
+    
+    .modal-footer {
+        padding: 0.75rem 1rem;
+        flex-direction: column;
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
     }
 }

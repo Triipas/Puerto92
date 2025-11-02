@@ -6,7 +6,7 @@ using System.Diagnostics;
 namespace Puerto92.Controllers
 {
     [Authorize]  
-    public class HomeController : Controller
+    public class HomeController : BaseController
     {
         private readonly ILogger<HomeController> _logger;
 
@@ -17,11 +17,18 @@ namespace Puerto92.Controllers
 
         public IActionResult Index()
         {
+            // Automáticamente devuelve partial view si es AJAX
             return View();
         }
 
         public IActionResult Privacy()
         {
+            return View();
+        }
+
+        public IActionResult Configuracion()
+        {
+            // Nueva página de configuración
             return View();
         }
 

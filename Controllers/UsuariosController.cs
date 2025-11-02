@@ -11,7 +11,7 @@ using Puerto92.Services;
 namespace Puerto92.Controllers
 {
     [Authorize(Roles = "Admin Maestro,Administrador Local")]
-    public class UsuariosController : Controller
+    public class UsuariosController : BaseController
     {
         private readonly UserManager<Usuario> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
@@ -33,6 +33,7 @@ namespace Puerto92.Controllers
             _auditService = auditService;
         }
 
+
         // GET: Usuarios
         public async Task<IActionResult> Index()
         {
@@ -50,7 +51,6 @@ namespace Puerto92.Controllers
                 })
                 .ToListAsync();
 
-            // Obtener roles de cada usuario
             foreach (var usuario in usuarios)
             {
                 var user = await _userManager.FindByIdAsync(usuario.Id!);
@@ -61,6 +61,7 @@ namespace Puerto92.Controllers
                 }
             }
 
+            // Automáticamente devuelve partial view si es AJAX
             return View(usuarios);
         }
 
@@ -214,13 +215,15 @@ namespace Puerto92.Controllers
                 return NotFound();
             }
 
-            // Remover validación de contraseña (no se cambia desde aquí)
             ModelState.Remove("Password");
 
             if (!ModelState.IsValid)
             {
-                TempData["Error"] = "Datos inválidos. Por favor verifica los campos.";
-                return RedirectToAction(nameof(Index));
+                if (IsAjaxRequest)
+                    return JsonError("Datos inválidos. Por favor verifica los campos.");
+                
+                SetErrorMessage("Datos inválidos. Por favor verifica los campos.");
+                return View(model); // ✅ Esto devolverá partial si es AJAX
             }
 
             var usuario = await _userManager.FindByIdAsync(id);
@@ -229,11 +232,9 @@ namespace Puerto92.Controllers
                 return NotFound();
             }
 
-            // Obtener rol actual antes de editar
             var currentRoles = await _userManager.GetRolesAsync(usuario);
             var rolAnterior = currentRoles.FirstOrDefault() ?? "Sin rol";
 
-            // Detectar cambios para auditoría
             List<string> cambios = new List<string>();
 
             if (usuario.NombreCompleto != model.NombreCompleto)
@@ -252,7 +253,6 @@ namespace Puerto92.Controllers
             if (usuario.Activo != model.Activo)
                 cambios.Add($"Estado: {(usuario.Activo ? "Activo" : "Inactivo")} → {(model.Activo ? "Activo" : "Inactivo")}");
 
-            // Actualizar datos (NO se cambia la contraseña desde aquí)
             usuario.NombreCompleto = model.NombreCompleto;
             usuario.UserName = model.UserName;
             usuario.LocalId = model.LocalId;
@@ -262,9 +262,7 @@ namespace Puerto92.Controllers
 
             if (result.Succeeded)
             {
-                // Actualizar rol
                 await _userManager.RemoveFromRolesAsync(usuario, currentRoles);
-
                 var newRole = await _roleManager.FindByIdAsync(model.RolId);
                 string rolNuevo = "Sin rol";
 
@@ -274,12 +272,9 @@ namespace Puerto92.Controllers
                     rolNuevo = newRole.Name!;
                 }
 
-                // Si cambió el rol, agregar a los cambios
                 if (rolAnterior != rolNuevo)
                 {
                     cambios.Add($"Rol: '{rolAnterior}' → '{rolNuevo}'");
-
-                    // 🔍 REGISTRAR CAMBIO DE ROL ESPECÍFICAMENTE
                     await _auditService.RegistrarCambioRolAsync(
                         usuario: usuario.UserName!,
                         rolAnterior: rolAnterior,
@@ -288,7 +283,6 @@ namespace Puerto92.Controllers
 
                 _logger.LogInformation($"Usuario {usuario.UserName} editado por {User.Identity!.Name}");
 
-                // 🔍 REGISTRAR EDICIÓN DE USUARIO EN AUDITORÍA
                 if (cambios.Any())
                 {
                     await _auditService.RegistrarEdicionUsuarioAsync(
@@ -296,8 +290,15 @@ namespace Puerto92.Controllers
                         cambiosRealizados: string.Join(", ", cambios));
                 }
 
-                TempData["Success"] = "Usuario actualizado exitosamente";
-                return RedirectToAction(nameof(Index));
+                // ✅ Usar el método helper de BaseController
+                SetSuccessMessage("Usuario actualizado exitosamente");
+                return RedirectToActionAjax(nameof(Index));
+            }
+
+            if (IsAjaxRequest)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                return JsonError(errors);
             }
 
             foreach (var error in result.Errors)
@@ -305,8 +306,8 @@ namespace Puerto92.Controllers
                 ModelState.AddModelError(string.Empty, error.Description);
             }
 
-            TempData["Error"] = "Error al actualizar el usuario";
-            return RedirectToAction(nameof(Index));
+            SetErrorMessage("Error al actualizar el usuario");
+            return View(model); // Devolverá partial si es AJAX
         }
         
         // GET: /Usuarios/GetRolesYLocales (Para AJAX)
@@ -358,45 +359,31 @@ namespace Puerto92.Controllers
         {
             try
             {
-                // Remover validación de contraseña (se generará automáticamente)
                 ModelState.Remove("Password");
 
                 if (!ModelState.IsValid)
                 {
-                    return Json(new
-                    {
-                        success = false,
-                        message = "Datos inválidos. Por favor verifica los campos."
-                    });
+                    return JsonError("Datos inválidos. Por favor verifica los campos.");
                 }
 
-                // Verificar si el usuario ya existe
                 var existingUser = await _userManager.FindByNameAsync(model.UserName);
                 if (existingUser != null)
                 {
-                    return Json(new
-                    {
-                        success = false,
-                        message = "El nombre de usuario ya existe"
-                    });
+                    return JsonError("El nombre de usuario ya existe");
                 }
 
-                // Generar contraseña temporal usando el mismo algoritmo que resetear
                 string passwordTemporal = GenerateTemporaryPassword();
-
-                // Obtener nombre del local
                 var local = await _context.Locales.FindAsync(model.LocalId);
                 var nombreLocal = local?.Nombre ?? "Desconocido";
 
-                // Crear nuevo usuario
                 var usuario = new Usuario
                 {
                     UserName = model.UserName,
                     NombreCompleto = model.NombreCompleto,
                     LocalId = model.LocalId,
                     Activo = model.Activo,
-                    EsPrimerIngreso = true,     // Es su primera vez
-                    PasswordReseteada = false,   // No es un reseteo, es creación
+                    EsPrimerIngreso = true,
+                    PasswordReseteada = false,
                     FechaCreacion = DateTime.Now
                 };
 
@@ -404,7 +391,6 @@ namespace Puerto92.Controllers
 
                 if (result.Succeeded)
                 {
-                    // Asignar rol
                     var role = await _roleManager.FindByIdAsync(model.RolId);
                     string rolNombre = "Sin rol";
 
@@ -416,44 +402,36 @@ namespace Puerto92.Controllers
 
                     _logger.LogInformation($"Usuario {usuario.UserName} creado por {User.Identity!.Name}");
 
-                    // 🔍 REGISTRAR CREACIÓN DE USUARIO EN AUDITORÍA
                     await _auditService.RegistrarCreacionUsuarioAsync(
                         usuarioCreado: usuario.UserName!,
                         rol: rolNombre,
                         local: nombreLocal);
 
-                    // Retornar JSON con información del usuario y contraseña
-                    return Json(new
-                    {
-                        success = true,
-                        password = passwordTemporal,
-                        nombreCompleto = usuario.NombreCompleto,
-                        userName = usuario.UserName,
-                        rolNombre = rolNombre
-                    });
+                    // ✅ Usar el método helper de BaseController
+                    return JsonSuccess(
+                        "Usuario creado exitosamente",
+                        data: new
+                        {
+                            password = passwordTemporal,
+                            nombreCompleto = usuario.NombreCompleto,
+                            userName = usuario.UserName,
+                            rolNombre = rolNombre
+                        }
+                    );
                 }
 
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                return Json(new
-                {
-                    success = false,
-                    message = $"Error al crear usuario: {errors}"
-                });
+                return JsonError($"Error al crear usuario: {errors}");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al crear usuario");
                 
-                // 🔍 REGISTRAR ERROR EN AUDITORÍA
                 await _auditService.RegistrarErrorSistemaAsync(
                     error: "Error al crear usuario",
                     detalles: ex.Message);
 
-                return Json(new
-                {
-                    success = false,
-                    message = "Error al crear el usuario. Por favor intenta nuevamente."
-                });
+                return JsonError("Error al crear el usuario. Por favor intenta nuevamente.");
             }
         }
 

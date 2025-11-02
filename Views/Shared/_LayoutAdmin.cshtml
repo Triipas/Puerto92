@@ -1,130 +1,169 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Puerto 92</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
-</head>
-<body>
-    <div class="admin-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <a href="@Url.Action("Index", "Home")" class="sidebar-logo">
-                    <i class="fa-solid fa-utensils"></i>
-                    <span>Puerto 92</span>
-                </a>
-            </div>
+@{
+    bool isAjax = ViewData["IsAjax"] != null && (bool)ViewData["IsAjax"];
+}
 
-            <div class="sidebar-user">
-                <div class="sidebar-user-name">@User.Identity!.Name</div>
-                <div class="sidebar-user-role">
-                    @if (User.IsInRole("Admin Maestro"))
-                    {
-                        <span>Admin Maestro</span>
-                    }
-                    else if (User.IsInRole("Administrador Local"))
-                    {
-                        <span>Admin Local</span>
-                    }
-                    else if (User.IsInRole("Supervisora de Calidad"))
-                    {
-                        <span>Supervisora de Calidad</span>
-                    }
-                    else if (User.IsInRole("Contador"))
-                    {
-                        <span>Contador</span>
-                    }
-                    else if (User.IsInRole("Jefe de Cocina"))
-                    {
-                        <span>Jefe de Cocina</span>
-                    }
-                    else if (User.IsInRole("Mozo"))
-                    {
-                        <span>Mozo</span>
-                    }
-                    else if (User.IsInRole("Cocinero"))
-                    {
-                        <span>Cocinero</span>
-                    }
-                    else if (User.IsInRole("Vajillero"))
-                    {
-                        <span>Vajillero</span>
-                    }
-                    else
-                    {
-                        <span>Usuario</span>
-                    }
-                </div>
-            </div>
-
-            <nav class="sidebar-nav">
-                <div class="nav-item">
-                    <a asp-controller="Home" asp-action="Index" 
-                       class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
-                        <i class="fa-solid fa-chart-line"></i>
-                        <span>Dashboard</span>
+@if (!isAjax)
+{
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>@ViewData["Title"] - Puerto 92</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/css/app-navigation.css" asp-append-version="true" />
+    </head>
+    <body>
+        <div class="admin-container">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <a href="@Url.Action("Index", "Home")" class="sidebar-logo" data-navigate>
+                        <i class="fa-solid fa-utensils"></i>
+                        <span>Puerto 92</span>
                     </a>
                 </div>
-                <div class="nav-item">
-                    <a asp-controller="Usuarios" asp-action="Index" 
-                       class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Usuarios" ? "active" : "")">
-                        <i class="fa-solid fa-users"></i>
-                        <span>Usuarios</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a asp-controller="Locales" asp-action="Index" 
-                       class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Locales" ? "active" : "")">
-                        <i class="fa-solid fa-store"></i>
-                        <span>Locales</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a asp-controller="Home" asp-action="Configuracion" 
-                       class="nav-link">
-                        <i class="fa-solid fa-gear"></i>
-                        <span>Configuración</span>
-                    </a>
-                </div>
-            </nav>
 
-            <div class="sidebar-footer">
-                <form asp-controller="Account" asp-action="Logout" method="post">
-                    <button type="submit" class="btn-logout">
-                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                        <span>Cerrar Sesión</span>
-                    </button>
-                </form>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            @if (TempData["Success"] != null)
-            {
-                <div class="alert alert-success">
-                    <i class="fa-solid fa-circle-check"></i>
-                    <span>@TempData["Success"]</span>
+                <div class="sidebar-user">
+                    <div class="sidebar-user-name">@User.Identity!.Name</div>
+                    <div class="sidebar-user-role">
+                        @if (User.IsInRole("Admin Maestro"))
+                        {
+                            <span>Admin Maestro</span>
+                        }
+                        else if (User.IsInRole("Administrador Local"))
+                        {
+                            <span>Admin Local</span>
+                        }
+                        else if (User.IsInRole("Supervisora de Calidad"))
+                        {
+                            <span>Supervisora de Calidad</span>
+                        }
+                        else if (User.IsInRole("Contador"))
+                        {
+                            <span>Contador</span>
+                        }
+                        else if (User.IsInRole("Jefe de Cocina"))
+                        {
+                            <span>Jefe de Cocina</span>
+                        }
+                        else if (User.IsInRole("Mozo"))
+                        {
+                            <span>Mozo</span>
+                        }
+                        else if (User.IsInRole("Cocinero"))
+                        {
+                            <span>Cocinero</span>
+                        }
+                        else if (User.IsInRole("Vajillero"))
+                        {
+                            <span>Vajillero</span>
+                        }
+                        else
+                        {
+                            <span>Usuario</span>
+                        }
+                    </div>
                 </div>
-            }
 
-            @if (TempData["Error"] != null)
-            {
-                <div class="alert alert-danger">
-                    <i class="fa-solid fa-circle-exclamation"></i>
-                    <span>@TempData["Error"]</span>
+                <nav class="sidebar-nav">
+                    <div class="nav-item">
+                        <a href="@Url.Action("Index", "Home")" 
+                           data-navigate
+                           class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
+                            <i class="fa-solid fa-chart-line"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="@Url.Action("Index", "Usuarios")"
+                           data-navigate
+                           class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Usuarios" ? "active" : "")">
+                            <i class="fa-solid fa-users"></i>
+                            <span>Usuarios</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="@Url.Action("Index", "Locales")"
+                           data-navigate
+                           class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Locales" ? "active" : "")">
+                            <i class="fa-solid fa-store"></i>
+                            <span>Locales</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="@Url.Action("Configuracion", "Home")"
+                           data-navigate
+                           class="nav-link">
+                            <i class="fa-solid fa-gear"></i>
+                            <span>Configuración</span>
+                        </a>
+                    </div>
+                </nav>
+
+                <div class="sidebar-footer">
+                    <form asp-controller="Account" asp-action="Logout" method="post">
+                        <button type="submit" class="btn-logout">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                            <span>Cerrar Sesión</span>
+                        </button>
+                    </form>
                 </div>
-            }
+            </aside>
 
-            @RenderBody()
-        </main>
-    </div>
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- Contenedor de notificaciones (se mantiene fijo) -->
+                <div id="notifications-container">
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span>@TempData["Success"]</span>
+                        </div>
+                    }
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            <span>@TempData["Error"]</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- Contenedor dinámico donde se carga el contenido -->
+                <div id="main-content-area" class="content-loaded">
+                    @RenderBody()
+                </div>
+            </main>
+        </div>
+
+        <div id="modals-container">
+            @* Los modales se renderizan aquí, fuera de .admin-container *@
+            @* Esto permite que el overlay cubra toda la pantalla incluyendo el sidebar *@
+        </div>
+
+
+        <!-- ⭐ IMPORTANTE: Contenedor de modales FUERA de .admin-container -->
+        <div id="modals-container"></div>
+
+        <!-- Scripts base -->
+        <script src="~/lib/jquery/dist/jquery.min.js"></script>
+        <script src="~/js/modal-manager.js" asp-append-version="true"></script>
+        <script src="~/js/app-navigation.js" asp-append-version="true"></script>
+        
+        @await RenderSectionAsync("Scripts", required: false)
+    </body>
+    </html>
+}
+else
+{
+    @* Si es petición AJAX, devolver solo el contenido *@
+    @RenderBody()
+    
+    @* Scripts específicos de la página *@
     @await RenderSectionAsync("Scripts", required: false)
-</body>
-</html>
+}
