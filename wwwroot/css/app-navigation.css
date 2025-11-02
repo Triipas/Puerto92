@@ -1,0 +1,323 @@
+/* ========================================
+   NAVEGACIÓN SPA - TRANSICIONES Y ESTADOS
+   ======================================== */
+
+/* Contenedor principal con transiciones suaves */
+#main-content-area {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* ========================================
+   LOADER DE PÁGINA
+   ======================================== */
+
+#page-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(4px);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+#page-loader.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loader-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    animation: fadeInScale 0.3s ease;
+}
+
+.loader-spinner i {
+    font-size: 48px;
+    color: #0092B8;
+    animation: spin 1s linear infinite;
+}
+
+.loader-spinner span {
+    font-size: 16px;
+    font-weight: 600;
+    color: #475569;
+    letter-spacing: 0.5px;
+}
+
+/* Animación de giro */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ========================================
+   BARRA DE PROGRESO SUPERIOR
+   ======================================== */
+
+#loading-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0%;
+    height: 3px;
+    background: linear-gradient(90deg, #0092B8, #00C4B4);
+    z-index: 100000;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px rgba(0, 146, 184, 0.5);
+}
+
+#loading-bar.active {
+    animation: loadingProgress 2s ease-in-out infinite;
+}
+
+@keyframes loadingProgress {
+    0% { width: 0%; }
+    50% { width: 70%; }
+    100% { width: 95%; }
+}
+
+/* ========================================
+   NOTIFICACIONES
+   ======================================== */
+
+.app-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    z-index: 100000;
+    min-width: 300px;
+    max-width: 500px;
+    transform: translateX(120%);
+    transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.app-notification.show {
+    transform: translateX(0);
+}
+
+.app-notification i {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.app-notification.success {
+    border-left: 4px solid #10B981;
+}
+
+.app-notification.success i {
+    color: #10B981;
+}
+
+.app-notification.error {
+    border-left: 4px solid #EF4444;
+}
+
+.app-notification.error i {
+    color: #EF4444;
+}
+
+.app-notification.info {
+    border-left: 4px solid #3B82F6;
+}
+
+.app-notification.info i {
+    color: #3B82F6;
+}
+
+.app-notification.warning {
+    border-left: 4px solid #F59E0B;
+}
+
+.app-notification.warning i {
+    color: #F59E0B;
+}
+
+.app-notification span {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1F2937;
+    line-height: 1.5;
+}
+
+/* ========================================
+   SKELETON LOADERS (Opcional)
+   ======================================== */
+
+.skeleton {
+    background: linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+    border-radius: 8px;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.skeleton-text {
+    height: 16px;
+    margin-bottom: 8px;
+}
+
+.skeleton-title {
+    height: 24px;
+    width: 60%;
+    margin-bottom: 12px;
+}
+
+.skeleton-card {
+    height: 120px;
+    margin-bottom: 16px;
+}
+
+/* ========================================
+   ANIMACIONES DE TRANSICIÓN DE CONTENIDO
+   ======================================== */
+
+/* Fade in desde abajo */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Fade in desde arriba */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Aplicar animaciones a elementos cargados dinámicamente */
+.content-loaded .page-header {
+    animation: fadeInDown 0.4s ease;
+}
+
+.content-loaded .stats-grid {
+    animation: fadeInUp 0.5s ease 0.1s both;
+}
+
+.content-loaded .content-card {
+    animation: fadeInUp 0.5s ease 0.2s both;
+}
+
+/* ========================================
+   ESTADOS DE SIDEBAR
+   ======================================== */
+
+/* Resaltar enlace activo durante la carga */
+.nav-link.loading {
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-link.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 1s infinite;
+}
+
+@keyframes shimmer {
+    100% {
+        left: 100%;
+    }
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+    .app-notification {
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+        max-width: none;
+    }
+
+    .loader-spinner i {
+        font-size: 36px;
+    }
+
+    .loader-spinner span {
+        font-size: 14px;
+    }
+}
+
+/* ========================================
+   SMOOTH SCROLL BEHAVIOR
+   ======================================== */
+
+html {
+    scroll-behavior: smooth;
+}
+
+/* Deshabilitar scroll durante transiciones */
+body.loading {
+    overflow: hidden;
+}
+
+/* ========================================
+   MEJORAS DE RENDIMIENTO
+   ======================================== */
+
+/* Usar GPU para animaciones suaves */
+#main-content-area,
+.app-notification,
+#page-loader,
+.nav-link {
+    will-change: transform, opacity;
+}
+
+/* Optimizar repaint */
+.modal-overlay,
+.sidebar,
+.main-content {
+    transform: translateZ(0);
+}

@@ -9,7 +9,7 @@ using Puerto92.Services;
 namespace Puerto92.Controllers
 {
     [Authorize(Roles = "Admin Maestro")]
-    public class LocalesController : Controller
+    public class LocalesController : BaseController
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<LocalesController> _logger;
@@ -38,7 +38,7 @@ namespace Puerto92.Controllers
                     Nombre = l.Nombre,
                     Direccion = l.Direccion,
                     Distrito = l.Distrito,
-                    Ciudad = l.Distrito, // Asumiendo que Ciudad es igual a Distrito por ahora
+                    Ciudad = l.Distrito,
                     Telefono = l.Telefono,
                     Activo = l.Activo,
                     FechaCreacion = l.FechaCreacion,
@@ -46,6 +46,7 @@ namespace Puerto92.Controllers
                 })
                 .ToListAsync();
 
+            // Automáticamente devuelve partial view si es AJAX
             return View(locales);
         }
 
@@ -56,13 +57,15 @@ namespace Puerto92.Controllers
         {
             if (!ModelState.IsValid)
             {
-                TempData["Error"] = "Datos inválidos. Por favor verifica los campos.";
-                return RedirectToAction(nameof(Index));
+                if (IsAjaxRequest)
+                    return JsonError("Datos inválidos. Por favor verifica los campos.");
+                
+                SetErrorMessage("Datos inválidos. Por favor verifica los campos.");
+                return RedirectToActionAjax(nameof(Index));
             }
 
             try
             {
-                // Generar código automático
                 var ultimoLocal = await _context.Locales
                     .OrderByDescending(l => l.Id)
                     .FirstOrDefaultAsync();
@@ -70,7 +73,6 @@ namespace Puerto92.Controllers
                 int siguienteNumero = 1;
                 if (ultimoLocal != null)
                 {
-                    // Extraer el número del último código (LOC-XX)
                     var partes = ultimoLocal.Codigo.Split('-');
                     if (partes.Length == 2 && int.TryParse(partes[1], out int numero))
                     {
@@ -80,14 +82,12 @@ namespace Puerto92.Controllers
 
                 string nuevoCodigo = $"LOC-{siguienteNumero:D2}";
 
-                // Verificar que el código no exista (por seguridad)
                 while (await _context.Locales.AnyAsync(l => l.Codigo == nuevoCodigo))
                 {
                     siguienteNumero++;
                     nuevoCodigo = $"LOC-{siguienteNumero:D2}";
                 }
 
-                // Crear nuevo local
                 var local = new Local
                 {
                     Codigo = nuevoCodigo,
@@ -104,26 +104,26 @@ namespace Puerto92.Controllers
 
                 _logger.LogInformation($"Local '{local.Nombre}' ({local.Codigo}) creado por {User.Identity!.Name}");
                 
-                // 🔍 REGISTRAR CREACIÓN DE LOCAL EN AUDITORÍA
                 await _auditService.RegistrarCreacionLocalAsync(
                     codigoLocal: local.Codigo,
                     nombreLocal: local.Nombre);
 
-                TempData["Success"] = $"Local '{local.Nombre}' creado exitosamente con código {nuevoCodigo}";
-                
-                return RedirectToAction(nameof(Index));
+                SetSuccessMessage($"Local '{local.Nombre}' creado exitosamente con código {nuevoCodigo}");
+                return RedirectToActionAjax(nameof(Index));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al crear local");
                 
-                // 🔍 REGISTRAR ERROR EN AUDITORÍA
                 await _auditService.RegistrarErrorSistemaAsync(
                     error: "Error al crear local",
                     detalles: ex.Message);
 
-                TempData["Error"] = "Error al crear el local. Por favor intenta nuevamente.";
-                return RedirectToAction(nameof(Index));
+                if (IsAjaxRequest)
+                    return JsonError("Error al crear el local. Por favor intenta nuevamente.");
+
+                SetErrorMessage("Error al crear el local. Por favor intenta nuevamente.");
+                return RedirectToActionAjax(nameof(Index));
             }
         }
 

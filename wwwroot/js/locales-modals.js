@@ -1,16 +1,29 @@
 /**
- * Gestión de Modales de Locales
+ * Gestión de Modales de Locales - VERSIÓN ARREGLADA
  * Puerto 92 - Sistema de Gestión
  */
 
 // ==========================================
-// INICIALIZACIÓN
+// INICIALIZACIÓN GLOBAL
 // ==========================================
 
-document.addEventListener('DOMContentLoaded', function() {
+/**
+ * Función de inicialización que se ejecuta cada vez que se carga la página
+ */
+function initLocalesPage() {
+    console.log('🔄 Inicializando página de locales...');
+    
     setupSearch();
     setupModalEventListeners();
-});
+    
+    console.log('✅ Página de locales inicializada correctamente');
+}
+
+// Ejecutar al cargar el documento
+document.addEventListener('DOMContentLoaded', initLocalesPage);
+
+// ⭐ NUEVO: Exponer función para reinicializar después de navegación SPA
+window.initLocalesPage = initLocalesPage;
 
 // ==========================================
 // GESTIÓN DE MODALES
@@ -20,16 +33,22 @@ document.addEventListener('DOMContentLoaded', function() {
  * Abrir modal de crear local
  */
 function openCreateLocalModal() {
+    console.log('📝 Abriendo modal de crear local...');
+    
     const modal = document.getElementById('createLocalModal');
     modal.style.display = 'flex';
     modal.classList.add('active');
     document.getElementById('createLocalForm').reset();
+    
+    console.log('✅ Modal de crear local abierto');
 }
 
 /**
  * Abrir modal de editar local
  */
 async function openEditLocalModal(id) {
+    console.log(`✏️ Abriendo modal de editar local: ${id}`);
+    
     try {
         const response = await fetch(`/Locales/GetLocal?id=${id}`);
         
@@ -57,9 +76,11 @@ async function openEditLocalModal(id) {
         const modal = document.getElementById('editLocalModal');
         modal.style.display = 'flex';
         modal.classList.add('active');
+        
+        console.log('✅ Modal de editar local abierto');
 
     } catch (error) {
-        console.error('Error al cargar local:', error);
+        console.error('❌ Error al cargar local:', error);
         showNotification('Error al cargar la información del local', 'error');
     }
 }
@@ -68,6 +89,8 @@ async function openEditLocalModal(id) {
  * Abrir modal de eliminar/desactivar local
  */
 async function openDeleteLocalModal(id, codigo, nombre, direccion, distrito, ciudad) {
+    console.log(`🗑️ Abriendo modal de eliminar local: ${id}`);
+    
     try {
         // Obtener información adicional del local
         const response = await fetch(`/Locales/GetLocalEstadisticas?id=${id}`);
@@ -96,9 +119,12 @@ async function openDeleteLocalModal(id, codigo, nombre, direccion, distrito, ciu
         const modal = document.getElementById('deleteLocalModal');
         modal.style.display = 'flex';
         modal.classList.add('active');
+        
+        console.log('✅ Modal de eliminar local abierto');
 
     } catch (error) {
-        console.error('Error al cargar información del local:', error);
+        console.error('❌ Error al cargar información del local:', error);
+        
         // Continuar mostrando el modal con información básica
         document.getElementById('deleteLocalId').value = id;
         document.getElementById('deleteLocalCodigo').textContent = codigo;
@@ -123,7 +149,7 @@ function closeModal(modalId) {
     modal.classList.remove('active');
     setTimeout(() => {
         modal.style.display = 'none';
-    }, 200); // Esperar animación
+    }, 200);
 }
 
 /**
@@ -180,18 +206,6 @@ function setupSearch() {
 // ==========================================
 // UTILIDADES
 // ==========================================
-
-/**
- * Marcar nav-link activo
- */
-function setupNavActive() {
-    const links = document.querySelectorAll('.nav-link');
-    links.forEach(link => {
-        if (link.href === window.location.href) {
-            link.classList.add('active');
-        }
-    });
-}
 
 /**
  * Mostrar notificación
