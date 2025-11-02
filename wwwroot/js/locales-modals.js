@@ -9,7 +9,6 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     setupSearch();
-    setupNavActive();
     setupModalEventListeners();
 });
 

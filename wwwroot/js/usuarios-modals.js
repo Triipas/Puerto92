@@ -16,10 +16,9 @@ const ROLES_CORPORATIVOS = ['Admin Maestro', 'Contador', 'Supervisora de Calidad
 // INICIALIZACIÓN
 // ==========================================
 
-document.addEventListener('DOMContentLoaded', async function () {
+document.addEventListener('DOMContentLoaded', async function() {
     await cargarRolesYLocales();
     setupSearch();
-    setupNavActive();
     setupModalEventListeners();
     setupCreateFormSubmit();
     setupRolChangeListeners(); // Detectar cambios en el select de rol

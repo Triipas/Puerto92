@@ -12,6 +12,7 @@ namespace Puerto92.Data
         }
 
         public DbSet<Local> Locales { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -26,6 +27,19 @@ namespace Puerto92.Data
             builder.Entity<Local>()
                 .HasIndex(l => l.Codigo)
                 .IsUnique();
+
+            // Índices para AuditLogs para mejorar el rendimiento de consultas
+            builder.Entity<AuditLog>()
+                .HasIndex(a => a.FechaHora);
+
+            builder.Entity<AuditLog>()
+                .HasIndex(a => a.UsuarioAccion);
+
+            builder.Entity<AuditLog>()
+                .HasIndex(a => a.Accion);
+
+            builder.Entity<AuditLog>()
+                .HasIndex(a => a.Modulo);
         }
     }
 }

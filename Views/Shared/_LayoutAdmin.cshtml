@@ -63,25 +63,29 @@
 
             <nav class="sidebar-nav">
                 <div class="nav-item">
-                    <a asp-controller="Home" asp-action="Index" class="nav-link">
+                    <a asp-controller="Home" asp-action="Index" 
+                       class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
                         <i class="fa-solid fa-chart-line"></i>
                         <span>Dashboard</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a asp-controller="Usuarios" asp-action="Index" class="nav-link">
+                    <a asp-controller="Usuarios" asp-action="Index" 
+                       class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Usuarios" ? "active" : "")">
                         <i class="fa-solid fa-users"></i>
                         <span>Usuarios</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a asp-controller="Locales" asp-action="Index" class="nav-link">
+                    <a asp-controller="Locales" asp-action="Index" 
+                       class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Locales" ? "active" : "")">
                         <i class="fa-solid fa-store"></i>
                         <span>Locales</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a asp-controller="Home" asp-action="Configuracion" class="nav-link">
+                    <a asp-controller="Home" asp-action="Configuracion" 
+                       class="nav-link">
                         <i class="fa-solid fa-gear"></i>
                         <span>Configuración</span>
                     </a>

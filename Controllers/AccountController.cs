@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Puerto92.Models;
 using Puerto92.ViewModels;
+using Puerto92.Services;
+using Puerto92.Helpers;
 
 namespace Puerto92.Controllers
 {
@@ -11,15 +13,18 @@ namespace Puerto92.Controllers
         private readonly SignInManager<Usuario> _signInManager;
         private readonly UserManager<Usuario> _userManager;
         private readonly ILogger<AccountController> _logger;
+        private readonly IAuditService _auditService;
 
         public AccountController(
             SignInManager<Usuario> signInManager,
             UserManager<Usuario> userManager,
-            ILogger<AccountController> logger)
+            ILogger<AccountController> logger,
+            IAuditService auditService)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _logger = logger;
+            _auditService = auditService;
         }
 
         // GET: /Account/Login
@@ -50,6 +55,9 @@ namespace Puerto92.Controllers
                 return View(model);
             }
 
+            // Obtener IP del usuario usando el helper
+            var ipAddress = IPHelper.ObtenerDireccionIPReal(HttpContext);
+
             // Intentar iniciar sesión
             var result = await _signInManager.PasswordSignInAsync(
                 model.UserName,
@@ -67,7 +75,10 @@ namespace Puerto92.Controllers
                     user.UltimoAcceso = DateTime.Now;
                     await _userManager.UpdateAsync(user);
 
-                    _logger.LogInformation($"Usuario {user.UserName} inició sesión correctamente");
+                    _logger.LogInformation($"Usuario {user.UserName} inició sesión correctamente desde {ipAddress}");
+
+                    // 🔍 REGISTRAR LOGIN EXITOSO EN AUDITORÍA
+                    await _auditService.RegistrarLoginExitosoAsync(user.UserName!, ipAddress);
 
                     // Verificar si debe cambiar contraseña (primer ingreso o reseteo)
                     if (user.EsPrimerIngreso || user.PasswordReseteada)
@@ -95,12 +106,27 @@ namespace Puerto92.Controllers
 
             if (result.IsLockedOut)
             {
-                _logger.LogWarning($"Cuenta bloqueada: {model.UserName}");
+                _logger.LogWarning($"Cuenta bloqueada: {model.UserName} desde {ipAddress}");
+                
+                // 🔍 REGISTRAR LOGIN FALLIDO - CUENTA BLOQUEADA
+                await _auditService.RegistrarLoginFallidoAsync(
+                    model.UserName, 
+                    ipAddress, 
+                    "Cuenta bloqueada por múltiples intentos fallidos");
+
                 ModelState.AddModelError(string.Empty, "Cuenta bloqueada por múltiples intentos fallidos. Intente nuevamente en 15 minutos.");
                 return View(model);
             }
 
             // Login fallido
+            _logger.LogWarning($"Login fallido para usuario: {model.UserName} desde {ipAddress}");
+            
+            // 🔍 REGISTRAR LOGIN FALLIDO - CREDENCIALES INCORRECTAS
+            await _auditService.RegistrarLoginFallidoAsync(
+                model.UserName, 
+                ipAddress, 
+                "Usuario o contraseña incorrectos");
+
             ModelState.AddModelError(string.Empty, "Usuario o contraseña incorrectos");
             return View(model);
         }
@@ -110,17 +136,37 @@ namespace Puerto92.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
+            var userName = User.Identity?.Name ?? "Desconocido";
+            
             await _signInManager.SignOutAsync();
-            _logger.LogInformation("Usuario cerró sesión");
+            _logger.LogInformation($"Usuario {userName} cerró sesión");
+            
+            // 🔍 REGISTRAR LOGOUT EN AUDITORÍA
+            await _auditService.RegistrarAccionAsync(
+                accion: AccionAuditoria.Logout,
+                descripcion: $"Usuario '{userName}' cerró sesión",
+                modulo: "Autenticación",
+                resultado: ResultadoAuditoria.Exitoso,
+                nivelSeveridad: NivelSeveridad.Info);
+
             return RedirectToAction(nameof(Login));
         }
 
         // GET: /Account/AccessDenied
         [HttpGet]
-        public IActionResult AccessDenied()
+        public async Task<IActionResult> AccessDenied()
         {
+            var userName = User.Identity?.Name ?? "Desconocido";
+            var requestPath = HttpContext.Request.Path;
+
+            // 🔍 REGISTRAR ACCESO DENEGADO
+            await _auditService.RegistrarAccesoDenegadoAsync(
+                recurso: requestPath,
+                motivo: "Usuario no tiene permisos suficientes");
+
             return View();
         }
+
         // GET: /Account/ChangePassword
         [HttpGet]
         public async Task<IActionResult> ChangePassword()
@@ -171,6 +217,9 @@ namespace Puerto92.Controllers
 
                 _logger.LogInformation($"Usuario {currentUser.UserName} cambió su contraseña exitosamente");
 
+                // 🔍 REGISTRAR CAMBIO DE CONTRASEÑA
+                await _auditService.RegistrarCambioPasswordAsync(currentUser.UserName!);
+
                 // Re-autenticar al usuario
                 await _signInManager.RefreshSignInAsync(currentUser);
 
@@ -190,5 +239,22 @@ namespace Puerto92.Controllers
             return View(model);
         }
 
+        /// <summary>
+        /// Obtener la dirección IP del cliente
+        /// </summary>
+        private string ObtenerDireccionIP()
+        {
+            // Intentar obtener la IP real si está detrás de un proxy
+            var forwardedFor = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(forwardedFor))
+            {
+                var ips = forwardedFor.Split(',');
+                if (ips.Length > 0)
+                    return ips[0].Trim();
+            }
+
+            var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+            return remoteIp ?? "0.0.0.0";
+        }
     }
 }
