@@ -41,9 +41,24 @@ namespace Puerto92.Data
                 }
             }
 
-            // ===== 2. CREAR LOCAL INICIAL =====
+            // ===== 2. CREAR LOCALES INICIALES =====
             if (!await context.Locales.AnyAsync())
             {
+                // Local Corporativo (para roles administrativos)
+                var localCorporativo = new Local
+                {
+                    Codigo = "CORP-00",
+                    Nombre = "Corporativo",
+                    Direccion = "Oficinas Centrales",
+                    Distrito = "Lima",
+                    Ciudad = "Lima",
+                    Telefono = "987654321",
+                    Activo = true,
+                    FechaCreacion = DateTime.Now
+                };
+                context.Locales.Add(localCorporativo);
+
+                // Local Principal (primer local operativo)
                 var localPrincipal = new Local
                 {
                     Codigo = "LOC-001",
@@ -56,6 +71,7 @@ namespace Puerto92.Data
                     FechaCreacion = DateTime.Now
                 };
                 context.Locales.Add(localPrincipal);
+                
                 await context.SaveChangesAsync();
             }
 
@@ -65,16 +81,19 @@ namespace Puerto92.Data
 
             if (adminUser == null)
             {
-                var primerLocal = await context.Locales.FirstAsync();
-
-                // Generar contraseña usando el mismo algoritmo
-                string adminPassword = GenerateTemporaryPassword();
+                // Obtener local corporativo
+                var localCorporativo = await context.Locales.FirstOrDefaultAsync(l => l.Codigo == "CORP-00");
+                if (localCorporativo == null)
+                {
+                    Console.WriteLine("❌ Error: No se encontró el local corporativo");
+                    return;
+                }
 
                 adminUser = new Usuario
                 {
                     UserName = "admin",
                     NombreCompleto = "Administrador Maestro",
-                    LocalId = primerLocal.Id,
+                    LocalId = localCorporativo.Id,
                     EsPrimerIngreso = false, // Admin no necesita cambiar contraseña
                     PasswordReseteada = false,
                     Activo = true,
@@ -82,14 +101,14 @@ namespace Puerto92.Data
                     EmailConfirmed = true
                 };
 
-                var result = await userManager.CreateAsync(adminUser, adminPassword);
+                var result = await userManager.CreateAsync(adminUser, "Admin123");
 
                 if (result.Succeeded)
                 {
                     await userManager.AddToRoleAsync(adminUser, "Admin Maestro");
                     Console.WriteLine("✅ Usuario Admin Maestro creado exitosamente");
                     Console.WriteLine($"   👤 Usuario: admin");
-                    Console.WriteLine($"   🔑 Contraseña: {adminPassword}");
+                    Console.WriteLine($"   🔑 Contraseña: Admin123");
                 }
                 else
                 {
