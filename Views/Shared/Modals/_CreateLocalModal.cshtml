@@ -1,0 +1,103 @@
+@* Partial View: Modal para Crear Local *@
+
+<div id="createLocalModal" class="modal-overlay" style="display: none;">
+    <div class="modal-container">
+        <div class="modal-header">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="background: #0092B8; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
+                    <i class="fa-solid fa-store"></i>
+                </div>
+                <div>
+                    <h2 class="modal-title">Crear Nuevo Local</h2>
+                    <p class="modal-subtitle">Complete los datos para registrar un nuevo local en el sistema</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeModal('createLocalModal')">&times;</button>
+        </div>
+        <form id="createLocalForm" asp-action="Create" asp-controller="Locales" method="post">
+            <div class="modal-body">
+                <!-- Código Automático Info -->
+                <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem; display: flex; gap: 0.5rem;">
+                    <i class="fa-solid fa-info-circle" style="color: #3B82F6; margin-top: 2px;"></i>
+                    <div>
+                        <strong style="color: #1E40AF; font-size: 13px;">Código Automático:</strong>
+                        <span style="color: #1E40AF; font-size: 12px;"> Se generará automáticamente con formato LOC-XX al crear el local.</span>
+                    </div>
+                </div>
+
+                <!-- Nombre del Local -->
+                <div class="form-group">
+                    <label class="form-label">Nombre del Local <span style="color: red;">*</span></label>
+                    <input type="text" name="Nombre" class="form-control" placeholder="Ej: Local Centro" required />
+                </div>
+
+                <!-- Dirección -->
+                <div class="form-group">
+                    <label class="form-label">Dirección <span style="color: red;">*</span></label>
+                    <input type="text" name="Direccion" class="form-control" placeholder="Ej: Av. Principal 123" required />
+                </div>
+
+                <!-- Distrito y Ciudad -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label">Distrito <span style="color: red;">*</span></label>
+                        <input type="text" name="Distrito" class="form-control" placeholder="Ej: Lima" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Ciudad <span style="color: red;">*</span></label>
+                        <input type="text" name="Ciudad" class="form-control" placeholder="Ej: Lima" required />
+                    </div>
+                </div>
+
+                <!-- Teléfono -->
+                <div class="form-group">
+                    <label class="form-label">Teléfono <span style="color: red;">*</span></label>
+                    <input type="text" name="Telefono" class="form-control" placeholder="Ej: +51 987654321" required />
+                </div>
+
+                <!-- Estado -->
+                <div class="form-group">
+                    <label class="form-label">Estado <span style="color: red;">*</span></label>
+                    <select name="Activo" class="form-select">
+                        <option value="true" selected>Activo</option>
+                        <option value="false">Inactivo</option>
+                    </select>
+                </div>
+
+                <!-- Información adicional -->
+                <div style="background: #ECFDF5; border-left: 3px solid #10B981; padding: 0.75rem; border-radius: 4px; margin-top: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; color: #059669; font-weight: 600; font-size: 13px; margin-bottom: 0.25rem;">
+                        <i class="fa-solid fa-check-circle"></i>
+                        <span>Al crear el local:</span>
+                    </div>
+                    <ul style="list-style: none; padding-left: 1.5rem; margin: 0; font-size: 12px; color: #047857;">
+                        <li style="position: relative; margin-bottom: 0.25rem;">
+                            <span style="position: absolute; left: -1rem;">•</span>
+                            Se inicializará con catálogo de productos vacío
+                        </li>
+                        <li style="position: relative; margin-bottom: 0.25rem;">
+                            <span style="position: absolute; left: -1rem;">•</span>
+                            Catálogo de utensilios vacío
+                        </li>
+                        <li style="position: relative; margin-bottom: 0.25rem;">
+                            <span style="position: absolute; left: -1rem;">•</span>
+                            Inventario en cero y sin usuarios asignados
+                        </li>
+                        <li style="position: relative;">
+                            <span style="position: absolute; left: -1rem;">•</span>
+                            Podrá asignar usuarios inmediatamente después de la creación
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeModal('createLocalModal')">Cancelar</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-plus"></i>
+                    Crear Local
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
