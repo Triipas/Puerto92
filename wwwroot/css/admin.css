@@ -636,20 +636,21 @@ body {
 .modal-overlay {
     display: none; /* Oculto por defecto */
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100vw;
-    height: 100vh;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
     background: rgba(0, 0, 0, 0.6);
-    z-index: 99999; /* Por encima del sidebar */
+    z-index: 99999 !important; /* Por encima de todo */
     align-items: center;
     justify-content: center;
     opacity: 0;
     transition: opacity 0.2s ease;
-    overflow-y: auto; /* Permitir scroll si el modal es muy alto */
-    padding: 20px; /* Espacio para que el modal no toque los bordes */
+    overflow-y: auto; /* Scroll vertical si es necesario */
 }
 
 .modal-overlay.active {
@@ -657,22 +658,47 @@ body {
     opacity: 1;
 }
 
+/* Contenedor interno del modal */
 .modal-container {
     background: white;
     border-radius: 12px;
     max-width: 500px;
-    width: 100%;
+    width: 90%; /* Responsive */
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     transform: scale(0.9) translateY(-20px);
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     position: relative;
-    margin: auto; /* Centrar en el overlay */
+    margin: auto; /* Centrar */
 }
 
 .modal-overlay.active .modal-container {
     transform: scale(1) translateY(0);
+}
+
+/* Asegurar que el overlay esté por encima del sidebar */
+.sidebar {
+    z-index: 1000;
+}
+
+.main-content {
+    z-index: 1;
+}
+
+/* El contenedor de modales debe estar al nivel más alto */
+#modals-container {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    pointer-events: none !important; /* No bloquear interacciones cuando no hay modales */
+    z-index: 99998 !important;
+}
+
+#modals-container > .modal-overlay {
+    pointer-events: auto !important; /* Habilitar interacciones en los modales */
 }
 
 .modal-header {
@@ -686,6 +712,7 @@ body {
     top: 0;
     background: white;
     z-index: 10;
+    border-radius: 12px 12px 0 0;
 }
 
 .modal-title {
@@ -737,6 +764,7 @@ body {
     bottom: 0;
     background: white;
     z-index: 10;
+    border-radius: 0 0 12px 12px;
 }
 
 /* Modal de Eliminación */

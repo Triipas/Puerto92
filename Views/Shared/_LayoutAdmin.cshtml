@@ -146,8 +146,13 @@
             @* Esto permite que el overlay cubra toda la pantalla incluyendo el sidebar *@
         </div>
 
+
+        <!-- ⭐ IMPORTANTE: Contenedor de modales FUERA de .admin-container -->
+        <div id="modals-container"></div>
+
         <!-- Scripts base -->
         <script src="~/lib/jquery/dist/jquery.min.js"></script>
+        <script src="~/js/modal-manager.js" asp-append-version="true"></script>
         <script src="~/js/app-navigation.js" asp-append-version="true"></script>
         
         @await RenderSectionAsync("Scripts", required: false)
@@ -159,6 +164,6 @@ else
     @* Si es petición AJAX, devolver solo el contenido *@
     @RenderBody()
     
-    @* Scripts específicos de la página (se cargarán dinámicamente) *@
+    @* Scripts específicos de la página *@
     @await RenderSectionAsync("Scripts", required: false)
 }

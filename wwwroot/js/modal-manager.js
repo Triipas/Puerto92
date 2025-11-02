@@ -1,8 +1,5 @@
 /**
  * Modal Manager - Asegura que los modales estén al nivel correcto del DOM
- * 
- * Este script mueve todos los modales fuera del contenedor principal
- * para que el overlay cubra toda la pantalla incluyendo el sidebar
  */
 
 (function() {
@@ -14,12 +11,21 @@
     function initModalManager() {
         console.log('🎭 Inicializando Modal Manager...');
         
-        // Crear contenedor de modales si no existe
+        // Esperar a que el DOM esté completamente cargado
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupModals);
+        } else {
+            setupModals();
+        }
+    }
+
+    /**
+     * Configurar modales
+     */
+    function setupModals() {
         ensureModalsContainer();
-        
-        // Mover todos los modales al contenedor global
         moveModalsToGlobalContainer();
-        
+        setupModalObserver();
         console.log('✅ Modal Manager inicializado');
     }
 
@@ -33,15 +39,6 @@
             console.log('📦 Creando contenedor de modales...');
             modalsContainer = document.createElement('div');
             modalsContainer.id = 'modals-container';
-            modalsContainer.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                pointer-events: none;
-                z-index: 99999;
-            `;
             document.body.appendChild(modalsContainer);
             console.log('✅ Contenedor de modales creado');
         }
@@ -54,7 +51,10 @@
      */
     function moveModalsToGlobalContainer() {
         const modalsContainer = document.getElementById('modals-container');
-        if (!modalsContainer) return;
+        if (!modalsContainer) {
+            console.error('❌ No se encontró el contenedor de modales');
+            return;
+        }
 
         // Buscar todos los modales en el DOM
         const modals = document.querySelectorAll('.modal-overlay');
@@ -64,7 +64,7 @@
             return;
         }
 
-        console.log(`📦 Moviendo ${modals.length} modal(es) al contenedor global...`);
+        console.log(`📦 Encontrados ${modals.length} modal(es)...`);
         
         let movedCount = 0;
         modals.forEach(modal => {
@@ -78,62 +78,62 @@
         });
 
         if (movedCount > 0) {
-            console.log(`✅ ${movedCount} modal(es) movido(s) correctamente`);
+            console.log(`✅ ${movedCount} modal(es) movido(s) al contenedor global`);
         } else {
             console.log('✅ Todos los modales ya están en el contenedor correcto');
         }
     }
 
     /**
-     * Reinicializar después de carga dinámica de contenido
+     * Observar cambios en el DOM para detectar nuevos modales
+     */
+    function setupModalObserver() {
+        const observer = new MutationObserver((mutations) => {
+            let hasNewModals = false;
+            
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === 1) {
+                        if (node.classList?.contains('modal-overlay') ||
+                            node.querySelector?.('.modal-overlay')) {
+                            hasNewModals = true;
+                        }
+                    }
+                });
+            });
+            
+            if (hasNewModals) {
+                console.log('🔍 Nuevos modales detectados, moviendo...');
+                setTimeout(() => {
+                    moveModalsToGlobalContainer();
+                }, 100);
+            }
+        });
+
+        // Observar cambios en el body
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    }
+
+    /**
+     * Reinicializar después de carga dinámica
      */
     function reinitializeModals() {
-        console.log('🔄 Reinicializando modales después de carga dinámica...');
-        
-        // Esperar un momento para que el DOM se actualice
+        console.log('🔄 Reinicializando modales...');
         setTimeout(() => {
             moveModalsToGlobalContainer();
         }, 100);
     }
 
-    // Inicializar cuando el DOM esté listo
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initModalManager);
-    } else {
-        initModalManager();
-    }
+    // Inicializar
+    initModalManager();
 
-    // Observar cambios en el DOM para detectar nuevos modales
-    const observer = new MutationObserver((mutations) => {
-        let shouldReinitialize = false;
-        
-        mutations.forEach((mutation) => {
-            mutation.addedNodes.forEach((node) => {
-                if (node.nodeType === 1 && (
-                    node.classList?.contains('modal-overlay') ||
-                    node.querySelector?.('.modal-overlay')
-                )) {
-                    shouldReinitialize = true;
-                }
-            });
-        });
-        
-        if (shouldReinitialize) {
-            console.log('🔍 Nuevos modales detectados en el DOM');
-            reinitializeModals();
-        }
-    });
-
-    // Observar el body completo
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
-
-    // Exponer función para reinicializar manualmente
+    // Exponer funciones globalmente
     window.reinitializeModals = reinitializeModals;
     window.moveModalsToGlobalContainer = moveModalsToGlobalContainer;
 
-    console.log('✅ Modal Manager cargado y activo');
+    console.log('✅ Modal Manager cargado');
 
 })();
