@@ -190,17 +190,34 @@ function setupModalEventListeners() {
  */
 function setupSearch() {
     const searchInput = document.getElementById('searchInput');
-    if (!searchInput) return;
+    if (!searchInput) {
+        console.warn('⚠️ Input de búsqueda no encontrado');
+        return;
+    }
 
-    searchInput.addEventListener('keyup', function() {
-        const searchValue = this.value.toLowerCase();
+    console.log('🔍 Configurando búsqueda de locales...');
+
+    // Remover event listeners anteriores clonando el nodo
+    const newSearchInput = searchInput.cloneNode(true);
+    searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+
+    newSearchInput.addEventListener('keyup', function() {
+        const searchValue = this.value.toLowerCase().trim();
         const rows = document.querySelectorAll('#localesTable tbody tr');
+        
+        let visibleCount = 0;
         
         rows.forEach(row => {
             const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(searchValue) ? '' : 'none';
+            const isVisible = text.includes(searchValue);
+            row.style.display = isVisible ? '' : 'none';
+            if (isVisible) visibleCount++;
         });
+        
+        console.log(`✅ Búsqueda: "${searchValue}" - Mostrando ${visibleCount} de ${rows.length} locales`);
     });
+    
+    console.log('✅ Búsqueda de locales configurada correctamente');
 }
 
 // ==========================================

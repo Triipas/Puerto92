@@ -1,0 +1,32 @@
+@model string
+
+@* 
+    Partial para buscador reutilizable
+    @model string - ID del elemento a buscar (ej: "usuarios", "locales")
+*@
+
+<div style="margin-bottom: 1.5rem;">
+    <div class="search-box">
+        <icon name="magnifying-glass" color="#64748B" />
+        <input type="text" 
+               id="searchInput" 
+               class="form-control" 
+               placeholder="🔍 Buscar @(Model ?? "elementos")..." 
+               style="max-width: 400px; padding-left: 2.5rem;" />
+    </div>
+</div>
+
+<style>
+    .search-box {
+        position: relative;
+        max-width: 400px;
+    }
+    
+    .search-box .fa-magnifying-glass {
+        position: absolute;
+        left: 0.875rem;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+    }
+</style>

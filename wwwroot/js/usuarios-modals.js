@@ -1,5 +1,5 @@
 /**
- * Gestión de Modales de Usuarios - VERSIÓN ARREGLADA
+ * Gestión de Modales de Usuarios - VERSIÓN CORREGIDA
  * Puerto 92 - Sistema de Gestión
  */
 
@@ -29,7 +29,7 @@ function initUsuariosPage() {
     
     // Cargar datos y configurar listeners
     cargarRolesYLocales().then(() => {
-        setupSearch();
+        setupSearch(); // ← IMPORTANTE: Configurar búsqueda
         setupModalEventListeners();
         setupCreateFormSubmit();
         setupRolChangeListeners();
@@ -42,6 +42,45 @@ document.addEventListener('DOMContentLoaded', initUsuariosPage);
 
 // ⭐ NUEVO: Exponer función para reinicializar después de navegación SPA
 window.initUsuariosPage = initUsuariosPage;
+
+// ==========================================
+// BÚSQUEDA Y FILTROS
+// ==========================================
+
+/**
+ * Configurar buscador en tiempo real
+ */
+function setupSearch() {
+    const searchInput = document.getElementById('searchInput');
+    if (!searchInput) {
+        console.warn('⚠️ Input de búsqueda no encontrado');
+        return;
+    }
+
+    console.log('🔍 Configurando búsqueda...');
+
+    // Remover event listeners anteriores
+    const newSearchInput = searchInput.cloneNode(true);
+    searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+
+    newSearchInput.addEventListener('keyup', function() {
+        const searchValue = this.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('#usuariosTable tbody tr');
+        
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            const isVisible = text.includes(searchValue);
+            row.style.display = isVisible ? '' : 'none';
+            if (isVisible) visibleCount++;
+        });
+        
+        console.log(`✅ Búsqueda: "${searchValue}" - Mostrando ${visibleCount} de ${rows.length} usuarios`);
+    });
+    
+    console.log('✅ Búsqueda configurada correctamente');
+}
 
 // ==========================================
 // CARGA DE DATOS
@@ -576,25 +615,6 @@ function setupModalEventListeners() {
                 }, 200);
             });
         }
-    });
-}
-
-// ==========================================
-// BÚSQUEDA
-// ==========================================
-
-function setupSearch() {
-    const searchInput = document.getElementById('searchInput');
-    if (!searchInput) return;
-
-    searchInput.addEventListener('keyup', function () {
-        const searchValue = this.value.toLowerCase();
-        const rows = document.querySelectorAll('#usuariosTable tbody tr');
-
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(searchValue) ? '' : 'none';
-        });
     });
 }
 

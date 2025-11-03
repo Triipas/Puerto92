@@ -1,0 +1,65 @@
+@model Puerto92.ViewModels.Shared.SidebarViewModel
+
+<aside class="sidebar">
+    <!-- Header -->
+    <div class="sidebar-header">
+        <a href="@Url.Action("Index", "Home")" class="sidebar-logo" data-navigate>
+            <i class="fa-solid fa-utensils"></i>
+            <span>Puerto 92</span>
+        </a>
+    </div>
+
+    <!-- User Info -->
+    <div class="sidebar-user">
+        <div class="sidebar-user-name">@Model.UserName</div>
+        <div class="sidebar-user-role">@Model.UserRoleDisplay</div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+        @foreach (var item in Model.NavigationItems)
+        {
+            var action = string.IsNullOrEmpty(item.Action) ? "Index" : item.Action;
+            
+            <div class="nav-item">
+                <a href="@Url.Action(action, item.Controller)" 
+                   data-navigate
+                   class="nav-link @(item.IsActive ? "active" : "")">
+                    <i class="fa-solid @item.Icon"></i>
+                    <span>@item.Title</span>
+                    @if (item.Badge.HasValue && item.Badge > 0)
+                    {
+                        <span class="nav-badge">@item.Badge</span>
+                    }
+                </a>
+                
+                @* Soporte para sub-items (futuro) *@
+                @if (item.SubItems.Any())
+                {
+                    <div class="nav-subitems">
+                        @foreach (var subItem in item.SubItems)
+                        {
+                            var subAction = string.IsNullOrEmpty(subItem.Action) ? "Index" : subItem.Action;
+                            <a href="@Url.Action(subAction, subItem.Controller)" 
+                               data-navigate
+                               class="nav-sublink">
+                                <i class="fa-solid @subItem.Icon"></i>
+                                <span>@subItem.Title</span>
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </nav>
+
+    <!-- Footer -->
+    <div class="sidebar-footer">
+        <form asp-controller="Account" asp-action="Logout" method="post">
+            <button type="submit" class="btn-logout">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                <span>Cerrar Sesión</span>
+            </button>
+        </form>
+    </div>
+</aside>

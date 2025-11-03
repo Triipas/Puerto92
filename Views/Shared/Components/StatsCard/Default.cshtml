@@ -1,0 +1,19 @@
+@model Puerto92.ViewModels.Shared.StatsCardViewModel
+
+<div class="stat-card">
+    <div class="stat-icon @Model.ColorClass">
+        <i class="fa-solid @Model.Icon"></i>
+    </div>
+    <div class="stat-content">
+        <h3>@Model.Value</h3>
+        <p>@Model.Title</p>
+        @if (!string.IsNullOrEmpty(Model.Subtitle))
+        {
+            <small style="color: #64748B;">@Model.Subtitle</small>
+        }
+    </div>
+    @if (!string.IsNullOrEmpty(Model.Link))
+    {
+        <a href="@Model.Link" class="stat-card-link" aria-label="Ver más"></a>
+    }
+</div>

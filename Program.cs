@@ -6,15 +6,17 @@ using Puerto92.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ===== SERVICIOS =====
 builder.Services.AddControllersWithViews();
 
+// Base de datos
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseSqlite(connectionString);
 });
 
-// Configurar Identity
+// Identity
 builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
 {
     // Configuración de contraseñas
@@ -35,7 +37,7 @@ builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
-// Configurar cookies de autenticación
+// Cookies de autenticación
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Account/Login";
@@ -45,7 +47,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 });
 
-// Configurar sesiones
+// Sesiones
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromHours(8);
@@ -53,9 +55,10 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Registrar servicios personalizados
-builder.Services.AddHttpContextAccessor(); // Necesario para obtener IP y usuario actual
+// ===== 🎯 SERVICIOS PERSONALIZADOS =====
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<INavigationService, NavigationService>(); // ⭐ NUEVO
 
 var app = builder.Build();
 
@@ -74,6 +77,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// ===== MIDDLEWARE =====
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -89,6 +93,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseSession();
 
+// ===== RUTAS =====
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Account}/{action=Login}/{id?}");
