@@ -1,6 +1,6 @@
 @model IEnumerable<Puerto92.ViewModels.CategoriaViewModel>
 @{
-    ViewData["Title"] = "Gestión de Categorías";
+    ViewData["Title"] = "Configuración Global";
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
     var tipoActual = ViewBag.TipoActual as string ?? "Bebidas";
     var tiposTodos = ViewBag.TiposTodos as string[] ?? new string[0];
@@ -9,98 +9,82 @@
 
 <!-- Page Header -->
 <div class="page-header">
-    <h1 class="page-title">Gestión de Categorías</h1>
-    <p class="page-subtitle">Organizar productos y utensilios según clasificaciones operativas</p>
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+        <i class="fa-solid fa-gear" style="color: #0092B8; font-size: 24px;"></i>
+        <h1 class="page-title">Configuración Global</h1>
+    </div>
+    <p class="page-subtitle">Gestionar categorías del sistema para productos y utensilios</p>
 </div>
 
 <!-- Stats Cards -->
 <div class="stats-grid">
     <div class="stat-card">
-        <div class="stat-icon primary">
-            <i class="fa-solid fa-list"></i>
-        </div>
-        <div class="stat-content">
-            <h3>@estadisticas.Values.Sum()</h3>
-            <p>Total Categorías</p>
-            <small style="color: #64748B;">En todos los tipos</small>
-        </div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-icon success">
-            <i class="fa-solid fa-wine-glass"></i>
+        <div class="stat-icon" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.2)); color: #F59E0B; border: 2px solid rgba(245, 158, 11, 0.2);">
+            <i class="fa-solid fa-wine-bottle"></i>
         </div>
         <div class="stat-content">
             <h3>@(estadisticas.ContainsKey("Bebidas") ? estadisticas["Bebidas"] : 0)</h3>
-            <p>Bebidas</p>
-            <small style="color: #64748B;">Categorías activas</small>
+            <p>Categorías Bebidas</p>
+            <small style="color: #64748B;"> 0 productos</small>
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon warning">
+        <div class="stat-icon" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.2)); color: #3B82F6; border: 2px solid rgba(59, 130, 246, 0.2);">
             <i class="fa-solid fa-utensils"></i>
         </div>
         <div class="stat-content">
             <h3>@(estadisticas.ContainsKey("Cocina") ? estadisticas["Cocina"] : 0)</h3>
-            <p>Cocina</p>
-            <small style="color: #64748B;">Categorías activas</small>
+            <p>Categorías Cocina</p>
+            <small style="color: #64748B;"> 0 productos</small>
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon danger">
+        <div class="stat-icon" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.2)); color: #10B981; border: 2px solid rgba(16, 185, 129, 0.2);">
             <i class="fa-solid fa-kitchen-set"></i>
         </div>
         <div class="stat-content">
             <h3>@(estadisticas.ContainsKey("Utensilios") ? estadisticas["Utensilios"] : 0)</h3>
-            <p>Utensilios</p>
-            <small style="color: #64748B;">Categorías activas</small>
+            <p>Categorías Utensilios</p>
+            <small style="color: #64748B;"> 0 productos</small>
         </div>
     </div>
 </div>
 
 <!-- Content Card -->
 <div class="content-card">
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">Lista de Categorías</h2>
-            <p style="font-size: 13px; color: #64748B; margin-top: 4px;">
-                @Model.Count() categoría(s) en @tipoActual
-            </p>
+    <div class="card-header" style="border-bottom: none; padding-bottom: 0;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <i class="fa-solid fa-list" style="color: #0092B8; font-size: 20px;"></i>
+            <div>
+                <h2 class="card-title">Gestionar Categorías</h2>
+                <p style="font-size: 13px; color: #64748B; margin-top: 0.25rem;">
+                    Organice productos y utensilios según clasificaciones operativas
+                </p>
+            </div>
         </div>
         <button onclick="openCreateCategoriaModal()" class="btn btn-primary">
             <i class="fa-solid fa-plus"></i>
-            Nueva Categoría
+            Agregar Nueva Categoría
         </button>
     </div>
 
-    <div class="card-body">
+    <div class="card-body" style="padding-top: 1rem;">
         <!-- Tabs de Tipos -->
         <div class="categoria-tabs">
             @foreach (var tipo in tiposTodos)
             {
                 var activeClass = tipo == tipoActual ? "active" : "";
                 var icon = tipo == "Bebidas" ? "wine-glass" : (tipo == "Cocina" ? "utensils" : "kitchen-set");
-                var count = estadisticas.ContainsKey(tipo) ? estadisticas[tipo] : 0;
                 
                 <a href="@Url.Action("Index", "Categorias", new { tipo = tipo })" 
                    class="categoria-tab @activeClass"
                    data-navigate>
                     <i class="fa-solid fa-@icon"></i>
                     <span>@tipo</span>
-                    <span class="tab-badge">@count</span>
                 </a>
             }
-        </div>
-
-        <!-- Buscador -->
-        <div style="margin: 1.5rem 0;">
-            <input type="text" 
-                   id="searchInput" 
-                   class="form-control" 
-                   placeholder="🔍 Buscar categorías..." 
-                   style="max-width: 400px;" />
         </div>
 
         @if (!Model.Any())
@@ -108,7 +92,7 @@
             <div class="empty-state">
                 <i class="fa-solid fa-folder-open"></i>
                 <h3>No hay categorías en @tipoActual</h3>
-                <p>Comienza creando tu primera categoría para este tipo.</p>
+                <p>Comience creando su primera categoría para este tipo.</p>
                 <button onclick="openCreateCategoriaModal()" class="btn btn-primary">
                     <i class="fa-solid fa-plus"></i>
                     Crear Primera Categoría
@@ -124,8 +108,7 @@
                         <tr>
                             <th style="width: 80px;">Orden</th>
                             <th>Nombre de Categoría</th>
-                            <th style="width: 150px; text-align: center;">Productos</th>
-                            <th style="width: 100px;">Estado</th>
+                            <th style="width: 180px; text-align: center;">Productos Asignados</th>
                             <th style="width: 150px; text-align: center;">Acciones</th>
                         </tr>
                     </thead>
@@ -139,41 +122,34 @@
                                         <span class="orden-number">@categoria.Orden</span>
                                     </div>
                                 </td>
-                                <td style="font-weight: 500;">@categoria.Nombre</td>
+                                <td style="font-weight: 500; font-size: 14px;">
+                                    <i class="fa-solid fa-circle" style="font-size: 8px; color: @(categoria.Activo ? "#10B981" : "#EF4444"); margin-right: 0.5rem;"></i>
+                                    @categoria.Nombre
+                                </td>
                                 <td style="text-align: center;">
                                     @if (categoria.CantidadProductos > 0)
                                     {
-                                        <span class="badge badge-success">@categoria.CantidadProductos producto(s)</span>
+                                        <span class="badge" style="background: rgba(59, 130, 246, 0.1); color: #3B82F6; font-size: 13px;">
+                                            @categoria.CantidadProductos producto(s)
+                                        </span>
                                     }
                                     else
                                     {
                                         <span style="color: #94A3B8; font-size: 13px;">Sin productos</span>
                                     }
                                 </td>
-                                <td>
-                                    @if (categoria.Activo)
-                                    {
-                                        <span class="badge badge-success">Activo</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge badge-danger">Inactivo</span>
-                                    }
-                                </td>
                                 <td style="text-align: center;">
                                     <div style="display: flex; gap: 0.5rem; justify-content: center;">
-                                        <!-- Botón Editar -->
                                         <button onclick="openEditCategoriaModal(@categoria.Id)" 
                                                 class="btn-icon btn-icon-edit" 
                                                 title="Editar categoría">
-                                            <i class="fa-regular fa-pen-to-square"></i>
+                                            <i class="fa-solid fa-pen"></i>
                                         </button>
 
-                                        <!-- Botón Eliminar -->
                                         <button onclick="openDeleteCategoriaModal(@categoria.Id, '@categoria.Nombre', @categoria.CantidadProductos, '@tipoActual')" 
                                                 class="btn-icon btn-icon-delete" 
                                                 title="Eliminar categoría">
-                                            <i class="fa-regular fa-trash-can"></i>
+                                            <i class="fa-solid fa-trash"></i>
                                         </button>
                                     </div>
                                 </td>
@@ -184,7 +160,7 @@
             </div>
 
             <!-- Nota sobre reordenamiento -->
-            <div style="background: #EFF6FF; border-left: 3px solid #3B82F6; padding: 0.75rem; border-radius: 4px; margin-top: 1rem;">
+            <div style="background: #EFF6FF; border-left: 3px solid #3B82F6; padding: 0.875rem; border-radius: 4px; margin-top: 1.5rem;">
                 <div style="display: flex; align-items: center; gap: 0.5rem; color: #1E40AF; font-size: 13px;">
                     <i class="fa-solid fa-info-circle"></i>
                     <span><strong>Tip:</strong> Arrastra y suelta las filas usando el ícono <i class="fa-solid fa-grip-vertical" style="font-size: 11px;"></i> para cambiar el orden de visualización.</span>
@@ -194,17 +170,12 @@
     </div>
 </div>
 
-<!-- Cargar Modales -->
+@* Cargar Modales *@
 <partial name="Modals/_CreateCategoriaModal" model="@tipoActual" />
 <partial name="Modals/_EditCategoriaModal" />
 <partial name="Modals/_DeleteCategoriaModal" />
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/categorias.css" asp-append-version="true" />
-}
-
 @section Scripts {
-    <!-- SortableJS para drag & drop -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="~/js/categorias-modals.js" asp-append-version="true"></script>
 }

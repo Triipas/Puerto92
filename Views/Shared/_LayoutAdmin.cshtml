@@ -20,10 +20,14 @@
               crossorigin="anonymous" 
               referrerpolicy="no-referrer" />
         
-        <!-- Estilos -->
+        <!-- Estilos Base -->
         <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
         <link rel="stylesheet" href="~/css/app-navigation.css" asp-append-version="true" />
         
+        <!-- ⭐ NUEVO: Estilos de Categorías siempre cargados -->
+        <link rel="stylesheet" href="~/css/categorias.css" asp-append-version="true" />
+        
+        <!-- Estilos adicionales de la página -->
         @await RenderSectionAsync("Styles", required: false)
     </head>
     <body>
@@ -38,7 +42,7 @@
                     @if (TempData["Success"] != null)
                     {
                         <div class="alert alert-success">
-                            <icon name="circle-check" />
+                            <i class="fa-solid fa-circle-check"></i>
                             <span>@TempData["Success"]</span>
                         </div>
                     }
@@ -46,7 +50,7 @@
                     @if (TempData["Error"] != null)
                     {
                         <div class="alert alert-danger">
-                            <icon name="circle-exclamation" />
+                            <i class="fa-solid fa-circle-exclamation"></i>
                             <span>@TempData["Error"]</span>
                         </div>
                     }
@@ -75,5 +79,12 @@ else
 {
     @* Petición AJAX - Devolver solo el contenido *@
     @RenderBody()
+    
+    @* Ignorar la sección Styles en peticiones AJAX *@
+    @if (IsSectionDefined("Styles"))
+    {
+        IgnoreSection("Styles");
+    }
+    
     @await RenderSectionAsync("Scripts", required: false)
 }

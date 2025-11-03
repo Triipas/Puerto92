@@ -117,6 +117,40 @@ async function actualizarOrdenDespuesDeArrastrar() {
     }
 }
 
+/**
+ * Actualizar orden sugerido al abrir modal de crear
+ */
+function actualizarOrdenSugerido() {
+    const filas = document.querySelectorAll('#sortableCategoriasTable tr');
+    const siguienteOrden = filas.length + 1;
+    
+    const ordenInput = document.getElementById('createOrden');
+    const ordenSugerido = document.getElementById('ordenSugerido');
+    
+    if (ordenInput) ordenInput.value = siguienteOrden;
+    if (ordenSugerido) ordenSugerido.textContent = siguienteOrden;
+}
+
+// Modificar la función openCreateCategoriaModal para incluir esto:
+function openCreateCategoriaModal() {
+    console.log('📝 Abriendo modal de crear categoría...');
+    
+    const modal = document.getElementById('createCategoriaModal');
+    modal.style.display = 'flex';
+    modal.classList.add('active');
+    
+    // Resetear formulario
+    document.getElementById('createCategoriaForm').reset();
+    
+    // Actualizar tipo según tab activa
+    actualizarTipoEnModal();
+    
+    // Actualizar orden sugerido
+    actualizarOrdenSugerido();
+    
+    console.log('✅ Modal de crear categoría abierto');
+}
+
 // ==========================================
 // GESTIÓN DE MODALES
 // ==========================================
@@ -201,33 +235,59 @@ async function openEditCategoriaModal(id) {
 function openDeleteCategoriaModal(id, nombre, cantidadProductos, tipo) {
     console.log(`🗑️ Abriendo modal de eliminar categoría: ${id}`);
     
-    // Llenar información
-    document.getElementById('deleteCategoriaId').value = id;
-    document.getElementById('deleteCategoriaTipo').textContent = tipo;
-    document.getElementById('deleteCategoriaNombre').textContent = nombre;
-    document.getElementById('deleteCategoriaProductos').textContent = cantidadProductos;
-    document.getElementById('deleteCantidadProductos').textContent = cantidadProductos;
+    try {
+        // Obtener la fila para extraer el orden
+        const fila = document.querySelector(`tr[data-categoria-id="${id}"]`);
+        const orden = fila ? fila.getAttribute('data-orden') : '0';
+        
+        // Llenar información básica
+        const deleteCategoriaId = document.getElementById('deleteCategoriaId');
+        const deleteCategoriaTipo = document.getElementById('deleteCategoriaTipo');
+        const deleteCategoriaNombre = document.getElementById('deleteCategoriaNombre');
+        const deleteCategoriaOrden = document.getElementById('deleteCategoriaOrden');
+        const deleteCantidadProductos = document.getElementById('deleteCantidadProductos');
+        
+        if (deleteCategoriaId) deleteCategoriaId.value = id;
+        if (deleteCategoriaTipo) deleteCategoriaTipo.textContent = tipo;
+        if (deleteCategoriaNombre) deleteCategoriaNombre.textContent = nombre;
+        if (deleteCategoriaOrden) deleteCategoriaOrden.textContent = orden;
+        if (deleteCantidadProductos) deleteCantidadProductos.textContent = cantidadProductos;
 
-    // Configurar acción del formulario
-    document.getElementById('deleteCategoriaForm').action = `/Categorias/Delete/${id}`;
+        // Configurar acción del formulario
+        const deleteForm = document.getElementById('deleteCategoriaForm');
+        if (deleteForm) {
+            deleteForm.action = `/Categorias/Delete/${id}`;
+        }
 
-    // Mostrar/ocultar secciones según si tiene productos
-    const tieneProductos = cantidadProductos > 0;
-    document.getElementById('deleteErrorProductos').style.display = tieneProductos ? 'block' : 'none';
-    document.getElementById('deleteConfirmacion').style.display = tieneProductos ? 'none' : 'block';
-    
-    // Habilitar/deshabilitar botón de eliminar
-    const btnEliminar = document.getElementById('btnConfirmarEliminar');
-    btnEliminar.disabled = tieneProductos;
-    btnEliminar.style.opacity = tieneProductos ? '0.5' : '1';
-    btnEliminar.style.cursor = tieneProductos ? 'not-allowed' : 'pointer';
+        // Mostrar/ocultar secciones según si tiene productos
+        const tieneProductos = cantidadProductos > 0;
+        const errorProductos = document.getElementById('deleteErrorProductos');
+        const confirmacion = document.getElementById('deleteConfirmacion');
+        
+        if (errorProductos) errorProductos.style.display = tieneProductos ? 'block' : 'none';
+        if (confirmacion) confirmacion.style.display = tieneProductos ? 'none' : 'block';
+        
+        // Habilitar/deshabilitar botón de eliminar
+        const btnEliminar = document.getElementById('btnConfirmarEliminar');
+        if (btnEliminar) {
+            btnEliminar.disabled = tieneProductos;
+            btnEliminar.style.opacity = tieneProductos ? '0.5' : '1';
+            btnEliminar.style.cursor = tieneProductos ? 'not-allowed' : 'pointer';
+        }
 
-    // Mostrar modal
-    const modal = document.getElementById('deleteCategoriaModal');
-    modal.style.display = 'flex';
-    modal.classList.add('active');
-    
-    console.log('✅ Modal de eliminar categoría abierto');
+        // Mostrar modal
+        const modal = document.getElementById('deleteCategoriaModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.classList.add('active');
+        }
+        
+        console.log('✅ Modal de eliminar categoría abierto');
+
+    } catch (error) {
+        console.error('❌ Error al abrir modal de eliminar:', error);
+        showNotification('Error al abrir el modal de eliminación', 'error');
+    }
 }
 
 /**
