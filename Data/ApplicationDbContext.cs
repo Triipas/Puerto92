@@ -13,6 +13,7 @@ namespace Puerto92.Data
 
         public DbSet<Local> Locales { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<Categoria> Categorias { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -31,15 +32,32 @@ namespace Puerto92.Data
             // Índices para AuditLogs para mejorar el rendimiento de consultas
             builder.Entity<AuditLog>()
                 .HasIndex(a => a.FechaHora);
-
             builder.Entity<AuditLog>()
                 .HasIndex(a => a.UsuarioAccion);
-
             builder.Entity<AuditLog>()
                 .HasIndex(a => a.Accion);
-
             builder.Entity<AuditLog>()
                 .HasIndex(a => a.Modulo);
+
+            builder.Entity<Categoria>(entity =>
+            {
+                entity.ToTable("Categorias", t =>
+                {
+                    // Check constraint para alinear con [Range(1,999)] del ViewModel
+                    t.HasCheckConstraint("CK_Categorias_Orden_Rango", "[Orden] BETWEEN 1 AND 999");
+                });
+
+                entity.Property(c => c.Tipo).HasMaxLength(20).IsRequired();
+                entity.Property(c => c.Nombre).HasMaxLength(100).IsRequired();
+                entity.HasIndex(c => new { c.Tipo, c.Nombre }).IsUnique();
+                entity.HasIndex(c => new { c.Tipo, c.Orden }).IsUnique();
+                entity.HasIndex(c => new { c.Tipo, c.Activo, c.Orden });
+
+                entity.Property(c => c.Activo).HasDefaultValue(true);
+                entity.Property(c => c.FechaCreacion).HasDefaultValueSql("getdate()");
+                entity.Property<byte[]>("RowVersion").IsRowVersion();
+            });
+            
         }
     }
 }

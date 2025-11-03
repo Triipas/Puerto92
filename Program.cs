@@ -103,4 +103,9 @@ app.MapControllerRoute(
     pattern: "Usuarios",
     defaults: new { controller = "Usuarios", action = "Index" });
 
+app.MapControllerRoute(
+name: "categorias",
+pattern: "Categorias",
+defaults: new { controller = "Categorias", action = "Index" });
+
 app.Run();

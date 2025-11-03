@@ -54,15 +54,18 @@ namespace Puerto92.Services
                 });
             }
 
-            // Configuración - Todos los roles (acción específica para diferenciar de Dashboard)
-            items.Add(new NavigationItemViewModel
+            // === SOLO ADMIN MAESTRO ===
+            if (user.IsInRole("Admin Maestro"))
             {
-                Icon = "fa-gear",
-                Title = "Configuración",
-                Controller = "Home",
-                Action = "Configuracion", // ← Acción específica
-                RequiredRoles = new List<string>()
-            });
+                items.Add(new NavigationItemViewModel
+                {
+                    Icon = "fa-gear",
+                    Title = "Configuración",
+                    Controller = "Categorias", // ← Cambio principal
+                    Action = "Index",
+                    RequiredRoles = new List<string> { "Admin Maestro" }
+                });
+            }
 
             return items;
         }

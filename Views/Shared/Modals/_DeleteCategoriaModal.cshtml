@@ -1,0 +1,89 @@
+@* Partial View: Modal para Eliminar Categoría *@
+
+<div id="deleteCategoriaModal" class="modal-overlay modal-delete" style="display: none;">
+    <div class="modal-container" style="max-width: 550px;">
+        <div class="modal-header">
+            <div>
+                <h2 class="modal-title">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Eliminar Categoría
+                </h2>
+                <p class="modal-subtitle">Esta acción es permanente y no se puede deshacer</p>
+            </div>
+            <button class="modal-close" onclick="closeModal('deleteCategoriaModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom: 1rem; color: #374151; font-weight: 500;">Está por eliminar la categoría:</p>
+            
+            <!-- Información de la Categoría -->
+            <div class="delete-info-box">
+                <div class="delete-info-row">
+                    <span class="delete-info-label">Tipo:</span>
+                    <span id="deleteCategoriaTipo">-</span>
+                </div>
+                <div class="delete-info-row">
+                    <span class="delete-info-label">Nombre:</span>
+                    <span id="deleteCategoriaNombre">-</span>
+                </div>
+                <div class="delete-info-row">
+                    <span class="delete-info-label">Productos:</span>
+                    <span id="deleteCategoriaProductos">0</span>
+                </div>
+            </div>
+
+            <!-- Mensaje de error si tiene productos -->
+            <div id="deleteErrorProductos" style="display: none; background: #FEF2F2; border-left: 3px solid #DC2626; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; color: #DC2626; font-weight: 600; font-size: 14px; margin-bottom: 0.5rem;">
+                    <i class="fa-solid fa-ban"></i>
+                    <span>No se puede eliminar esta categoría</span>
+                </div>
+                <p style="font-size: 13px; color: #991B1B; margin: 0;">
+                    Hay <strong><span id="deleteCantidadProductos">0</span> producto(s)</strong> asignados a esta categoría. 
+                    Primero debes reasignar o eliminar esos productos antes de poder eliminar la categoría.
+                </p>
+            </div>
+
+            <!-- Mensaje de confirmación si no tiene productos -->
+            <div id="deleteConfirmacion" style="display: none;">
+                <div class="delete-warning">
+                    <div class="delete-warning-title">
+                        <i class="fa-solid fa-xmark"></i>
+                        Al eliminar esta categoría:
+                    </div>
+                    <ul class="delete-warning-list">
+                        <li>Se eliminará permanentemente del sistema</li>
+                        <li>Dejará de aparecer en kardex y desplegables</li>
+                        <li>No podrá ser recuperada posteriormente</li>
+                    </ul>
+                </div>
+
+                <div class="delete-note">
+                    <div class="delete-note-title">
+                        <i class="fa-solid fa-info-circle"></i>
+                        Registros de auditoría:
+                    </div>
+                    <ul class="delete-note-list">
+                        <li>La eliminación quedará registrada en los logs del sistema</li>
+                        <li>Se guardará información de quién y cuándo realizó la eliminación</li>
+                    </ul>
+                </div>
+
+                <div style="background: #FEF3C7; border-left: 3px solid #F59E0B; padding: 0.875rem; border-radius: 4px; margin-top: 1rem;">
+                    <p style="font-size: 13px; color: #92400E; margin: 0;">
+                        <strong style="color: #78350F;">Confirma:</strong> ¿Estás seguro de que deseas eliminar esta categoría? Esta acción no se puede revertir.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <form id="deleteCategoriaForm" method="post">
+            <input type="hidden" id="deleteCategoriaId" name="id" />
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeModal('deleteCategoriaModal')">Cancelar</button>
+                <button type="submit" class="btn btn-delete" id="btnConfirmarEliminar" disabled>
+                    <i class="fa-solid fa-trash"></i>
+                    Sí, Eliminar Categoría
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

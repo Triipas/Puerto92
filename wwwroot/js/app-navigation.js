@@ -9,7 +9,7 @@ class AppNavigation {
         this.cache = new Map(); // Caché de contenido cargado
         this.currentUrl = window.location.pathname;
         this.isLoading = false;
-        
+
         this.init();
     }
 
@@ -17,7 +17,7 @@ class AppNavigation {
         this.setupNavigationListeners();
         this.setupHistoryManagement();
         this.setupFormInterception();
-        
+
         // Guardar contenido inicial en caché
         if (this.contentContainer) {
             this.cache.set(this.currentUrl, this.contentContainer.innerHTML);
@@ -33,11 +33,11 @@ class AppNavigation {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const url = link.getAttribute('href');
-                
+
                 // Actualizar estado activo
                 document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
                 link.classList.add('active');
-                
+
                 this.navigateTo(url);
             });
         });
@@ -69,7 +69,7 @@ class AppNavigation {
     setupFormInterception() {
         document.addEventListener('submit', (e) => {
             const form = e.target;
-            
+
             // Solo interceptar formularios con data-ajax-form
             if (form.hasAttribute('data-ajax-form')) {
                 e.preventDefault();
@@ -122,13 +122,13 @@ class AppNavigation {
         }
 
         const html = await response.text();
-        
+
         // Guardar en caché
         this.cache.set(url, html);
-        
+
         // Actualizar contenido
         this.updateContent(html);
-        
+
         // Actualizar historial
         if (addToHistory) {
             this.updateHistory(url);
@@ -150,10 +150,10 @@ class AppNavigation {
 
         setTimeout(() => {
             this.contentContainer.innerHTML = html;
-            
+
             // Recargar scripts de la página
             this.reloadScripts();
-            
+
             // Animación de entrada
             setTimeout(() => {
                 this.contentContainer.style.opacity = '1';
@@ -175,7 +175,7 @@ class AppNavigation {
     reloadScripts() {
         // Buscar scripts en el nuevo contenido
         const scripts = this.contentContainer.querySelectorAll('script');
-        
+
         scripts.forEach(oldScript => {
             const newScript = document.createElement('script');
             Array.from(oldScript.attributes).forEach(attr => {
@@ -194,9 +194,9 @@ class AppNavigation {
      */
     initPageSpecificScripts() {
         const currentPath = window.location.pathname.toLowerCase();
-        
+
         console.log('🔄 Inicializando scripts para:', currentPath);
-        
+
         // Página de Usuarios
         if (currentPath.includes('/usuarios')) {
             if (typeof window.initUsuariosPage === 'function') {
@@ -204,7 +204,7 @@ class AppNavigation {
                 window.initUsuariosPage();
             }
         }
-        
+
         // Página de Locales
         else if (currentPath.includes('/locales')) {
             if (typeof window.initLocalesPage === 'function') {
@@ -212,7 +212,15 @@ class AppNavigation {
                 window.initLocalesPage();
             }
         }
-        
+
+        // Página de Categorías
+        else if (currentPath.includes('/categorias')) {
+            if (typeof window.initCategoriasPage === 'function') {
+                console.log('✅ Inicializando scripts de categorías');
+                window.initCategoriasPage();
+            }
+        }
+
         // Funciones genéricas
         if (typeof setupSearch === 'function') setupSearch();
         if (typeof setupModalEventListeners === 'function') setupModalEventListeners();
@@ -236,7 +244,7 @@ class AppNavigation {
 
             if (response.ok) {
                 const result = await response.json();
-                
+
                 if (result.success) {
                     if (result.redirectUrl) {
                         await this.navigateTo(result.redirectUrl);
@@ -245,7 +253,7 @@ class AppNavigation {
                         this.cache.delete(this.currentUrl);
                         await this.loadContent(this.currentUrl, false);
                     }
-                    
+
                     if (result.message) {
                         this.showNotification(result.message, 'success');
                     }
@@ -266,7 +274,7 @@ class AppNavigation {
      */
     showLoadingState() {
         this.isLoading = true;
-        
+
         // Crear overlay de carga si no existe
         let loader = document.getElementById('page-loader');
         if (!loader) {
@@ -280,7 +288,7 @@ class AppNavigation {
             `;
             document.body.appendChild(loader);
         }
-        
+
         loader.classList.add('active');
     }
 
@@ -305,13 +313,13 @@ class AppNavigation {
             <i class="fa-solid fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
             <span>${message}</span>
         `;
-        
+
         document.body.appendChild(notification);
-        
+
         setTimeout(() => {
             notification.classList.add('show');
         }, 100);
-        
+
         setTimeout(() => {
             notification.classList.remove('show');
             setTimeout(() => notification.remove(), 300);
