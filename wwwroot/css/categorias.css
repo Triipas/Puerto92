@@ -1,0 +1,210 @@
+/* ========================================
+   CONFIGURACIÓN DE CATEGORÍAS - DISEÑO MEJORADO
+   ======================================== */
+
+/* === TABS DE TIPOS === */
+.categoria-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #E5E7EB;
+    flex-wrap: wrap;
+}
+
+.categoria-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 1rem 1.5rem;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #64748B;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.categoria-tab:hover {
+    color: #3B82F6;
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.categoria-tab.active {
+    color: #3B82F6;
+    border-bottom-color: #3B82F6;
+    font-weight: 600;
+}
+
+.categoria-tab i {
+    font-size: 18px;
+}
+
+/* === TABLA DE CATEGORÍAS === */
+.categoria-table {
+    margin-top: 1.5rem;
+}
+
+.categoria-table thead th {
+    background: #F8FAFC;
+    padding: 1rem;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #E5E7EB;
+}
+
+.categoria-table tbody td {
+    padding: 1.25rem 1rem;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: middle;
+}
+
+.categoria-table tbody tr {
+    transition: all 0.2s ease;
+    cursor: move;
+}
+
+.categoria-table tbody tr:hover {
+    background: #F8FAFC;
+}
+
+.categoria-table tbody tr.sortable-ghost {
+    opacity: 0.4;
+    background: #DBEAFE;
+}
+
+.categoria-table tbody tr.sortable-chosen {
+    background: #EFF6FF;
+}
+
+/* === CELDA DE ORDEN === */
+.orden-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.drag-handle {
+    color: #CBD5E1;
+    cursor: grab;
+    font-size: 16px;
+    transition: all 0.2s ease;
+}
+
+.drag-handle:hover {
+    color: #3B82F6;
+    transform: scale(1.1);
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.orden-number {
+    font-weight: 700;
+    color: #3B82F6;
+    background: rgba(59, 130, 246, 0.1);
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    min-width: 36px;
+    text-align: center;
+    font-size: 13px;
+}
+
+/* === BOTONES DE ACCIÓN === */
+.btn-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    transition: all 0.2s ease;
+    background: transparent;
+    border: 1.5px solid;
+}
+
+.btn-icon-edit {
+    border-color: #3B82F6;
+    color: #3B82F6;
+}
+
+.btn-icon-edit:hover {
+    background: rgba(59, 130, 246, 0.1);
+    transform: translateY(-2px);
+}
+
+.btn-icon-delete {
+    border-color: #EF4444;
+    color: #EF4444;
+}
+
+.btn-icon-delete:hover {
+    background: rgba(239, 68, 68, 0.1);
+    transform: translateY(-2px);
+}
+
+/* === ESTADO VACÍO === */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-state i {
+    font-size: 64px;
+    color: #CBD5E1;
+    margin-bottom: 1.5rem;
+}
+
+.empty-state h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    font-size: 14px;
+    color: #94A3B8;
+    margin-bottom: 2rem;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .categoria-tabs {
+        flex-direction: column;
+    }
+
+    .categoria-tab {
+        border-bottom: 1px solid #E5E7EB;
+        border-left: 3px solid transparent;
+        justify-content: space-between;
+    }
+
+    .categoria-tab.active {
+        border-bottom-color: #E5E7EB;
+        border-left-color: #3B82F6;
+    }
+
+    .orden-cell {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .categoria-table {
+        font-size: 13px;
+    }
+
+    .empty-state {
+        padding: 2rem 1rem;
+    }
+}

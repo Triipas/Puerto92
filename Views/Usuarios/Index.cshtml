@@ -4,6 +4,7 @@
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
 }
 
+<!-- Page Header -->
 <div class="page-header">
     <h1 class="page-title">Gestión de Usuarios</h1>
     <p class="page-subtitle">Crear, editar y administrar usuarios del sistema</p>
@@ -116,7 +117,7 @@
                                 {
                                     <span>@(usuario.UserName.ToLower())@@puerto92.com</span>
                                 }
-
+                            </td>
                             <td style="text-align: center;">
                                 <div style="display: flex; gap: 0.5rem; justify-content: center;">
                                     <!-- Botón Editar - Azul Outline -->
@@ -133,7 +134,7 @@
                                         <i class="fa-solid fa-rotate-right"></i>
                                     </button>
                                     
-                                    @* Solo mostrar botón de eliminar si NO es Admin Maestro *@
+                                    @* Solo mostrar eliminar si NO es Admin Maestro *@
                                     @if (usuario.NombreRol != "Admin Maestro")
                                     {
                                         <!-- Botón Desactivar - Rojo Outline -->
@@ -162,7 +163,7 @@
     </div>
 </div>
 
-@* Cargar Modales usando Partial Views *@
+@* Cargar Modales usando rutas originales *@
 <partial name="Modals/_CreateUsuarioModal" />
 <partial name="Modals/_EditUsuarioModal" />
 <partial name="Modals/_ResetPasswordUsuarioModal" />

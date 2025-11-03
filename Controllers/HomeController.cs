@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace Puerto92.Controllers
 {
-    [Authorize]  
+    [Authorize]
     public class HomeController : BaseController
     {
         private readonly ILogger<HomeController> _logger;
@@ -23,6 +23,11 @@ namespace Puerto92.Controllers
 
         public IActionResult Privacy()
         {
+            if (User.IsInRole("Admin Maestro"))
+            {
+                return RedirectToAction("Index", "Categorias");
+            }
+
             return View();
         }
 

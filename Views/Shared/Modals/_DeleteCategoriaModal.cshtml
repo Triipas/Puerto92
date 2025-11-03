@@ -1,0 +1,85 @@
+@* Modal para Eliminar Categoría *@
+
+<div id="deleteCategoriaModal" class="modal-overlay modal-delete" style="display: none;">
+    <div class="modal-container" style="max-width: 520px;">
+        <div class="modal-header" style="background: #FEF2F2; border-bottom: 1px solid #FEE2E2;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="background: rgba(239, 68, 68, 0.1); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-triangle-exclamation" style="color: #EF4444; font-size: 22px;"></i>
+                </div>
+                <div>
+                    <h2 class="modal-title" style="color: #DC2626;">Eliminar Categoría</h2>
+                    <p class="modal-subtitle" style="color: #991B1B;">Esta acción es permanente y no se puede deshacer</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeModal('deleteCategoriaModal')" style="color: #DC2626;">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom: 1rem; color: #374151; font-size: 14px; font-weight: 500;">Está por eliminar la categoría:</p>
+            
+            <!-- Información de la Categoría -->
+            <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
+                <div style="margin-bottom: 0.625rem;">
+                    <span style="font-weight: 600; color: #6B7280; font-size: 13px;">Tipo:</span>
+                    <span id="deleteCategoriaTipo" style="color: #1F2937; font-size: 13px; margin-left: 0.5rem;">-</span>
+                </div>
+                <div style="margin-bottom: 0.625rem;">
+                    <span style="font-weight: 600; color: #6B7280; font-size: 13px;">Nombre:</span>
+                    <span id="deleteCategoriaNombre" style="color: #1F2937; font-size: 13px; margin-left: 0.5rem;">-</span>
+                </div>
+                <div>
+                    <span style="font-weight: 600; color: #6B7280; font-size: 13px;">Orden:</span>
+                    <span id="deleteCategoriaOrden" style="color: #1F2937; font-size: 13px; margin-left: 0.5rem;">-</span>
+                </div>
+            </div>
+
+            <!-- Mensaje de error si tiene productos -->
+            <div id="deleteErrorProductos" style="display: none; background: #FEF2F2; border-left: 3px solid #DC2626; padding: 1rem; border-radius: 6px; margin-bottom: 1.25rem;">
+                <div style="display: flex; align-items: start; gap: 0.75rem;">
+                    <i class="fa-solid fa-ban" style="color: #DC2626; margin-top: 2px;"></i>
+                    <div style="font-size: 13px; color: #991B1B;">
+                        <strong style="display: block; margin-bottom: 0.375rem;">No se puede eliminar esta categoría</strong>
+                        <p style="margin: 0; font-size: 12px; line-height: 1.5;">
+                            Hay <strong><span id="deleteCantidadProductos">0</span> producto(s)</strong> asignados a esta categoría. 
+                            Primero debes reasignar o eliminar esos productos antes de poder eliminar la categoría.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mensaje de confirmación si no tiene productos -->
+            <div id="deleteConfirmacion" style="display: block;">
+                <div style="background: #FEF2F2; border-left: 3px solid #DC2626; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+                    <div style="font-size: 13px; color: #991B1B;">
+                        <strong style="display: block; margin-bottom: 0.5rem;">Confirme la eliminación:</strong>
+                        <p style="margin: 0; font-size: 12px; line-height: 1.5;">
+                            Esta categoría no tiene productos asignados y puede ser eliminada de forma segura. Una vez eliminada, no aparecerá en los desplegables del sistema.
+                        </p>
+                    </div>
+                </div>
+
+                <div style="background: #DBEAFE; border-left: 3px solid #3B82F6; padding: 1rem; border-radius: 6px;">
+                    <div style="font-size: 13px; color: #1E40AF;">
+                        <strong style="display: block; margin-bottom: 0.5rem;">
+                            <i class="fa-solid fa-info-circle"></i>
+                            Registro de auditoría:
+                        </strong>
+                        <p style="margin: 0; font-size: 12px; line-height: 1.5;">
+                            Esta acción quedará registrada en los logs del sistema con fecha, hora y usuario que la realizó.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <form id="deleteCategoriaForm" method="post">
+            <input type="hidden" id="deleteCategoriaId" name="id" />
+            <div class="modal-footer" style="border-top: 1px solid #E5E7EB;">
+                <button type="button" class="btn btn-cancel" onclick="closeModal('deleteCategoriaModal')">Cancelar</button>
+                <button type="submit" class="btn btn-delete" id="btnConfirmarEliminar">
+                    <i class="fa-solid fa-trash"></i>
+                    Sí, Eliminar Categoría
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

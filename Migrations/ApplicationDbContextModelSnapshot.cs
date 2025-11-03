@@ -208,6 +208,60 @@ namespace Puerto92.Migrations
                     b.ToTable("AuditLogs");
                 });
 
+            modelBuilder.Entity("Puerto92.Models.Categoria", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("Activo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("CreadoPor")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("getdate()");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Tipo", "Nombre")
+                        .IsUnique();
+
+                    b.HasIndex("Tipo", "Orden")
+                        .IsUnique();
+
+                    b.HasIndex("Tipo", "Activo", "Orden");
+
+                    b.ToTable("Categorias", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Categorias_Orden_Rango", "[Orden] BETWEEN 1 AND 999");
+                        });
+                });
+
             modelBuilder.Entity("Puerto92.Models.Local", b =>
                 {
                     b.Property<int>("Id")

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Puerto92.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialDB : Migration
+    public partial class AgregarCategorias : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -46,6 +46,26 @@ namespace Puerto92.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AuditLogs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Categorias",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Tipo = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Nombre = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Orden = table.Column<int>(type: "INTEGER", nullable: false),
+                    Activo = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: true),
+                    FechaCreacion = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "getdate()"),
+                    CreadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "BLOB", rowVersion: true, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Categorias", x => x.Id);
+                    table.CheckConstraint("CK_Categorias_Orden_Rango", "[Orden] BETWEEN 1 AND 999");
                 });
 
             migrationBuilder.CreateTable(
@@ -275,6 +295,23 @@ namespace Puerto92.Migrations
                 column: "UsuarioAccion");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Categorias_Tipo_Activo_Orden",
+                table: "Categorias",
+                columns: new[] { "Tipo", "Activo", "Orden" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Categorias_Tipo_Nombre",
+                table: "Categorias",
+                columns: new[] { "Tipo", "Nombre" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Categorias_Tipo_Orden",
+                table: "Categorias",
+                columns: new[] { "Tipo", "Orden" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Locales_Codigo",
                 table: "Locales",
                 column: "Codigo",
@@ -301,6 +338,9 @@ namespace Puerto92.Migrations
 
             migrationBuilder.DropTable(
                 name: "AuditLogs");
+
+            migrationBuilder.DropTable(
+                name: "Categorias");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
