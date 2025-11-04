@@ -83,5 +83,15 @@ namespace Puerto92.Services
         /// Registrar error del sistema
         /// </summary>
         Task RegistrarErrorSistemaAsync(string error, string detalles);
+
+        // Nuevo método específico para utensilios
+        Task RegistrarCreacionUtensilioAsync(Utensilio utensilio);
+        Task RegistrarEdicionUtensilioAsync(Utensilio utensilio);
+        Task RegistrarDesactivacionUtensilioAsync(Utensilio utensilio);
+
+Task RegistrarCreacionProductoAsync(Producto producto);
+Task RegistrarEdicionProductoAsync(Producto producto);
+Task RegistrarDesactivacionProductoAsync(Producto producto);
+
     }
 }

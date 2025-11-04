@@ -270,6 +270,81 @@ namespace Puerto92.Services
                 nivelSeveridad: NivelSeveridad.Error);
         }
 
+        public async Task RegistrarEdicionUtensilioAsync(Utensilio utensilio)
+{
+    var cambios = JsonSerializer.Serialize(utensilio); // o solo las propiedades que cambian
+    await RegistrarAccionAsync(
+        accion: "EditarUtensilio",
+        descripcion: $"Se editó el utensilio: {utensilio.Nombre} ({utensilio.Codigo})",
+        datosAdicionales: cambios,
+        modulo: "Utensilios",
+        resultado: "Exitoso",
+        nivelSeveridad: "Info"
+    );
+}
+
+public async Task RegistrarCreacionUtensilioAsync(Utensilio utensilio)
+{
+    await RegistrarAccionAsync(
+        accion: "Creación Utensilio",
+        descripcion: $"Se creó el utensilio '{utensilio.Nombre}' (Código: {utensilio.Codigo}, Tipo: {utensilio.Tipo})",
+        datosAdicionales: JsonSerializer.Serialize(utensilio),
+        modulo: "Utensilios",
+        resultado: "Exitoso",
+        nivelSeveridad: "Info");
+}
+
+public async Task RegistrarDesactivacionUtensilioAsync(Utensilio utensilio)
+{
+    await RegistrarAccionAsync(
+        accion: "Desactivación Utensilio",
+        descripcion: $"Se desactivó el utensilio '{utensilio.Nombre}' (Código: {utensilio.Codigo}, Tipo: {utensilio.Tipo})",
+        datosAdicionales: JsonSerializer.Serialize(utensilio),
+        modulo: "Utensilios",
+        resultado: "Exitoso",
+        nivelSeveridad: "Warning");
+}
+
+
+public async Task RegistrarCreacionProductoAsync(Producto producto)
+{
+    await RegistrarAccionAsync(
+        accion: "Creación Producto",
+        descripcion: $"Se creó el producto '{producto.Nombre}' (Código: {producto.Codigo}, Categoría: {producto.Categoria})",
+        datosAdicionales: JsonSerializer.Serialize(producto),
+        modulo: "Productos",
+        resultado: "Exitoso",
+        nivelSeveridad: "Info");
+}
+
+// Registrar edición de producto
+public async Task RegistrarEdicionProductoAsync(Producto producto)
+{
+    var cambios = JsonSerializer.Serialize(producto); // Puedes filtrar solo lo que cambia si quieres
+    await RegistrarAccionAsync(
+        accion: "Edición Producto",
+        descripcion: $"Se editó el producto '{producto.Nombre}' (Código: {producto.Codigo}, Categoría: {producto.Categoria})",
+        datosAdicionales: cambios,
+        modulo: "Productos",
+        resultado: "Exitoso",
+        nivelSeveridad: "Info");
+}
+
+// Registrar desactivación de producto
+public async Task RegistrarDesactivacionProductoAsync(Producto producto)
+{
+    await RegistrarAccionAsync(
+        accion: "Desactivación Producto",
+        descripcion: $"Se desactivó el producto '{producto.Nombre}' (Código: {producto.Codigo}, Categoría: {producto.Categoria})",
+        datosAdicionales: JsonSerializer.Serialize(producto),
+        modulo: "Productos",
+        resultado: "Exitoso",
+        nivelSeveridad: "Warning");
+}
+
+
+
+
         /// <summary>
         /// Obtener la dirección IP del cliente
         /// </summary>
@@ -292,4 +367,5 @@ namespace Puerto92.Services
             return remoteIp ?? "0.0.0.0";
         }
     }
+    
 }

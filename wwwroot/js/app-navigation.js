@@ -206,12 +206,35 @@ class AppNavigation {
         }
         
         // Página de Locales
-        else if (currentPath.includes('/locales')) {
+        if (currentPath.includes('/locales')) {
             if (typeof window.initLocalesPage === 'function') {
                 console.log('✅ Inicializando scripts de locales');
                 window.initLocalesPage();
             }
         }
+        // 🆕 Página de Utensilios (Contador)
+if (currentPath.includes('/utensilios')) {
+    if (typeof window.initCatalogoUtensilios === 'function') {
+        console.log('✅ Inicializando scripts de catálogo de utensilios');
+        window.initCatalogoUtensilios();
+    }
+}
+
+// 🆕 Página de Productos (Supervisora de Calidad)
+ if (currentPath.includes('/productos')) {
+    if (typeof window.initCatalogoProductos === 'function') {
+        console.log('✅ Inicializando scripts de catálogo de productos');
+        window.initCatalogoProductos();
+    }
+}
+
+// 🆕 Página de Proveedores (Supervisora de Calidad)
+if (currentPath.includes('/proveedores')) {
+    if (typeof window.initGestionProveedores === 'function') {
+        console.log('✅ Inicializando scripts de gestión de proveedores');
+        window.initGestionProveedores();
+    }
+}
         
         // Funciones genéricas
         if (typeof setupSearch === 'function') setupSearch();

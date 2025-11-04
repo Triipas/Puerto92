@@ -1,0 +1,36 @@
+@* Modales/Proveedores/_EditProveedorModal.cshtml *@
+<div id="editProveedorModal" class="modal-overlay">
+    <div class="modal-content">
+        <h2>Editar Proveedor</h2>
+        <form id="editProveedorForm" enctype="multipart/form-data">
+            <input type="hidden" id="editId" name="Id">
+
+            <label>RUC</label>
+            <input type="text" id="editRuc" name="Ruc">
+            <span class="feedback"></span>
+
+            <label>Nombre</label>
+            <input type="text" id="editNombre" name="Nombre" required>
+
+            <label>Categoría</label>
+            <select id="editCategoria" name="Categoria">
+                <option value="">Seleccione...</option>
+            </select>
+
+            <label>Teléfono</label>
+            <input type="text" id="editTelefono" name="Telefono">
+
+            <label>Email</label>
+            <input type="email" id="editEmail" name="Email">
+
+            <label>Persona de Contacto</label>
+            <input type="text" id="editPersonaContacto" name="PersonaContacto">
+
+            <label>Dirección</label>
+            <input type="text" id="editDireccion" name="Direccion">
+
+            <button type="submit"><i class="fa-solid fa-save"></i> Guardar Cambios</button>
+            <button type="button" onclick="closeModal('editProveedorModal')">Cancelar</button>
+        </form>
+    </div>
+</div>

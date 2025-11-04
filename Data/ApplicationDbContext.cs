@@ -13,6 +13,9 @@ namespace Puerto92.Data
 
         public DbSet<Local> Locales { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<Utensilio> Utensilios { get; set; }
+        public DbSet<Producto> Productos { get; set; } = null!;
+          public DbSet<Proveedor> Proveedores { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

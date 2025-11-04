@@ -53,6 +53,42 @@ namespace Puerto92.Services
                     RequiredRoles = new List<string> { "Admin Maestro" }
                 });
             }
+            // === SOLO CONTADOR ===
+            if (user.IsInRole("Contador"))
+            {
+                items.Add(new NavigationItemViewModel
+                {
+                    Icon = "fa-utensils",
+                    Title = "Utensilios",
+                    Controller = "Utensilios",
+                    Action = "Index",
+                    RequiredRoles = new List<string> { "Contador" }
+                });
+            }
+// === SOLO SUPERVISORA DE CALIDAD ===
+if (user.IsInRole("Supervisora de Calidad"))
+{
+    items.Add(new NavigationItemViewModel
+    {
+        Icon = "fa-box",           // Icono de productos
+        Title = "Catálogo de Productos",
+        Controller = "Productos",
+        Action = "Index",
+        RequiredRoles = new List<string> { "Supervisora de Calidad" }
+    });
+}
+
+if (user.IsInRole("Supervisora de Calidad"))
+{
+    items.Add(new NavigationItemViewModel
+    {
+        Icon = "fa-truck",        // Icono de proveedores
+        Title = "Gestión de Proveedores",
+        Controller = "Proveedores",
+        Action = "Index",
+        RequiredRoles = new List<string> { "Supervisora de Calidad" }
+    });
+}
 
             // Configuración - Todos los roles (acción específica para diferenciar de Dashboard)
             items.Add(new NavigationItemViewModel

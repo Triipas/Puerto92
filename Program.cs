@@ -102,5 +102,10 @@ app.MapControllerRoute(
     name: "usuarios",
     pattern: "Usuarios",
     defaults: new { controller = "Usuarios", action = "Index" });
+    
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
 
 app.Run();

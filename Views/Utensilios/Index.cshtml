@@ -1,0 +1,90 @@
+@model IEnumerable<Puerto92.ViewModels.UtensilioViewModel>
+@{
+    ViewData["Title"] = "Catálogo de Utensilios";
+    // 🔥 Condicionar el layout según si es AJAX o no
+    Layout = ViewData["IsAjax"] != null && (bool)ViewData["IsAjax"] 
+        ? null 
+        : "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="container">
+
+    <!-- ==================== Estadísticas ==================== -->
+    <div class="stats-cards" style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+        <div class="card" style="flex:1; padding:1rem; background:#f3f4f6; border-radius:0.5rem; text-align:center;">
+            <h3>Total Activos</h3>
+            <p id="totalActivos" style="font-size:1.5rem;">0</p>
+        </div>
+        <div class="card" style="flex:1; padding:1rem; background:#f3f4f6; border-radius:0.5rem; text-align:center;">
+            <h3>Utensilios Cocina</h3>
+            <p id="utensiliosCocina" style="font-size:1.5rem;">0</p>
+        </div>
+        <div class="card" style="flex:1; padding:1rem; background:#f3f4f6; border-radius:0.5rem; text-align:center;">
+            <h3>Utensilios Mozos</h3>
+            <p id="utensiliosMozos" style="font-size:1.5rem;">0</p>
+        </div>
+        <div class="card" style="flex:1; padding:1rem; background:#f3f4f6; border-radius:0.5rem; text-align:center;">
+            <h3>Vajilla</h3>
+            <p id="vajilla" style="font-size:1.5rem;">0</p>
+        </div>
+    </div>
+
+    <!-- ==================== Filtros y búsqueda ==================== -->
+    <div style="display:flex; justify-content: space-between; margin-bottom:1rem;">
+        <div class="category-tabs" style="display:flex; gap:0.5rem;">
+            <button class="tab active" data-category="todos">Todos</button>
+            <button class="tab" data-category="cocina">Cocina</button>
+            <button class="tab" data-category="mozos">Mozos</button>
+            <button class="tab" data-category="vajilla">Vajilla</button>
+        </div>
+        <div>
+            <input type="text" id="searchInput" placeholder="Buscar utensilio..." style="padding:0.5rem; width:200px;">
+        </div>
+    </div>
+
+    <!-- ==================== Botones ==================== -->
+    <div style="margin-bottom:1rem; display:flex; gap:0.5rem;">
+        <button onclick="openCreateModal()" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> Nuevo Utensilio
+        </button>
+        <button onclick="openBulkUploadModal()" class="btn btn-secondary">
+            <i class="fa-solid fa-upload"></i> Carga Masiva
+        </button>
+        <button onclick="exportarDatos()" class="btn btn-success">
+            <i class="fa-solid fa-file-csv"></i> Exportar CSV
+        </button>
+        <button onclick="descargarPlantilla()" class="btn btn-info">
+            <i class="fa-solid fa-file-arrow-down"></i> Descargar Plantilla
+        </button>
+    </div>
+
+    <!-- ==================== Tabla de utensilios ==================== -->
+    <div class="table-responsive">
+        <table class="table" id="utensiliosTable" style="width:100%; border-collapse:collapse;">
+            <thead style="background:#e5e7eb;">
+                <tr>
+                    <th>Código</th>
+                    <th>Nombre / Descripción</th>
+                    <th>Unidad</th>
+                    <th>Precio</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Filas generadas por JS -->
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- ==================== Partial Views / Modales ==================== -->
+<partial name="Modals/_CreateUtensilioModal" />
+<partial name="Modals/_EditUtensilioModal" />
+<partial name="Modals/_DeactivateUtensilioModal" />
+<partial name="Modals/_BulkUploadUtensilioModal" />
+
+@section Scripts {
+    <script src="~/js/contador-modals.js" asp-append-version="true"></script>
+}

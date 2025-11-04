@@ -1,0 +1,14 @@
+@* Modales/Proveedores/_DeactivateProveedorModal.cshtml *@
+<div id="deactivateProveedorModal" class="modal-overlay">
+    <div class="modal-content">
+        <h2>Desactivar Proveedor</h2>
+        <form id="deactivateProveedorForm">
+            <input type="hidden" id="deactivateId" name="Id">
+
+            <p>¿Desea desactivar al proveedor <strong id="deactivateNombre"></strong> (RUC: <span id="deactivateRuc"></span>) de la categoría <span id="deactivateCategoria"></span>?</p>
+
+            <button type="submit"><i class="fa-solid fa-times-circle"></i> Desactivar Proveedor</button>
+            <button type="button" onclick="closeModal('deactivateProveedorModal')">Cancelar</button>
+        </form>
+    </div>
+</div>

@@ -105,6 +105,7 @@ async function cargarRolesYLocales() {
         locales = data.locales || [];
 
         console.log(`✅ Cargados ${roles.length} roles y ${locales.length} locales`);
+        console.log('📦 Locales recibidos:', locales);
 
         // Encontrar el local corporativo
         const localCorp = locales.find(l => l.text.toLowerCase().includes('corporativo'));
@@ -264,6 +265,15 @@ function handleRolChange(rolSelectId, localSelectId) {
         localSelect.style.color = '#6B7280';
         localSelect.style.cursor = 'not-allowed';
         addCorporativeMessage(localSelectId);
+         let hiddenLocal = document.getElementById(`${localSelectId}_hidden`);
+    if (!hiddenLocal) {
+        hiddenLocal = document.createElement('input');
+        hiddenLocal.type = 'hidden';
+        hiddenLocal.name = 'LocalId';
+        hiddenLocal.id = `${localSelectId}_hidden`;
+        localSelect.parentNode.appendChild(hiddenLocal);
+    }
+    hiddenLocal.value = localCorporativoId;
     } else {
         localSelect.disabled = false;
         localSelect.style.background = '';
@@ -277,6 +287,9 @@ function handleRolChange(rolSelectId, localSelectId) {
         }
         
         removeCorporativeMessage(localSelectId);
+           const oldHidden = document.getElementById(`${localSelectId}_hidden`);
+    if (oldHidden) oldHidden.remove();
+        
     }
 }
 
@@ -542,6 +555,11 @@ function setupCreateFormSubmit() {
         submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creando...';
 
         try {
+
+            console.log('🧾 Datos que se enviarán al backend:');
+for (let [key, value] of formData.entries()) {
+    console.log(`   ${key}: ${value}`);
+}
             const response = await fetch('/Usuarios/CreateAjax', {
                 method: 'POST',
                 body: formData

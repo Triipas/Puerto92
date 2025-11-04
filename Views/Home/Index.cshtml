@@ -3,6 +3,16 @@
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
 }
 
+<p>Roles del usuario:</p>
+<ul>
+@foreach (var claim in User.Claims)
+{
+    <li>@claim.Type : @claim.Value</li>
+}
+</ul>
+
+<p>Es contador? @User.IsInRole("Contador")</p>
+
 <div class="page-header">
     <h1 class="page-title">Dashboard Principal</h1>
     <p class="page-subtitle">Bienvenido al sistema de gestión Puerto 92</p>
@@ -74,6 +84,10 @@
                 <i class="fa-solid fa-gear"></i>
                 Configuración
             </a>
+ <a asp-controller="Utensilios" asp-action="Index" class="btn btn-primary" style="justify-content: center;">
+                <i class="fa-solid fa-gear"></i>
+                Utensilios
+            </a>
         </div>
     </div>
 </div>
@@ -95,10 +109,19 @@
             {
                 <span class="badge badge-success">Administrador Local</span>
             }
+            else if (User.IsInRole("Contador"))
+            {
+                <span class="badge badge-success">Contador</span>
+            }
+            else if (User.IsInRole("Supervisora de Calidad"))
+            {
+                <span class="badge badge-success">Supervisora de Calidad</span>
+            }
             else
             {
                 <span class="badge badge-danger">Sin rol asignado</span>
             }
+            
         </p>
     </div>
 </div>

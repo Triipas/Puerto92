@@ -1,0 +1,34 @@
+@* Modals/_CreateProveedorModal.cshtml *@
+<div id="createProveedorModal" class="modal-overlay">
+    <div class="modal-content">
+        <h2>Agregar Proveedor</h2>
+        <form id="createProveedorForm" enctype="multipart/form-data">
+            <label>RUC</label>
+            <input type="text" id="createProveedorRuc" name="Ruc">
+            <span class="feedback"></span>
+
+            <label>Nombre</label>
+            <input type="text" id="createProveedorNombre" name="Nombre" required>
+
+            <label>Categoría</label>
+            <select id="createProveedorCategoria" name="Categoria">
+                <option value="">Seleccione...</option>
+            </select>
+
+            <label>Teléfono</label>
+            <input type="text" id="createProveedorTelefono" name="Telefono">
+
+            <label>Email</label>
+            <input type="email" id="createProveedorEmail" name="Email">
+
+            <label>Persona de Contacto</label>
+            <input type="text" id="createProveedorPersonaContacto" name="PersonaContacto">
+
+            <label>Dirección</label>
+            <input type="text" id="createProveedorDireccion" name="Direccion">
+
+            <button type="submit"><i class="fa-solid fa-save"></i> Crear Proveedor</button>
+            <button type="button" onclick="closeModal('createProveedorModal')">Cancelar</button>
+        </form>
+    </div>
+</div>

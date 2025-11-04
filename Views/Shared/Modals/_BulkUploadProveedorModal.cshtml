@@ -1,0 +1,13 @@
+@* Modales/Proveedores/_BulkUploadProveedorModal.cshtml *@
+<div id="bulkUploadModal" class="modal-overlay">
+    <div class="modal-content">
+        <h2>Subida Masiva de Proveedores</h2>
+        <form id="bulkUploadForm" enctype="multipart/form-data">
+            <label>Archivo CSV</label>
+            <input type="file" name="file" accept=".csv" required>
+
+            <button type="submit"><i class="fa-solid fa-upload"></i> Subir</button>
+            <button type="button" onclick="closeModal('bulkUploadModal')">Cancelar</button>
+        </form>
+    </div>
+</div>

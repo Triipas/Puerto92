@@ -1,0 +1,71 @@
+@model IEnumerable<Puerto92.ViewModels.ProveedoresViewModel>
+@{
+    ViewBag.Title = "Gestión de Proveedores";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml"; // tu layout principal
+}
+
+
+@section Scripts {
+    <script src="~/js/proveedores-modals.js"></script>
+}
+<div class="page-header">
+    <h1>Gestión de Proveedores</h1>
+</div>
+
+<!-- ================= Estadísticas ================= -->
+<div class="estadisticas-grid">
+    <div class="card">
+        <h3>Total de Proveedores</h3>
+        <p id="totalProveedores">0</p>
+    </div>
+    <div class="card">
+        <h3>Proveedores Activos</h3>
+        <p id="proveedoresActivos">0</p>
+    </div>
+    <div class="card">
+        <h3>Proveedores Inactivos</h3>
+        <p id="proveedoresInactivos">0</p>
+    </div>
+</div>
+
+<!-- ================= Filtros ================= -->
+<div class="filtros">
+    <input type="text" id="searchInput" placeholder="Buscar proveedores...">
+    
+    <select id="categoryFilter">
+        <option value="todas">Todas las categorías</option>
+        @* Las demás categorías se llenan con JS *@
+    </select>
+    <script src="~/js/proveedores-modals.js"></script>
+    <button onclick="openCreateProveedorModal()" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i> Nuevo Proveedor
+</button>
+    
+    <button onclick="exportarDatos()" class="btn btn-secondary">
+        <i class="fa-solid fa-file-csv"></i> Exportar CSV
+    </button>
+</div>
+
+<!-- ================= Tabla ================= -->
+<table id="proveedoresTable" class="table">
+    <thead>
+        <tr>
+            <th>RUC</th>
+            <th>Nombre / Contacto</th>
+            <th>Categoría</th>
+            <th>Teléfono</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Se llena dinámicamente con JS -->
+    </tbody>
+</table>
+
+
+<partial name="Modals/_CreateProveedorModal" />
+<partial name="Modals/_EditProveedorModal" />
+<partial name="Modals/_DeactivateProveedorModal" />
+<partial name="Modals/_BulkUploadProveedorModal" />
+
