@@ -1,7 +1,11 @@
 /**
  * Gestión de Modales de Proveedores
  * Puerto 92 - Sistema de Gestión
+ * CON CATEGORÍAS DINÁMICAS DESDE EL SISTEMA
  */
+
+// Variables globales
+let categoriasProveedores = [];
 
 // ==========================================
 // INICIALIZACIÓN GLOBAL
@@ -13,11 +17,19 @@
 function initProveedoresPage() {
     console.log('🔄 Inicializando página de proveedores...');
     
-    setupSearch();
-    setupModalEventListeners();
-    setupRUCValidation();
+    // Resetear categorías
+    categoriasProveedores = [];
     
-    console.log('✅ Página de proveedores inicializada correctamente');
+    // Cargar categorías primero
+    cargarCategoriasProveedores().then(() => {
+        setupSearch();
+        setupModalEventListeners();
+        setupRUCValidation();
+        console.log('✅ Página de proveedores inicializada correctamente');
+    }).catch(error => {
+        console.error('❌ Error al inicializar página:', error);
+        showNotification('Error al cargar las categorías', 'error');
+    });
 }
 
 // Ejecutar al cargar el documento
@@ -25,6 +37,128 @@ document.addEventListener('DOMContentLoaded', initProveedoresPage);
 
 // Exponer función para reinicializar después de navegación SPA
 window.initProveedoresPage = initProveedoresPage;
+
+// ==========================================
+// CARGA DE DATOS
+// ==========================================
+
+/**
+ * Cargar TODAS las categorías del sistema (Bebidas, Cocina, Utensilios)
+ */
+async function cargarCategoriasProveedores() {
+    console.log('📥 Cargando categorías para proveedores...');
+    
+    try {
+        const response = await fetch('/Proveedores/GetCategorias');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        console.log('📦 Respuesta del servidor:', data);
+        
+        if (!Array.isArray(data)) {
+            throw new Error('La respuesta no es un array');
+        }
+        
+        categoriasProveedores = data;
+        console.log(`✅ Cargadas ${categoriasProveedores.length} categorías para proveedores:`, categoriasProveedores);
+        
+        // Llenar selects de Crear y Editar
+        llenarSelectCategoriasProveedores('createProveedorCategoria');
+        llenarSelectCategoriasProveedores('editProveedorCategoria');
+        
+        return categoriasProveedores;
+
+    } catch (error) {
+        console.error('❌ Error al cargar categorías:', error);
+        categoriasProveedores = [];
+        
+        // Actualizar selects con mensaje de error
+        ['createProveedorCategoria', 'editProveedorCategoria'].forEach(selectId => {
+            const select = document.getElementById(selectId);
+            if (select) {
+                select.innerHTML = '<option value="">Error al cargar categorías</option>';
+            }
+        });
+        
+        throw error;
+    }
+}
+
+/**
+ * Llenar select de categorías con agrupación por tipo
+ */
+function llenarSelectCategoriasProveedores(selectId) {
+    const select = document.getElementById(selectId);
+    
+    if (!select) {
+        console.warn(`⚠️ Select ${selectId} no encontrado en el DOM`);
+        return;
+    }
+    
+    console.log(`📝 Llenando select ${selectId} con ${categoriasProveedores.length} categorías`);
+    
+    // Limpiar todas las opciones
+    select.innerHTML = '';
+    
+    // Si no hay categorías
+    if (categoriasProveedores.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'No hay categorías disponibles';
+        option.disabled = true;
+        option.selected = true;
+        select.appendChild(option);
+        console.warn('⚠️ No hay categorías para mostrar');
+        return;
+    }
+    
+    // Agregar opción placeholder
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Seleccione una categoría...';
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    select.appendChild(placeholder);
+    
+    // Agrupar categorías por tipo
+    const categoriasPorTipo = {
+        'Bebidas': [],
+        'Cocina': [],
+        'Utensilios': []
+    };
+    
+    categoriasProveedores.forEach(cat => {
+        if (categoriasPorTipo[cat.tipo]) {
+            categoriasPorTipo[cat.tipo].push(cat);
+        }
+    });
+    
+    // Crear optgroups
+    ['Bebidas', 'Cocina', 'Utensilios'].forEach(tipo => {
+        const categoriasTipo = categoriasPorTipo[tipo];
+        
+        if (categoriasTipo.length > 0) {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = tipo;
+            
+            categoriasTipo.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.value; // Nombre de la categoría
+                option.textContent = cat.text; // Nombre de la categoría
+                optgroup.appendChild(option);
+                console.log(`  ✓ ${tipo} > ${cat.text}`);
+            });
+            
+            select.appendChild(optgroup);
+        }
+    });
+    
+    console.log(`✅ Select ${selectId} llenado correctamente con ${categoriasProveedores.length} categorías agrupadas por tipo`);
+}
 
 // ==========================================
 // VALIDACIÓN DE RUC
@@ -115,35 +249,57 @@ async function validarRUCDuplicado(ruc) {
 /**
  * Abrir modal de crear proveedor
  */
-function openCreateProveedorModal() {
+async function openCreateProveedorModal() {
     console.log('📝 Abriendo modal de crear proveedor...');
     
-    const modal = document.getElementById('createProveedorModal');
-    if (!modal) {
-        console.error('❌ Modal createProveedorModal no encontrado');
-        return;
+    try {
+        // Asegurar que las categorías estén cargadas
+        if (categoriasProveedores.length === 0) {
+            console.log('⚠️ Categorías no cargadas, recargando...');
+            showNotification('Cargando categorías...', 'info');
+            await cargarCategoriasProveedores();
+        }
+        
+        // Verificar nuevamente después de cargar
+        if (categoriasProveedores.length === 0) {
+            showNotification('No hay categorías disponibles. Por favor, cree categorías desde Configuración Global.', 'warning');
+            return;
+        }
+        
+        const modal = document.getElementById('createProveedorModal');
+        if (!modal) {
+            console.error('❌ Modal createProveedorModal no encontrado');
+            return;
+        }
+        
+        // Resetear formulario
+        const form = document.getElementById('createProveedorForm');
+        if (form) {
+            form.reset();
+        }
+        
+        // Resetear estilos del RUC
+        const rucInput = document.getElementById('createRUC');
+        if (rucInput) {
+            rucInput.style.borderColor = '';
+            rucInput.style.background = '';
+        }
+        
+        // Re-llenar select de categorías
+        llenarSelectCategoriasProveedores('createProveedorCategoria');
+        
+        // Mostrar modal
+        modal.style.display = 'flex';
+        setTimeout(() => {
+            modal.classList.add('active');
+        }, 10);
+        
+        console.log('✅ Modal de crear proveedor abierto');
+        
+    } catch (error) {
+        console.error('❌ Error al abrir modal:', error);
+        showNotification('Error al abrir el modal de crear proveedor', 'error');
     }
-    
-    // Resetear formulario
-    const form = document.getElementById('createProveedorForm');
-    if (form) {
-        form.reset();
-    }
-    
-    // Resetear estilos del RUC
-    const rucInput = document.getElementById('createRUC');
-    if (rucInput) {
-        rucInput.style.borderColor = '';
-        rucInput.style.background = '';
-    }
-    
-    // Mostrar modal
-    modal.style.display = 'flex';
-    setTimeout(() => {
-        modal.classList.add('active');
-    }, 10);
-    
-    console.log('✅ Modal de crear proveedor abierto');
 }
 
 /**
@@ -153,6 +309,12 @@ async function openEditProveedorModal(id) {
     console.log(`✏️ Abriendo modal de editar proveedor: ${id}`);
     
     try {
+        // Asegurar que las categorías estén cargadas
+        if (categoriasProveedores.length === 0) {
+            console.log('⚠️ Categorías no cargadas, recargando...');
+            await cargarCategoriasProveedores();
+        }
+        
         const response = await fetch(`/Proveedores/GetProveedor?id=${id}`);
         
         if (!response.ok) {
@@ -167,11 +329,14 @@ async function openEditProveedorModal(id) {
         document.getElementById('editProveedorRUCDisplay').textContent = proveedor.ruc;
         document.getElementById('editProveedorRUCInput').value = proveedor.ruc;
         document.getElementById('editProveedorNombre').value = proveedor.nombre;
-        document.getElementById('editProveedorCategoria').value = proveedor.categoria;
         document.getElementById('editProveedorTelefono').value = proveedor.telefono;
         document.getElementById('editProveedorEmail').value = proveedor.email || '';
         document.getElementById('editProveedorPersonaContacto').value = proveedor.personaContacto || '';
         document.getElementById('editProveedorDireccion').value = proveedor.direccion || '';
+
+        // Re-llenar select de categorías y seleccionar la actual
+        llenarSelectCategoriasProveedores('editProveedorCategoria');
+        document.getElementById('editProveedorCategoria').value = proveedor.categoria;
 
         // Configurar acción del formulario
         document.getElementById('editProveedorForm').action = `/Proveedores/Edit/${id}`;
@@ -404,3 +569,4 @@ window.openEditProveedorModal = openEditProveedorModal;
 window.openDesactivarProveedorModal = openDesactivarProveedorModal;
 window.closeModal = closeModal;
 window.buscarProveedorPorRUC = buscarProveedorPorRUC;
+window.cargarCategoriasProveedores = cargarCategoriasProveedores;

@@ -1,4 +1,4 @@
-@* Modal para Editar Proveedor *@
+@* Modal para Editar Proveedor - CON CATEGORÍAS DINÁMICAS *@
 
 <div id="editProveedorModal" class="modal-overlay" style="display: none;">
     <div class="modal-container">
@@ -38,12 +38,11 @@
                     <div class="form-group">
                         <label class="form-label">Categoría <span style="color: red;">*</span></label>
                         <select id="editProveedorCategoria" name="Categoria" class="form-select" required>
-                            <option value="">Seleccione...</option>
-                            <option value="Pescados y Mariscos">Pescados y Mariscos</option>
-                            <option value="Bebidas">Bebidas</option>
-                            <option value="Condimentos">Condimentos</option>
-                            <option value="Vajilla y Utensilios">Vajilla y Utensilios</option>
+                            <option value="">Cargando categorías...</option>
                         </select>
+                        <small style="color: #64748B; font-size: 12px; display: block; margin-top: 0.25rem;">
+                            Categorías del sistema
+                        </small>
                     </div>
 
                     <div class="form-group">
