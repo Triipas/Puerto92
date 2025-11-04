@@ -1,0 +1,263 @@
+/* ========================================
+   CATÁLOGO DE UTENSILIOS - ESTILOS
+   ======================================== */
+
+/* === TABS DE TIPOS === */
+.categoria-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 0;
+    border-bottom: 2px solid #E5E7EB;
+    flex-wrap: wrap;
+}
+
+.categoria-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 1rem 1.5rem;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #64748B;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.categoria-tab:hover {
+    color: #0092B8;
+    background: rgba(0, 146, 184, 0.05);
+    text-decoration: none;
+}
+
+.categoria-tab.active {
+    color: #0092B8;
+    border-bottom-color: #0092B8;
+    font-weight: 600;
+}
+
+.categoria-tab i {
+    font-size: 18px;
+}
+
+/* === TABLA DE UTENSILIOS === */
+.utensilios-table thead th {
+    background: #F8FAFC;
+    padding: 1rem;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #E5E7EB;
+}
+
+.utensilios-table tbody td {
+    padding: 1.25rem 1rem;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: middle;
+}
+
+.utensilios-table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.utensilios-table tbody tr:hover {
+    background: #F8FAFC;
+    transform: translateX(2px);
+}
+
+/* === BADGES PERSONALIZADOS PARA TIPOS === */
+.badge.badge-success {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.badge.badge-warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: #D97706;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.badge.badge-danger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+/* === ESTADO VACÍO === */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-state i {
+    font-size: 64px;
+    color: #CBD5E1;
+    margin-bottom: 1.5rem;
+}
+
+.empty-state h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    font-size: 14px;
+    color: #94A3B8;
+    margin-bottom: 2rem;
+}
+
+/* === MODAL ESPECÍFICO - CARGA MASIVA === */
+#dropzone {
+    transition: all 0.2s ease !important;
+}
+
+#dropzone:hover {
+    border-color: #10B981 !important;
+    background: #F0FDF4 !important;
+}
+
+/* === ANIMACIONES === */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.table tbody tr {
+    animation: fadeInUp 0.3s ease;
+}
+
+/* === ICONOS EN TABS === */
+.categoria-tab i {
+    transition: transform 0.2s ease;
+}
+
+.categoria-tab:hover i {
+    transform: scale(1.1);
+}
+
+.categoria-tab.active i {
+    transform: scale(1.15);
+}
+
+/* === PRECIO DESTACADO === */
+.precio-destacado {
+    font-weight: 700;
+    color: #10B981;
+    font-size: 15px;
+}
+
+/* === CÓDIGO DESTACADO === */
+.codigo-destacado {
+    font-weight: 600;
+    color: #3B82F6;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
+
+/* === LOADING STATE === */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999999;
+}
+
+.loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.loading-spinner i {
+    font-size: 48px;
+    color: #0092B8;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .categoria-tabs {
+        flex-direction: column;
+    }
+
+    .categoria-tab {
+        border-bottom: 1px solid #E5E7EB;
+        border-left: 3px solid transparent;
+        justify-content: space-between;
+    }
+
+    .categoria-tab.active {
+        border-bottom-color: #E5E7EB;
+        border-left-color: #0092B8;
+    }
+
+    .empty-state {
+        padding: 2rem 1rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* === MENSAJES DE VALIDACIÓN === */
+.validation-error {
+    background: #FEF2F2;
+    border-left: 3px solid #EF4444;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    font-size: 13px;
+    color: #991B1B;
+}
+
+.validation-success {
+    background: #ECFDF5;
+    border-left: 3px solid #10B981;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    font-size: 13px;
+    color: #047857;
+}
+
+/* === TABLA RESPONSIVE === */
+@media (max-width: 1024px) {
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .table {
+        min-width: 800px;
+    }
+}

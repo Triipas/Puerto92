@@ -83,5 +83,25 @@ namespace Puerto92.Services
         /// Registrar error del sistema
         /// </summary>
         Task RegistrarErrorSistemaAsync(string error, string detalles);
+
+        /// <summary>
+        /// Registrar creación de utensilio
+        /// </summary>
+        Task RegistrarCreacionUtensilioAsync(string codigoUtensilio, string nombreUtensilio, string tipo);
+
+        /// <summary>
+        /// Registrar edición de utensilio
+        /// </summary>
+        Task RegistrarEdicionUtensilioAsync(string codigoUtensilio, string nombreUtensilio, string cambios);
+
+        /// <summary>
+        /// Registrar desactivación de utensilio
+        /// </summary>
+        Task RegistrarDesactivacionUtensilioAsync(string codigoUtensilio, string nombreUtensilio);
+
+        /// <summary>
+        /// Registrar carga masiva de utensilios
+        /// </summary>
+        Task RegistrarCargaMasivaUtensiliosAsync(int cantidad, string resultado);
     }
 }

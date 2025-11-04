@@ -15,6 +15,7 @@ namespace Puerto92.Data
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<Categoria> Categorias { get; set; }
         public DbSet<AsignacionKardex> AsignacionesKardex { get; set; }
+        public DbSet<Utensilio> Utensilios { get; set; } // ⭐ NUEVO
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -44,7 +45,6 @@ namespace Puerto92.Data
             {
                 entity.ToTable("Categorias", t =>
                 {
-                    // Check constraint para alinear con [Range(1,999)] del ViewModel
                     t.HasCheckConstraint("CK_Categorias_Orden_Rango", "[Orden] BETWEEN 1 AND 999");
                 });
 
@@ -72,7 +72,6 @@ namespace Puerto92.Data
                     .HasForeignKey(a => a.LocalId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                // Índices para mejorar consultas
                 entity.HasIndex(a => new { a.LocalId, a.Fecha, a.TipoKardex });
                 entity.HasIndex(a => new { a.EmpleadoId, a.Fecha });
                 entity.HasIndex(a => a.Estado);
@@ -83,6 +82,55 @@ namespace Puerto92.Data
                 entity.Property(a => a.EsReasignacion).HasDefaultValue(false);
                 entity.Property(a => a.RegistroIniciado).HasDefaultValue(false);
                 entity.Property(a => a.NotificacionEnviada).HasDefaultValue(false);
+            });
+
+            // ⭐ NUEVO: Configuración de Utensilios
+            builder.Entity<Utensilio>(entity =>
+            {
+                entity.ToTable("Utensilios");
+
+                entity.Property(u => u.Codigo)
+                    .HasMaxLength(20)
+                    .IsRequired();
+
+                entity.Property(u => u.Nombre)
+                    .HasMaxLength(100)
+                    .IsRequired();
+
+                entity.Property(u => u.Tipo)
+                    .HasMaxLength(20)
+                    .IsRequired();
+
+                entity.Property(u => u.Unidad)
+                    .HasMaxLength(20)
+                    .IsRequired();
+
+                entity.Property(u => u.Precio)
+                    .HasColumnType("decimal(18,2)")
+                    .IsRequired();
+
+                entity.Property(u => u.Descripcion)
+                    .HasMaxLength(500);
+
+                entity.Property(u => u.Activo)
+                    .HasDefaultValue(true);
+
+                entity.Property(u => u.FechaCreacion)
+                    .HasDefaultValueSql("getdate()");
+
+                entity.Property(u => u.CreadoPor)
+                    .HasMaxLength(100);
+
+                entity.Property(u => u.ModificadoPor)
+                    .HasMaxLength(100);
+
+                // Índices para optimizar consultas
+                entity.HasIndex(u => u.Codigo)
+                    .IsUnique();
+
+                entity.HasIndex(u => new { u.Tipo, u.Activo });
+
+                entity.HasIndex(u => u.Nombre);
             });
         }
     }

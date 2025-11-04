@@ -105,11 +105,12 @@ namespace Puerto92.Services
                 accion: AccionAuditoria.CrearUsuario,
                 descripcion: $"Usuario '{usuarioCreado}' creado con rol '{rol}' en local '{local}'",
                 usuarioAfectado: usuarioCreado,
-                datosAdicionales: JsonSerializer.Serialize(new { 
-                    UsuarioCreado = usuarioCreado, 
-                    Rol = rol, 
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    UsuarioCreado = usuarioCreado,
+                    Rol = rol,
                     Local = local,
-                    FechaCreacion = DateTime.Now 
+                    FechaCreacion = DateTime.Now
                 }),
                 modulo: "Usuarios",
                 resultado: ResultadoAuditoria.Exitoso,
@@ -122,10 +123,11 @@ namespace Puerto92.Services
                 accion: AccionAuditoria.EditarUsuario,
                 descripcion: $"Usuario '{usuarioEditado}' editado. Cambios: {cambiosRealizados}",
                 usuarioAfectado: usuarioEditado,
-                datosAdicionales: JsonSerializer.Serialize(new { 
-                    UsuarioEditado = usuarioEditado, 
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    UsuarioEditado = usuarioEditado,
                     Cambios = cambiosRealizados,
-                    FechaEdicion = DateTime.Now 
+                    FechaEdicion = DateTime.Now
                 }),
                 modulo: "Usuarios",
                 resultado: ResultadoAuditoria.Exitoso,
@@ -138,9 +140,10 @@ namespace Puerto92.Services
                 accion: AccionAuditoria.EliminarUsuario,
                 descripcion: $"Usuario '{usuarioEliminado}' eliminado del sistema",
                 usuarioAfectado: usuarioEliminado,
-                datosAdicionales: JsonSerializer.Serialize(new { 
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
                     UsuarioEliminado = usuarioEliminado,
-                    FechaEliminacion = DateTime.Now 
+                    FechaEliminacion = DateTime.Now
                 }),
                 modulo: "Usuarios",
                 resultado: ResultadoAuditoria.Exitoso,
@@ -153,11 +156,12 @@ namespace Puerto92.Services
                 accion: AccionAuditoria.CambiarRolUsuario,
                 descripcion: $"Rol de usuario '{usuario}' cambiado de '{rolAnterior}' a '{rolNuevo}'",
                 usuarioAfectado: usuario,
-                datosAdicionales: JsonSerializer.Serialize(new { 
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
                     Usuario = usuario,
-                    RolAnterior = rolAnterior, 
+                    RolAnterior = rolAnterior,
                     RolNuevo = rolNuevo,
-                    FechaCambio = DateTime.Now 
+                    FechaCambio = DateTime.Now
                 }),
                 modulo: "Usuarios",
                 resultado: ResultadoAuditoria.Exitoso,
@@ -170,9 +174,10 @@ namespace Puerto92.Services
                 accion: AccionAuditoria.ResetPassword,
                 descripcion: $"Contraseña reseteada para usuario '{usuarioAfectado}'",
                 usuarioAfectado: usuarioAfectado,
-                datosAdicionales: JsonSerializer.Serialize(new { 
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
                     UsuarioAfectado = usuarioAfectado,
-                    FechaReset = DateTime.Now 
+                    FechaReset = DateTime.Now
                 }),
                 modulo: "Autenticación",
                 resultado: ResultadoAuditoria.Exitoso,
@@ -185,9 +190,10 @@ namespace Puerto92.Services
                 accion: AccionAuditoria.CambioPassword,
                 descripcion: $"Usuario '{usuario}' cambió su contraseña",
                 usuarioAfectado: usuario,
-                datosAdicionales: JsonSerializer.Serialize(new { 
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
                     Usuario = usuario,
-                    FechaCambio = DateTime.Now 
+                    FechaCambio = DateTime.Now
                 }),
                 modulo: "Autenticación",
                 resultado: ResultadoAuditoria.Exitoso,
@@ -199,10 +205,11 @@ namespace Puerto92.Services
             await RegistrarAccionAsync(
                 accion: AccionAuditoria.CrearLocal,
                 descripcion: $"Local '{nombreLocal}' ({codigoLocal}) creado",
-                datosAdicionales: JsonSerializer.Serialize(new { 
-                    Codigo = codigoLocal, 
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    Codigo = codigoLocal,
                     Nombre = nombreLocal,
-                    FechaCreacion = DateTime.Now 
+                    FechaCreacion = DateTime.Now
                 }),
                 modulo: "Locales",
                 resultado: ResultadoAuditoria.Exitoso,
@@ -214,11 +221,12 @@ namespace Puerto92.Services
             await RegistrarAccionAsync(
                 accion: AccionAuditoria.EditarLocal,
                 descripcion: $"Local '{nombreLocal}' ({codigoLocal}) editado. Cambios: {cambios}",
-                datosAdicionales: JsonSerializer.Serialize(new { 
-                    Codigo = codigoLocal, 
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    Codigo = codigoLocal,
                     Nombre = nombreLocal,
                     Cambios = cambios,
-                    FechaEdicion = DateTime.Now 
+                    FechaEdicion = DateTime.Now
                 }),
                 modulo: "Locales",
                 resultado: ResultadoAuditoria.Exitoso,
@@ -230,10 +238,11 @@ namespace Puerto92.Services
             await RegistrarAccionAsync(
                 accion: AccionAuditoria.DesactivarLocal,
                 descripcion: $"Local '{nombreLocal}' ({codigoLocal}) desactivado",
-                datosAdicionales: JsonSerializer.Serialize(new { 
-                    Codigo = codigoLocal, 
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    Codigo = codigoLocal,
                     Nombre = nombreLocal,
-                    FechaDesactivacion = DateTime.Now 
+                    FechaDesactivacion = DateTime.Now
                 }),
                 modulo: "Locales",
                 resultado: ResultadoAuditoria.Exitoso,
@@ -245,10 +254,11 @@ namespace Puerto92.Services
             await RegistrarAccionAsync(
                 accion: AccionAuditoria.AccesoDenegado,
                 descripcion: $"Acceso denegado a '{recurso}'. Motivo: {motivo}",
-                datosAdicionales: JsonSerializer.Serialize(new { 
-                    Recurso = recurso, 
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    Recurso = recurso,
                     Motivo = motivo,
-                    Timestamp = DateTime.Now 
+                    Timestamp = DateTime.Now
                 }),
                 modulo: "Seguridad",
                 resultado: ResultadoAuditoria.Denegado,
@@ -260,10 +270,11 @@ namespace Puerto92.Services
             await RegistrarAccionAsync(
                 accion: AccionAuditoria.ErrorSistema,
                 descripcion: $"Error del sistema: {error}",
-                datosAdicionales: JsonSerializer.Serialize(new { 
-                    Error = error, 
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    Error = error,
                     Detalles = detalles,
-                    Timestamp = DateTime.Now 
+                    Timestamp = DateTime.Now
                 }),
                 modulo: "Sistema",
                 resultado: ResultadoAuditoria.Error,
@@ -290,6 +301,73 @@ namespace Puerto92.Services
 
             var remoteIp = httpContext.Connection.RemoteIpAddress?.ToString();
             return remoteIp ?? "0.0.0.0";
+        }
+        // Agregar estos métodos a AuditService.cs
+
+        public async Task RegistrarCreacionUtensilioAsync(string codigoUtensilio, string nombreUtensilio, string tipo)
+        {
+            await RegistrarAccionAsync(
+                accion: "Crear Utensilio",
+                descripcion: $"Utensilio '{nombreUtensilio}' ({codigoUtensilio}) de tipo '{tipo}' creado",
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    Codigo = codigoUtensilio,
+                    Nombre = nombreUtensilio,
+                    Tipo = tipo,
+                    FechaCreacion = DateTime.Now
+                }),
+                modulo: "Catálogo de Utensilios",
+                resultado: ResultadoAuditoria.Exitoso,
+                nivelSeveridad: NivelSeveridad.Info);
+        }
+
+        public async Task RegistrarEdicionUtensilioAsync(string codigoUtensilio, string nombreUtensilio, string cambios)
+        {
+            await RegistrarAccionAsync(
+                accion: "Editar Utensilio",
+                descripcion: $"Utensilio '{nombreUtensilio}' ({codigoUtensilio}) editado. Cambios: {cambios}",
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    Codigo = codigoUtensilio,
+                    Nombre = nombreUtensilio,
+                    Cambios = cambios,
+                    FechaEdicion = DateTime.Now
+                }),
+                modulo: "Catálogo de Utensilios",
+                resultado: ResultadoAuditoria.Exitoso,
+                nivelSeveridad: NivelSeveridad.Info);
+        }
+
+        public async Task RegistrarDesactivacionUtensilioAsync(string codigoUtensilio, string nombreUtensilio)
+        {
+            await RegistrarAccionAsync(
+                accion: "Desactivar Utensilio",
+                descripcion: $"Utensilio '{nombreUtensilio}' ({codigoUtensilio}) desactivado del catálogo",
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    Codigo = codigoUtensilio,
+                    Nombre = nombreUtensilio,
+                    FechaDesactivacion = DateTime.Now
+                }),
+                modulo: "Catálogo de Utensilios",
+                resultado: ResultadoAuditoria.Exitoso,
+                nivelSeveridad: NivelSeveridad.Warning);
+        }
+
+        public async Task RegistrarCargaMasivaUtensiliosAsync(int cantidad, string resultado)
+        {
+            await RegistrarAccionAsync(
+                accion: "Carga Masiva de Utensilios",
+                descripcion: $"Carga masiva completada: {cantidad} utensilios. {resultado}",
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    Cantidad = cantidad,
+                    Resultado = resultado,
+                    FechaCarga = DateTime.Now
+                }),
+                modulo: "Catálogo de Utensilios",
+                resultado: ResultadoAuditoria.Exitoso,
+                nivelSeveridad: NivelSeveridad.Info);
         }
     }
 }

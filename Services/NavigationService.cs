@@ -67,7 +67,20 @@ namespace Puerto92.Services
                 });
             }
 
-            // === SOLO ADMIN MAESTRO ===
+            // SOLO CONTADOR - CATÁLOGO DE UTENSILIOS
+            if (user.IsInRole("Contador"))
+            {
+                items.Add(new NavigationItemViewModel
+                {
+                    Icon = "fa-utensils",
+                    Title = "Catálogo de Utensilios",
+                    Controller = "Utensilios",
+                    Action = "Index",
+                    RequiredRoles = new List<string> { "Contador" }
+                });
+            }
+
+            // === SOLO ADMIN MAESTRO - CONFIGURACIÓN ===
             if (user.IsInRole("Admin Maestro"))
             {
                 items.Add(new NavigationItemViewModel

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Puerto92.Migrations
 {
     /// <inheritdoc />
-    public partial class AgregarAsignacionesKardex : Migration
+    public partial class AddUtensiliosTable : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -86,6 +86,29 @@ namespace Puerto92.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Locales", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Utensilios",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Codigo = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Nombre = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Tipo = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Unidad = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Precio = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Descripcion = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    Activo = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: true),
+                    FechaCreacion = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "getdate()"),
+                    FechaModificacion = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    CreadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    ModificadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Utensilios", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -377,6 +400,22 @@ namespace Puerto92.Migrations
                 table: "Locales",
                 column: "Codigo",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Utensilios_Codigo",
+                table: "Utensilios",
+                column: "Codigo",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Utensilios_Nombre",
+                table: "Utensilios",
+                column: "Nombre");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Utensilios_Tipo_Activo",
+                table: "Utensilios",
+                columns: new[] { "Tipo", "Activo" });
         }
 
         /// <inheritdoc />
@@ -405,6 +444,9 @@ namespace Puerto92.Migrations
 
             migrationBuilder.DropTable(
                 name: "Categorias");
+
+            migrationBuilder.DropTable(
+                name: "Utensilios");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
