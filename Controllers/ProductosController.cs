@@ -40,8 +40,10 @@ namespace Puerto92.Controllers
             ViewBag.TotalProductos = await _context.Productos.CountAsync();
             ViewBag.TotalActivos = todosProductos.Count;
             ViewBag.TotalInactivos = await _context.Productos.CountAsync(p => !p.Activo);
+            
+            // ⚠️ CAMBIO: Contar categorías de tipo "Cocina"
             ViewBag.TotalCategorias = await _context.Categorias
-                .Where(c => c.Tipo == "Productos" && c.Activo)
+                .Where(c => c.Tipo == "Cocina" && c.Activo) // 👈 CAMBIO AQUÍ
                 .CountAsync();
 
             var query = _context.Productos
@@ -76,9 +78,9 @@ namespace Puerto92.Controllers
                 })
                 .ToListAsync();
 
-            // Obtener categorías de productos para el filtro
+            // ⚠️ CAMBIO: Obtener categorías de tipo "Cocina" para el filtro
             ViewBag.Categorias = await _context.Categorias
-                .Where(c => c.Tipo == "Productos" && c.Activo)
+                .Where(c => c.Tipo == "Cocina" && c.Activo) // 👈 CAMBIO AQUÍ
                 .OrderBy(c => c.Orden)
                 .ToListAsync();
 
@@ -118,17 +120,27 @@ namespace Puerto92.Controllers
         [HttpGet]
         public async Task<IActionResult> GetCategorias()
         {
-            var categorias = await _context.Categorias
-                .Where(c => c.Tipo == "Productos" && c.Activo)
-                .OrderBy(c => c.Orden)
-                .Select(c => new
-                {
-                    value = c.Id,
-                    text = c.Nombre
-                })
-                .ToListAsync();
+            try
+            {
+                var categorias = await _context.Categorias
+                    .Where(c => c.Tipo == "Cocina" && c.Activo) // 👈 Filtrar por "Cocina"
+                    .OrderBy(c => c.Orden)
+                    .Select(c => new
+                    {
+                        value = c.Id,
+                        text = c.Nombre
+                    })
+                    .ToListAsync();
 
-            return Json(categorias);
+                _logger.LogInformation($"✅ Se encontraron {categorias.Count} categorías de tipo Cocina activas");
+
+                return Json(categorias);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error al obtener categorías");
+                return Json(new List<object>());
+            }
         }
 
         // POST: Productos/Create
@@ -147,10 +159,12 @@ namespace Puerto92.Controllers
 
             try
             {
-                // Validar que la categoría existe y es de tipo "Productos"
+                // ⚠️ CAMBIO IMPORTANTE: Validar que sea tipo "Cocina" en lugar de "Productos"
                 var categoria = await _context.Categorias.FindAsync(model.CategoriaId);
-                if (categoria == null || categoria.Tipo != "Productos" || !categoria.Activo)
+                if (categoria == null || categoria.Tipo != "Cocina" || !categoria.Activo) // 👈 CAMBIO AQUÍ
                 {
+                    _logger.LogWarning($"Categoría inválida: ID {model.CategoriaId}, Tipo: {categoria?.Tipo}, Activo: {categoria?.Activo}");
+                    
                     if (IsAjaxRequest)
                         return JsonError("Categoría inválida o inactiva.");
 
@@ -206,7 +220,7 @@ namespace Puerto92.Controllers
                 _context.Productos.Add(producto);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation($"Producto '{producto.Nombre}' ({producto.Codigo}) creado por {User.Identity!.Name}");
+                _logger.LogInformation($"✅ Producto '{producto.Nombre}' ({producto.Codigo}) creado por {User.Identity!.Name}");
 
                 await _auditService.RegistrarCreacionProductoAsync(
                     codigoProducto: producto.Codigo,
@@ -604,7 +618,7 @@ namespace Puerto92.Controllers
                     codigosGenerados.Add(codigo);
 
                     // Buscar categoría
-                    var categoria = categorias.FirstOrDefault(c => 
+                    var categoria = categorias.FirstOrDefault(c =>
                         c.Nombre.Equals(dto.Categoria, StringComparison.OrdinalIgnoreCase));
 
                     var producto = new Producto
@@ -682,9 +696,9 @@ namespace Puerto92.Controllers
         }
 
         private ProductoImportDto ParsearLineaCSV(
-            string linea, 
-            int numeroFila, 
-            char separador, 
+            string linea,
+            int numeroFila,
+            char separador,
             List<Categoria> categorias)
         {
             var dto = new ProductoImportDto { NumeroFila = numeroFila };
@@ -717,9 +731,9 @@ namespace Puerto92.Controllers
                 }
                 else
                 {
-                    var categoriaExiste = categorias.Any(c => 
+                    var categoriaExiste = categorias.Any(c =>
                         c.Nombre.Equals(dto.Categoria, StringComparison.OrdinalIgnoreCase));
-                    
+
                     if (!categoriaExiste)
                     {
                         var categoriasDisponibles = string.Join(", ", categorias.Select(c => c.Nombre));
