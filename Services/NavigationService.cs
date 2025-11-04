@@ -28,6 +28,19 @@ namespace Puerto92.Services
                 RequiredRoles = new List<string>()
             });
 
+            // === ADMINISTRADOR LOCAL ===
+            if (user.IsInRole("Administrador Local"))
+            {
+                items.Add(new NavigationItemViewModel
+                {
+                    Icon = "fa-calendar-days",
+                    Title = "Asignaciones",
+                    Controller = "Asignaciones",
+                    Action = "Index",
+                    RequiredRoles = new List<string> { "Administrador Local" }
+                });
+            }
+
             // === ADMIN MAESTRO Y ADMINISTRADOR LOCAL ===
             if (user.IsInRole("Admin Maestro") || user.IsInRole("Administrador Local"))
             {
@@ -61,7 +74,7 @@ namespace Puerto92.Services
                 {
                     Icon = "fa-gear",
                     Title = "Configuración",
-                    Controller = "Categorias", // ← Cambio principal
+                    Controller = "Categorias",
                     Action = "Index",
                     RequiredRoles = new List<string> { "Admin Maestro" }
                 });

@@ -14,6 +14,7 @@ namespace Puerto92.Data
         public DbSet<Local> Locales { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<Categoria> Categorias { get; set; }
+        public DbSet<AsignacionKardex> AsignacionesKardex { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -57,7 +58,32 @@ namespace Puerto92.Data
                 entity.Property(c => c.FechaCreacion).HasDefaultValueSql("getdate()");
                 entity.Property<byte[]>("RowVersion").IsRowVersion();
             });
-            
+
+            // Configuración de AsignacionKardex
+            builder.Entity<AsignacionKardex>(entity =>
+            {
+                entity.HasOne(a => a.Empleado)
+                    .WithMany()
+                    .HasForeignKey(a => a.EmpleadoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(a => a.Local)
+                    .WithMany()
+                    .HasForeignKey(a => a.LocalId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // Índices para mejorar consultas
+                entity.HasIndex(a => new { a.LocalId, a.Fecha, a.TipoKardex });
+                entity.HasIndex(a => new { a.EmpleadoId, a.Fecha });
+                entity.HasIndex(a => a.Estado);
+                entity.HasIndex(a => a.FechaCreacion);
+
+                entity.Property(a => a.Estado).HasDefaultValue("Pendiente");
+                entity.Property(a => a.FechaCreacion).HasDefaultValueSql("getdate()");
+                entity.Property(a => a.EsReasignacion).HasDefaultValue(false);
+                entity.Property(a => a.RegistroIniciado).HasDefaultValue(false);
+                entity.Property(a => a.NotificacionEnviada).HasDefaultValue(false);
+            });
         }
     }
 }

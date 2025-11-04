@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Puerto92.Migrations
 {
     /// <inheritdoc />
-    public partial class AgregarCategorias : Migration
+    public partial class AgregarAsignacionesKardex : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -148,6 +148,47 @@ namespace Puerto92.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AsignacionesKardex",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    TipoKardex = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    Fecha = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    EmpleadoId = table.Column<string>(type: "TEXT", nullable: false),
+                    LocalId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Estado = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false, defaultValue: "Pendiente"),
+                    FechaCreacion = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "getdate()"),
+                    CreadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    EsReasignacion = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false),
+                    AsignacionOriginalId = table.Column<int>(type: "INTEGER", nullable: true),
+                    EmpleadoOriginal = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    MotivoReasignacion = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    FechaReasignacion = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    ReasignadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    RegistroIniciado = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false),
+                    DatosParciales = table.Column<string>(type: "TEXT", nullable: true),
+                    FechaNotificacion = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    NotificacionEnviada = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AsignacionesKardex", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AsignacionesKardex_AspNetUsers_EmpleadoId",
+                        column: x => x.EmpleadoId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_AsignacionesKardex_Locales_LocalId",
+                        column: x => x.LocalId,
+                        principalTable: "Locales",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AspNetUserClaims",
                 columns: table => new
                 {
@@ -231,6 +272,26 @@ namespace Puerto92.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AsignacionesKardex_EmpleadoId_Fecha",
+                table: "AsignacionesKardex",
+                columns: new[] { "EmpleadoId", "Fecha" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AsignacionesKardex_Estado",
+                table: "AsignacionesKardex",
+                column: "Estado");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AsignacionesKardex_FechaCreacion",
+                table: "AsignacionesKardex",
+                column: "FechaCreacion");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AsignacionesKardex_LocalId_Fecha_TipoKardex",
+                table: "AsignacionesKardex",
+                columns: new[] { "LocalId", "Fecha", "TipoKardex" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
@@ -321,6 +382,9 @@ namespace Puerto92.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AsignacionesKardex");
+
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
