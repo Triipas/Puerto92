@@ -1,0 +1,94 @@
+@* Partial View: Modal para Editar Categoría *@
+
+<div id="editCategoriaModal" class="modal-overlay" style="display: none;">
+    <div class="modal-container">
+        <div class="modal-header">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="background: #0092B8; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </div>
+                <div>
+                    <h2 class="modal-title">Editar Categoría</h2>
+                    <p class="modal-subtitle">Modificar información de la categoría</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeModal('editCategoriaModal')">&times;</button>
+        </div>
+        <form id="editCategoriaForm" method="post">
+            <input type="hidden" id="editCategoriaId" name="Id" />
+            <input type="hidden" id="editCategoriaTipo" name="Tipo" />
+            <div class="modal-body">
+                <!-- Tipo de Categoría (solo lectura) -->
+                <div class="form-group">
+                    <label class="form-label">Tipo de Categoría</label>
+                    <div style="background: #F9FAFB; border: 1px solid #E5E7EB; padding: 0.75rem; border-radius: 8px;">
+                        <div style="font-weight: 600; color: #1E293B; font-size: 15px; display: flex; align-items: center; gap: 0.5rem;">
+                            <i id="editCategoriaTipoIcono" class="fa-solid fa-wine-glass"></i>
+                            <span id="editCategoriaTipoTexto">Bebidas</span>
+                        </div>
+                        <small style="color: #64748B; font-size: 12px;">El tipo no puede ser modificado</small>
+                    </div>
+                </div>
+
+                <!-- Nombre de la Categoría -->
+                <div class="form-group">
+                    <label class="form-label">
+                        Nombre de la Categoría <span style="color: red;">*</span>
+                    </label>
+                    <input type="text" 
+                           id="editCategoriaNombre" 
+                           name="Nombre" 
+                           class="form-control" 
+                           required 
+                           maxlength="100" />
+                    <small style="color: #64748B; font-size: 12px; display: block; margin-top: 0.25rem;">
+                        El nombre debe ser único dentro de este tipo
+                    </small>
+                </div>
+
+                <!-- Orden de Visualización -->
+                <div class="form-group">
+                    <label class="form-label">
+                        Orden de Visualización <span style="color: red;">*</span>
+                    </label>
+                    <input type="number" 
+                           id="editCategoriaOrden" 
+                           name="Orden" 
+                           class="form-control" 
+                           min="1" 
+                           max="999"
+                           required />
+                    <small style="color: #64748B; font-size: 12px; display: block; margin-top: 0.25rem;">
+                        Número menor = aparece primero en las listas
+                    </small>
+                </div>
+
+                <!-- Estado -->
+                <div class="form-group">
+                    <label class="form-label">Estado <span style="color: red;">*</span></label>
+                    <select id="editCategoriaActivo" name="Activo" class="form-select">
+                        <option value="true">Activo</option>
+                        <option value="false">Inactivo</option>
+                    </select>
+                </div>
+
+                <!-- Advertencia sobre cambios -->
+                <div style="background: #FEF3C7; border-left: 3px solid #F59E0B; padding: 0.875rem; border-radius: 4px; margin-top: 1rem;">
+                    <div style="display: flex; align-items: start; gap: 0.5rem;">
+                        <i class="fa-solid fa-exclamation-triangle" style="color: #F59E0B; margin-top: 2px;"></i>
+                        <div style="font-size: 12px; color: #78350F;">
+                            <strong>Importante:</strong> Los cambios en el nombre se reflejarán automáticamente en todos los productos asociados, kardex y vistas operativas del sistema.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeModal('editCategoriaModal')">Cancelar</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-save"></i>
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

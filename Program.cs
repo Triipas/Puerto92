@@ -108,4 +108,9 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 
+app.MapControllerRoute(
+name: "categorias",
+pattern: "Categorias",
+defaults: new { controller = "Categorias", action = "Index" });
+
 app.Run();
