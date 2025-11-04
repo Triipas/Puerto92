@@ -108,4 +108,9 @@ name: "categorias",
 pattern: "Categorias",
 defaults: new { controller = "Categorias", action = "Index" });
 
+app.MapControllerRoute(
+    name: "proveedores",
+    pattern: "Proveedores",
+    defaults: new { controller = "Proveedores", action = "Index" });
+
 app.Run();

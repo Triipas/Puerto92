@@ -1,0 +1,212 @@
+@model IEnumerable<Puerto92.ViewModels.ProveedorViewModel>
+@{
+    ViewData["Title"] = "Gestión de Proveedores";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    var categoriaFiltro = ViewBag.CategoriaFiltro as string;
+    var categorias = ViewBag.Categorias as List<Puerto92.Models.Categoria> ?? new List<Puerto92.Models.Categoria>();
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/proveedores.css" asp-append-version="true" />
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+        <i class="fa-solid fa-truck-field" style="color: #0092B8; font-size: 24px;"></i>
+        <h1 class="page-title">Gestión de Proveedores</h1>
+    </div>
+    <p class="page-subtitle">Administre el catálogo de proveedores de insumos y materiales</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="fa-solid fa-truck-field"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@ViewBag.TotalProveedores</h3>
+            <p>Total Proveedores</p>
+            <small style="color: #64748B;">Registrados en el catálogo</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon success">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@ViewBag.TotalActivos</h3>
+            <p>Proveedores Activos</p>
+            <small style="color: #64748B;">Disponibles para pedidos</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon danger">
+            <i class="fa-solid fa-ban"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@ViewBag.TotalInactivos</h3>
+            <p>Proveedores Inactivos</p>
+            <small style="color: #64748B;">No disponibles</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon warning">
+            <i class="fa-solid fa-layer-group"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@ViewBag.TotalCategorias</h3>
+            <p>Categorías</p>
+            <small style="color: #64748B;">En uso</small>
+        </div>
+    </div>
+</div>
+
+<!-- Content Card -->
+<div class="content-card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Catálogo de Proveedores</h2>
+            <p style="font-size: 13px; color: #64748B; margin-top: 4px;">
+                @Model.Count() proveedor(es) encontrado(s)
+            </p>
+        </div>
+        <button onclick="openCreateProveedorModal()" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i>
+            Agregar Proveedor
+        </button>
+    </div>
+
+    <div class="card-body">
+        <!-- Buscador y Filtro -->
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+            <input type="text" id="searchInput" class="form-control" 
+                   placeholder="🔍 Buscar por RUC, nombre o teléfono..." 
+                   style="flex: 1; min-width: 300px;" />
+            
+            <select id="categoriaFilter" class="form-select" style="max-width: 250px;" onchange="filtrarPorCategoria(this.value)">
+                <option value="">Todas las categorías</option>
+                @foreach (var cat in categorias.GroupBy(c => c.Tipo))
+                {
+                    <optgroup label="@cat.Key">
+                        @foreach (var categoria in cat)
+                        {
+                            <option value="@categoria.Nombre" selected="@(categoriaFiltro == categoria.Nombre ? "selected" : null)">
+                                @categoria.Nombre
+                            </option>
+                        }
+                    </optgroup>
+                }
+            </select>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <i class="fa-solid fa-truck-field"></i>
+                <h3>No hay proveedores registrados</h3>
+                <p>
+                    @if (!string.IsNullOrEmpty(categoriaFiltro))
+                    {
+                        <span>No hay proveedores en esta categoría</span>
+                    }
+                    else
+                    {
+                        <span>Comienza agregando proveedores usando el botón superior</span>
+                    }
+                </p>
+            </div>
+        }
+        else
+        {
+            <!-- Tabla -->
+            <div class="table-responsive">
+                <table class="table" id="proveedoresTable">
+                    <thead>
+                        <tr>
+                            <th>RUC</th>
+                            <th>Nombre</th>
+                            <th>Categoría</th>
+                            <th>Teléfono</th>
+                            <th>Persona de Contacto</th>
+                            <th>Estado</th>
+                            <th style="text-align: center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var proveedor in Model)
+                        {
+                            <tr>
+                                <td style="font-weight: 600; color: #3B82F6; font-family: 'Courier New', monospace;">@proveedor.RUC</td>
+                                <td style="font-weight: 500;">@proveedor.Nombre</td>
+                                <td>
+                                    <span class="badge badge-info">
+                                        <i class="fa-solid fa-tag"></i> @proveedor.Categoria
+                                    </span>
+                                </td>
+                                <td style="font-family: 'Courier New', monospace;">@proveedor.Telefono</td>
+                                <td>@(proveedor.PersonaContacto ?? "-")</td>
+                                <td>
+                                    @if (proveedor.Activo)
+                                    {
+                                        <span class="badge badge-success">Activo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-danger">Inactivo</span>
+                                    }
+                                </td>
+                                <td style="text-align: center;">
+                                    <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                                        @if (proveedor.Activo)
+                                        {
+                                            <!-- Botón Editar -->
+                                            <button onclick="openEditProveedorModal(@proveedor.Id)" 
+                                                    class="btn-icon btn-icon-edit" 
+                                                    title="Editar">
+                                                <i class="fa-regular fa-pen-to-square"></i>
+                                            </button>
+                                            
+                                            <!-- Botón Desactivar -->
+                                            <button onclick="openDesactivarProveedorModal(@proveedor.Id, '@proveedor.RUC', '@proveedor.Nombre', '@proveedor.Categoria')" 
+                                                    class="btn-icon btn-icon-delete" 
+                                                    title="Desactivar">
+                                                <i class="fa-regular fa-circle-xmark"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span style="font-size: 12px; color: #94A3B8;">Inactivo</span>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@* Cargar Modales *@
+<partial name="Modals/_CreateProveedorModal" />
+<partial name="Modals/_EditProveedorModal" />
+<partial name="Modals/_DesactivarProveedorModal" />
+
+@section Scripts {
+    <script src="~/js/proveedores-modals.js" asp-append-version="true"></script>
+    <script>
+        function filtrarPorCategoria(categoria) {
+            if (categoria) {
+                window.location.href = '@Url.Action("Index")?categoria=' + encodeURIComponent(categoria);
+            } else {
+                window.location.href = '@Url.Action("Index")';
+            }
+        }
+    </script>
+}

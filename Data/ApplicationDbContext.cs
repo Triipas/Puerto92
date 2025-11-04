@@ -16,7 +16,8 @@ namespace Puerto92.Data
         public DbSet<Categoria> Categorias { get; set; }
         public DbSet<AsignacionKardex> AsignacionesKardex { get; set; }
         public DbSet<Utensilio> Utensilios { get; set; }
-        public DbSet<Producto> Productos { get; set; } // ⭐ NUEVO
+        public DbSet<Producto> Productos { get; set; }
+        public DbSet<Proveedor> Proveedores { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -185,6 +186,58 @@ namespace Puerto92.Data
 
                 entity.HasIndex(p => p.Nombre);
             });
+
+            builder.Entity<Proveedor>(entity =>
+            {
+                entity.ToTable("Proveedores");
+
+                entity.Property(p => p.RUC)
+                    .HasMaxLength(11)
+                    .IsRequired();
+
+                entity.Property(p => p.Nombre)
+                    .HasMaxLength(200)
+                    .IsRequired();
+
+                entity.Property(p => p.Categoria)
+                    .HasMaxLength(100)
+                    .IsRequired();
+
+                entity.Property(p => p.Telefono)
+                    .HasMaxLength(20)
+                    .IsRequired();
+
+                entity.Property(p => p.Email)
+                    .HasMaxLength(100);
+
+                entity.Property(p => p.PersonaContacto)
+                    .HasMaxLength(100);
+
+                entity.Property(p => p.Direccion)
+                    .HasMaxLength(300);
+
+                entity.Property(p => p.Activo)
+                    .HasDefaultValue(true);
+
+                entity.Property(p => p.FechaCreacion)
+                    .HasDefaultValueSql("getdate()");
+
+                entity.Property(p => p.CreadoPor)
+                    .HasMaxLength(100);
+
+                entity.Property(p => p.ModificadoPor)
+                    .HasMaxLength(100);
+
+                // Índice único para RUC
+                entity.HasIndex(p => p.RUC)
+                    .IsUnique();
+
+                // Índices para mejorar búsquedas
+                entity.HasIndex(p => new { p.Categoria, p.Activo });
+
+                entity.HasIndex(p => p.Nombre);
+            });
+
         }
     }
 }

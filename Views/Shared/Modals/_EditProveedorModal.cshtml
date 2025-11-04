@@ -1,0 +1,95 @@
+@* Modal para Editar Proveedor - CON CATEGORÍAS DINÁMICAS *@
+
+<div id="editProveedorModal" class="modal-overlay" style="display: none;">
+    <div class="modal-container">
+        <div class="modal-header">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="background: #0092B8; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </div>
+                <div>
+                    <h2 class="modal-title">Editar Proveedor</h2>
+                    <p class="modal-subtitle">Modifique los datos del proveedor según sea necesario</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeModal('editProveedorModal')">&times;</button>
+        </div>
+        <form id="editProveedorForm" method="post">
+            <input type="hidden" id="editProveedorId" name="Id" />
+            <div class="modal-body">
+                <!-- RUC (no editable) -->
+                <div class="form-group">
+                    <label class="form-label">RUC del Proveedor</label>
+                    <div style="background: #F9FAFB; border: 1px solid #E5E7EB; padding: 0.75rem; border-radius: 8px;">
+                        <div style="font-weight: 600; color: #1E293B; font-size: 16px; font-family: 'Courier New', monospace;" id="editProveedorRUCDisplay">20123456789</div>
+                        <small style="color: #64748B; font-size: 12px;">El RUC no puede ser modificado</small>
+                    </div>
+                    <input type="hidden" id="editProveedorRUCInput" name="RUC" />
+                </div>
+
+                <!-- Nombre o Razón Social -->
+                <div class="form-group">
+                    <label class="form-label">Nombre o Razón Social <span style="color: red;">*</span></label>
+                    <input type="text" id="editProveedorNombre" name="Nombre" class="form-control" required maxlength="200" />
+                </div>
+
+                <!-- Categoría y Teléfono -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label">Categoría <span style="color: red;">*</span></label>
+                        <select id="editProveedorCategoria" name="Categoria" class="form-select" required>
+                            <option value="">Cargando categorías...</option>
+                        </select>
+                        <small style="color: #64748B; font-size: 12px; display: block; margin-top: 0.25rem;">
+                            Categorías del sistema
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Teléfono <span style="color: red;">*</span></label>
+                        <input type="text" id="editProveedorTelefono" name="Telefono" class="form-control" required maxlength="20" />
+                    </div>
+                </div>
+
+                <!-- Email y Persona de Contacto -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label">Email (opcional)</label>
+                        <input type="email" id="editProveedorEmail" name="Email" class="form-control" maxlength="100" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Persona de Contacto (opcional)</label>
+                        <input type="text" id="editProveedorPersonaContacto" name="PersonaContacto" class="form-control" maxlength="100" />
+                    </div>
+                </div>
+
+                <!-- Dirección -->
+                <div class="form-group">
+                    <label class="form-label">Dirección (opcional)</label>
+                    <textarea id="editProveedorDireccion" name="Direccion" class="form-control" rows="2" maxlength="300"></textarea>
+                </div>
+
+                <!-- Advertencia de Cambios -->
+                <div style="background: #FEF3C7; border-left: 3px solid #F59E0B; padding: 0.875rem; border-radius: 4px; margin-top: 1rem;">
+                    <div style="display: flex; align-items: start; gap: 0.5rem;">
+                        <i class="fa-solid fa-exclamation-triangle" style="color: #F59E0B; margin-top: 2px;"></i>
+                        <div>
+                            <p style="font-size: 13px; color: #92400E; margin: 0; font-weight: 600;">Importante:</p>
+                            <p style="font-size: 12px; color: #78350F; margin: 0.25rem 0 0 0;">
+                                Los cambios se reflejarán <strong>inmediatamente</strong> en todos los pedidos futuros de todos los locales.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeModal('editProveedorModal')">Cancelar</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-save"></i>
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
