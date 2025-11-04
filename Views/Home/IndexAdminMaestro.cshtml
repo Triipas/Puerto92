@@ -1,0 +1,127 @@
+@model Puerto92.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard Admin Maestro";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1 class="page-title">Dashboard Admin Maestro</h1>
+    <p class="page-subtitle">Vista general del sistema Puerto 92</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@Model.TotalUsuarios</h3>
+            <p>Usuarios Totales</p>
+            <small style="color: #10B981;">@Model.UsuariosActivos activos</small>
+        </div>
+        <a href="@Url.Action("Index", "Usuarios")" class="stat-card-link" aria-label="Ver usuarios"></a>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon success">
+            <i class="fa-solid fa-store"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@Model.TotalLocales</h3>
+            <p>Locales</p>
+            <small style="color: #10B981;">@Model.LocalesActivos activos</small>
+        </div>
+        <a href="@Url.Action("Index", "Locales")" class="stat-card-link" aria-label="Ver locales"></a>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon warning">
+            <i class="fa-solid fa-box"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@Model.TotalProductos</h3>
+            <p>Productos</p>
+            <small style="color: #64748B;">En catálogo</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon danger">
+            <i class="fa-solid fa-utensils"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@Model.TotalUtensilios</h3>
+            <p>Utensilios</p>
+            <small style="color: #64748B;">En inventario</small>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="content-card">
+    <div class="card-header">
+        <h2 class="card-title">Acceso Rápido</h2>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <a asp-controller="Usuarios" asp-action="Index" class="btn btn-primary" style="justify-content: center;">
+                <i class="fa-solid fa-users"></i>
+                Gestionar Usuarios
+            </a>
+            <a asp-controller="Locales" asp-action="Index" class="btn btn-primary" style="justify-content: center;">
+                <i class="fa-solid fa-store"></i>
+                Gestionar Locales
+            </a>
+            <a asp-controller="Categorias" asp-action="Index" class="btn btn-primary" style="justify-content: center;">
+                <i class="fa-solid fa-gear"></i>
+                Configuración
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Users -->
+@if (Model.UltimosUsuarios.Any())
+{
+    <div class="content-card">
+        <div class="card-header">
+            <h2 class="card-title">Usuarios Recientes</h2>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Usuario</th>
+                            <th>Fecha Creación</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var usuario in Model.UltimosUsuarios)
+                        {
+                            <tr>
+                                <td style="font-weight: 500;">@usuario.NombreCompleto</td>
+                                <td>@usuario.UserName</td>
+                                <td>@usuario.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    @if (usuario.Activo)
+                                    {
+                                        <span class="badge badge-success">Activo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-danger">Inactivo</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}

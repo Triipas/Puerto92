@@ -1,0 +1,160 @@
+@model Puerto92.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1 class="page-title">¡Bienvenido, @Model.NombreUsuario! 👋</h1>
+    <p class="page-subtitle">Dashboard de @Model.Rol - Puerto 92</p>
+</div>
+
+<!-- User Info Card -->
+<div class="content-card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                <i class="fa-solid fa-user-circle"></i>
+                Información Personal
+            </h2>
+        </div>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+            <div style="background: #F8FAFC; padding: 1.25rem; border-radius: 8px; border-left: 3px solid #0092B8;">
+                <div style="font-size: 12px; color: #64748B; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                    Nombre Completo
+                </div>
+                <div style="font-size: 16px; font-weight: 600; color: #1E293B;">
+                    @Model.NombreUsuario
+                </div>
+            </div>
+
+            <div style="background: #F8FAFC; padding: 1.25rem; border-radius: 8px; border-left: 3px solid #10B981;">
+                <div style="font-size: 12px; color: #64748B; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                    Usuario
+                </div>
+                <div style="font-size: 16px; font-weight: 600; color: #1E293B;">
+                    @Model.UserName
+                </div>
+            </div>
+
+            <div style="background: #F8FAFC; padding: 1.25rem; border-radius: 8px; border-left: 3px solid #F59E0B;">
+                <div style="font-size: 12px; color: #64748B; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                    Rol
+                </div>
+                <div style="font-size: 16px; font-weight: 600; color: #1E293B;">
+                    @Model.Rol
+                </div>
+            </div>
+
+            <div style="background: #F8FAFC; padding: 1.25rem; border-radius: 8px; border-left: 3px solid #3B82F6;">
+                <div style="font-size: 12px; color: #64748B; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                    Local Asignado
+                </div>
+                <div style="font-size: 16px; font-weight: 600; color: #1E293B;">
+                    @Model.LocalNombre
+                </div>
+            </div>
+        </div>
+
+        @if (Model.UltimoAcceso.HasValue)
+        {
+            <div style="margin-top: 1.5rem; padding: 1rem; background: #EFF6FF; border-radius: 8px; display: flex; align-items: center; gap: 0.75rem;">
+                <i class="fa-solid fa-clock" style="color: #3B82F6; font-size: 18px;"></i>
+                <div>
+                    <div style="font-size: 13px; color: #1E40AF; font-weight: 500;">Último acceso:</div>
+                    <div style="font-size: 14px; color: #1E40AF;">@Model.UltimoAcceso.Value.ToString("dd/MM/yyyy HH:mm")</div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="content-card">
+    <div class="card-header">
+        <h2 class="card-title">
+            <i class="fa-solid fa-bolt"></i>
+            Acciones Rápidas
+        </h2>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <a asp-controller="Account" asp-action="ChangePassword" class="btn btn-primary" style="justify-content: center;">
+                <i class="fa-solid fa-key"></i>
+                Cambiar Contraseña
+            </a>
+            
+            <button type="button" class="btn btn-secondary" style="justify-content: center;" onclick="window.print()">
+                <i class="fa-solid fa-print"></i>
+                Imprimir Dashboard
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- System Info -->
+<div class="content-card">
+    <div class="card-header">
+        <h2 class="card-title">
+            <i class="fa-solid fa-info-circle"></i>
+            Información del Sistema
+        </h2>
+    </div>
+    <div class="card-body">
+        <div style="background: #F0FDFA; border: 1px solid #A7F3D0; border-radius: 8px; padding: 1.25rem;">
+            <div style="display: flex; align-items: start; gap: 1rem;">
+                <div style="background: #10B981; width: 48px; height: 48px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fa-solid fa-utensils" style="color: white; font-size: 22px;"></i>
+                </div>
+                <div>
+                    <h3 style="font-size: 16px; font-weight: 600; color: #047857; margin-bottom: 0.5rem;">
+                        Sistema de Gestión Puerto 92
+                    </h3>
+                    <p style="font-size: 14px; color: #059669; line-height: 1.6; margin: 0;">
+                        Restaurante de Mariscos - Sistema integral de gestión de inventario, asignaciones y control operativo.
+                    </p>
+                    <p style="font-size: 13px; color: #10B981; margin-top: 0.75rem; margin-bottom: 0;">
+                        <strong>Fecha:</strong> @DateTime.Now.ToString("dddd, dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Help Section -->
+<div class="content-card">
+    <div class="card-header">
+        <h2 class="card-title">
+            <i class="fa-solid fa-question-circle"></i>
+            ¿Necesitas Ayuda?
+        </h2>
+    </div>
+    <div class="card-body">
+        <p style="color: #64748B; margin-bottom: 1rem;">
+            Si tienes alguna duda o necesitas asistencia con el sistema, contacta a tu supervisor o al administrador.
+        </p>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <div style="background: #F8FAFC; padding: 1rem; border-radius: 8px; flex: 1; min-width: 200px; border: 1px solid #E5E7EB;">
+                <div style="font-weight: 600; color: #1E293B; margin-bottom: 0.5rem;">
+                    <i class="fa-solid fa-phone"></i> Soporte Técnico
+                </div>
+                <div style="font-size: 14px; color: #64748B;">
+                    Contacta al administrador del sistema
+                </div>
+            </div>
+            
+            <div style="background: #F8FAFC; padding: 1rem; border-radius: 8px; flex: 1; min-width: 200px; border: 1px solid #E5E7EB;">
+                <div style="font-weight: 600; color: #1E293B; margin-bottom: 0.5rem;">
+                    <i class="fa-solid fa-book"></i> Documentación
+                </div>
+                <div style="font-size: 14px; color: #64748B;">
+                    Manual de usuario disponible
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
