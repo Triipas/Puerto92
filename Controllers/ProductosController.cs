@@ -531,14 +531,13 @@ namespace Puerto92.Controllers
             var productosImportados = new List<Producto>();
             var codigosGenerados = new HashSet<string>();
 
-            // Obtener categorías de productos
             var categorias = await _context.Categorias
-                .Where(c => c.Tipo == "Productos" && c.Activo)
+                .Where(c => c.Tipo == "Cocina" && c.Activo)
                 .ToListAsync();
 
             if (!categorias.Any())
             {
-                resultado.Errores.Add("No hay categorías de productos activas en el sistema. Cree categorías antes de importar.");
+                resultado.Errores.Add("No hay categorías de tipo Cocina activas en el sistema. Cree categorías antes de importar.");
                 return resultado;
             }
 
