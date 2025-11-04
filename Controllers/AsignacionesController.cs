@@ -148,7 +148,7 @@ namespace Puerto92.Controllers
 
         // POST: Asignaciones/Asignar
         [HttpPost]
-        public async Task<IActionResult> Asignar([FromBody] AsignacionViewModel model)
+        public async Task<IActionResult> Asignar([FromBody] AsignacionRequest request)
         {
             try
             {
@@ -158,10 +158,24 @@ namespace Puerto92.Controllers
                     return JsonError("Usuario no encontrado");
                 }
 
+                // Validar datos
+                if (string.IsNullOrEmpty(request.TipoKardex) ||
+                    string.IsNullOrEmpty(request.EmpleadoId) ||
+                    string.IsNullOrEmpty(request.Fecha))
+                {
+                    return JsonError("Datos incompletos");
+                }
+
+                // Parsear fecha correctamente
+                if (!DateTime.TryParse(request.Fecha, out DateTime fechaAsignacion))
+                {
+                    return JsonError("Fecha inválida");
+                }
+
                 // Validar que el empleado no tenga asignación ese día
                 var existeAsignacion = await _context.AsignacionesKardex
-                    .AnyAsync(a => a.EmpleadoId == model.EmpleadoId &&
-                                  a.Fecha.Date == model.Fecha.Date &&
+                    .AnyAsync(a => a.EmpleadoId == request.EmpleadoId &&
+                                  a.Fecha.Date == fechaAsignacion.Date &&
                                   a.LocalId == usuario.LocalId);
 
                 if (existeAsignacion)
@@ -172,9 +186,9 @@ namespace Puerto92.Controllers
                 // Crear asignación
                 var asignacion = new AsignacionKardex
                 {
-                    TipoKardex = model.TipoKardex,
-                    Fecha = model.Fecha.Date,
-                    EmpleadoId = model.EmpleadoId,
+                    TipoKardex = request.TipoKardex,
+                    Fecha = fechaAsignacion.Date,
+                    EmpleadoId = request.EmpleadoId,
                     LocalId = usuario.LocalId,
                     Estado = EstadoAsignacion.Pendiente,
                     FechaCreacion = DateTime.Now,
@@ -185,16 +199,16 @@ namespace Puerto92.Controllers
                 await _context.SaveChangesAsync();
 
                 // Obtener nombre del empleado para el log
-                var empleado = await _context.Users.FindAsync(model.EmpleadoId);
+                var empleado = await _context.Users.FindAsync(request.EmpleadoId);
 
-                _logger.LogInformation($"Asignación creada: {model.TipoKardex} - {empleado?.NombreCompleto} - {model.Fecha:dd/MM/yyyy}");
+                _logger.LogInformation($"Asignación creada: {request.TipoKardex} - {empleado?.NombreCompleto} - {fechaAsignacion:dd/MM/yyyy}");
 
                 return JsonSuccess("Asignación agregada correctamente", new { asignacionId = asignacion.Id });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al crear asignación");
-                return JsonError("Error al crear la asignación");
+                return JsonError($"Error al crear la asignación: {ex.Message}");
             }
         }
 
@@ -314,8 +328,9 @@ namespace Puerto92.Controllers
                     resultado: "Exitoso",
                     nivelSeveridad: "Warning");
 
-                return JsonSuccess("Reasignación realizada exitosamente", new { 
-                    empleadoNuevo = nuevoEmpleado?.NombreCompleto 
+                return JsonSuccess("Reasignación realizada exitosamente", new
+                {
+                    empleadoNuevo = nuevoEmpleado?.NombreCompleto
                 });
             }
             catch (Exception ex)
@@ -381,5 +396,127 @@ namespace Puerto92.Controllers
                 ["Reasignaciones"] = asignaciones.Count(a => a.EsReasignacion)
             };
         }
+
+        // Agregar nuevo método para obtener asignaciones pendientes
+        [HttpGet]
+        public async Task<IActionResult> GetAsignacionesPendientes(string tipoKardex, int mes, int anio)
+        {
+            var usuario = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity!.Name);
+            if (usuario == null)
+            {
+                return JsonError("Usuario no encontrado");
+            }
+
+            var primerDia = new DateTime(anio, mes, 1);
+            var ultimoDia = primerDia.AddMonths(1).AddDays(-1);
+
+            var asignaciones = await _context.AsignacionesKardex
+                .Include(a => a.Empleado)
+                .Where(a => a.LocalId == usuario.LocalId &&
+                           a.Fecha >= primerDia &&
+                           a.Fecha <= ultimoDia &&
+                           a.TipoKardex == tipoKardex &&
+                           a.Estado == EstadoAsignacion.Pendiente)
+                .OrderBy(a => a.Fecha)
+                .Select(a => new
+                {
+                    id = a.Id,
+                    fecha = a.Fecha.ToString("yyyy-MM-dd"),
+                    empleado = a.Empleado!.NombreCompleto,
+                    tipoKardex = a.TipoKardex
+                })
+                .ToListAsync();
+
+            return Json(asignaciones);
+        }
+
+        // Agregar método para cancelar asignación
+        [HttpPost]
+        public async Task<IActionResult> CancelarAsignacion(int id, [FromBody] string motivo)
+        {
+            try
+            {
+                var asignacion = await _context.AsignacionesKardex
+                    .Include(a => a.Empleado)
+                    .FirstOrDefaultAsync(a => a.Id == id);
+
+                if (asignacion == null)
+                {
+                    return JsonError("Asignación no encontrada");
+                }
+
+                // Solo permitir cancelar si NO ha iniciado el registro
+                if (asignacion.RegistroIniciado)
+                {
+                    return JsonError("No se puede cancelar. El empleado ya inició el registro del kardex.");
+                }
+
+                var empleadoNombre = asignacion.Empleado?.NombreCompleto ?? "Desconocido";
+                var tipoKardex = asignacion.TipoKardex;
+                var fecha = asignacion.Fecha;
+
+                _context.AsignacionesKardex.Remove(asignacion);
+                await _context.SaveChangesAsync();
+
+                _logger.LogWarning($"Asignación CANCELADA: {tipoKardex} - {empleadoNombre} - {fecha:dd/MM/yyyy}. Motivo: {motivo}");
+
+                await _auditService.RegistrarAccionAsync(
+                    accion: "Cancelar Asignación Kardex",
+                    descripcion: $"Asignación cancelada: {tipoKardex} - {empleadoNombre} - {fecha:dd/MM/yyyy}. Motivo: {motivo ?? "No especificado"}",
+                    modulo: "Asignaciones",
+                    resultado: "Exitoso",
+                    nivelSeveridad: "Warning");
+
+                return JsonSuccess("Asignación cancelada exitosamente");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cancelar asignación");
+                return JsonError("Error al cancelar la asignación");
+            }
+        }
+
+        // Agregar método para obtener historial
+        [HttpGet]
+        public async Task<IActionResult> GetHistorial(int mes, int anio)
+        {
+            var usuario = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity!.Name);
+            if (usuario == null)
+            {
+                return JsonError("Usuario no encontrado");
+            }
+
+            var primerDia = new DateTime(anio, mes, 1);
+            var ultimoDia = primerDia.AddMonths(1).AddDays(-1);
+
+            // Obtener logs de auditoría relacionados con asignaciones
+            var historial = await _context.AuditLogs
+                .Where(a => a.Modulo == "Asignaciones" &&
+                           a.FechaHora >= primerDia &&
+                           a.FechaHora <= ultimoDia &&
+                           (a.Accion.Contains("Asignación") || a.Accion.Contains("Reasign") || a.Accion.Contains("Guardar")))
+                .OrderByDescending(a => a.FechaHora)
+                .Select(a => new
+                {
+                    id = a.Id,
+                    accion = a.Accion,
+                    descripcion = a.Descripcion,
+                    usuario = a.UsuarioAccion,
+                    fechaHora = a.FechaHora,
+                    resultado = a.Resultado,
+                    nivelSeveridad = a.NivelSeveridad
+                })
+                .Take(100)
+                .ToListAsync();
+
+            return Json(historial);
+        }
+    }
+    // Agregar al final del archivo, FUERA de la clase AsignacionesController
+    public class AsignacionRequest
+    {
+        public string TipoKardex { get; set; } = string.Empty;
+        public string Fecha { get; set; } = string.Empty;
+        public string EmpleadoId { get; set; } = string.Empty;
     }
 }

@@ -1,0 +1,27 @@
+@* Modal de Historial de Asignaciones *@
+
+<div id="historialModal" class="modal-overlay" style="display: none;">
+    <div class="modal-container" style="max-width: 700px; max-height: 85vh;">
+        <div class="modal-header">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="background: rgba(59, 130, 246, 0.1); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-clock-rotate-left" style="color: #3B82F6; font-size: 22px;"></i>
+                </div>
+                <div>
+                    <h2 class="modal-title">Historial de Asignaciones</h2>
+                    <p class="modal-subtitle">Registro completo de acciones realizadas este mes</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeModal('historialModal')">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 0; overflow-y: auto; max-height: calc(85vh - 140px);">
+            <!-- Lista de Historial -->
+            <div id="listaHistorial" style="padding: 1.5rem;">
+                <p style="color: #94A3B8; font-size: 13px; text-align: center; padding: 2rem;">Cargando historial...</p>
+            </div>
+        </div>
+        <div class="modal-footer" style="border-top: 1px solid #E5E7EB;">
+            <button type="button" class="btn btn-cancel" onclick="closeModal('historialModal')">Cerrar</button>
+        </div>
+    </div>
+</div>

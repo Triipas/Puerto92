@@ -133,7 +133,7 @@
 }
 
 .calendario-dia {
-    min-height: 100px;
+    min-height: 140px;
     border: 1.5px solid #E5E7EB;
     border-radius: 8px;
     padding: 0.75rem;
@@ -307,125 +307,6 @@
     border-color: #0092B8;
 }
 
-/* === AUDITORÍA === */
-.auditoria-section {
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid #E5E7EB;
-}
-
-.auditoria-titulo {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 15px;
-    font-weight: 600;
-    color: #1E293B;
-    margin-bottom: 1rem;
-}
-
-.auditoria-titulo i {
-    color: #0092B8;
-}
-
-.auditoria-lista {
-    background: #F8FAFC;
-    border-radius: 8px;
-    padding: 1rem;
-    max-height: 200px;
-    overflow-y: auto;
-}
-
-.auditoria-item {
-    padding: 0.625rem 0;
-    border-bottom: 1px solid #E5E7EB;
-    font-size: 12px;
-    color: #475569;
-}
-
-.auditoria-item:last-child {
-    border-bottom: none;
-}
-
-.auditoria-tiempo {
-    color: #94A3B8;
-    margin-right: 0.5rem;
-}
-
-/* === RESPONSIVE === */
-@media (max-width: 1024px) {
-    .calendario-grid {
-        gap: 6px;
-    }
-    
-    .calendario-dia {
-        min-height: 80px;
-        padding: 0.5rem;
-    }
-    
-    .empleado-nombre {
-        font-size: 12px;
-    }
-    
-    .asignacion-badge {
-        font-size: 10px;
-    }
-}
-
-@media (max-width: 768px) {
-    .kardex-tabs {
-        flex-direction: column;
-    }
-    
-    .kardex-tab {
-        border-bottom: 1px solid #E5E7EB;
-        border-left: 3px solid transparent;
-        justify-content: space-between;
-    }
-    
-    .kardex-tab.active {
-        border-bottom-color: #E5E7EB;
-        border-left-color: var(--tab-color, #3B82F6);
-    }
-    
-    .calendario-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .calendario-navegacion {
-        width: 100%;
-        justify-content: space-between;
-    }
-    
-    .mes-anio {
-        min-width: auto;
-    }
-    
-    .calendario-grid {
-        gap: 4px;
-    }
-    
-    .calendario-dia {
-        min-height: 70px;
-        padding: 0.375rem;
-    }
-    
-    .dia-numero {
-        width: 24px;
-        height: 24px;
-        font-size: 12px;
-    }
-    
-    .empleado-nombre {
-        font-size: 11px;
-    }
-    
-    .calendario-leyenda {
-        gap: 1rem;
-    }
-}
-
 /* === ANIMACIONES === */
 @keyframes fadeInScale {
     from {
@@ -454,6 +335,106 @@
 .calendario-loading i {
     font-size: 48px;
     animation: spin 1s linear infinite;
+}
+
+/* Botones mini para acciones en días */
+.btn-mini {
+    padding: 0.25rem 0.5rem;
+    font-size: 11px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-mini-warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: #D97706;
+}
+
+.btn-mini-warning:hover {
+    background: #F59E0B;
+    color: white;
+}
+
+.btn-mini-danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: #DC2626;
+}
+
+.btn-mini-danger:hover {
+    background: #EF4444;
+    color: white;
+}
+
+.btn-asignar-dia {
+    width: 100%;
+    padding: 0.5rem;
+    background: rgba(59, 130, 246, 0.05);
+    border: 1px dashed #BFDBFE;
+    border-radius: 6px;
+    color: #3B82F6;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    margin-top: auto;
+}
+
+.btn-asignar-dia:hover {
+    background: #3B82F6;
+    color: white;
+    border-color: #3B82F6;
+}
+/* Estilos para el historial */
+.historial-item {
+    padding: 1rem;
+    border-bottom: 1px solid #F1F5F9;
+    transition: background 0.2s ease;
+}
+
+.historial-item:last-child {
+    border-bottom: none;
+}
+
+.historial-item:hover {
+    background: #F8FAFC;
+}
+
+.historial-badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 0.25rem 0.625rem;
+    border-radius: 6px;
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.historial-badge.info {
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563EB;
+}
+
+.historial-badge.warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: #D97706;
+}
+
+.historial-badge.error {
+    background: rgba(239, 68, 68, 0.1);
+    color: #DC2626;
+}
+
+.historial-badge.critical {
+    background: rgba(220, 38, 38, 0.2);
+    color: #7F1D1D;
 }
 
 @keyframes spin {

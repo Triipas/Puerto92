@@ -1,10 +1,13 @@
 /**
  * Gestión de Asignaciones de Kardex - Puerto 92
- * Asignación y reasignación de responsables
+ * Asignación, reasignación y cancelación de responsables
  */
 
 // Variables globales
 let asignacionesPendientes = [];
+let mesActual = null;
+let anioActual = null;
+let tipoKardexActual = null;
 
 // ==========================================
 // INICIALIZACIÓN GLOBAL
@@ -13,9 +16,11 @@ let asignacionesPendientes = [];
 function initAsignacionesPage() {
     console.log('🔄 Inicializando página de asignaciones...');
     
+    // Obtener datos del contexto
+    extraerDatosContexto();
+    
     setupModalEventListeners();
-    actualizarContadorPendientes();
-    cargarAsignacionesPendientes();
+    cargarAsignacionesPendientesDesdeServidor();
     
     console.log('✅ Página de asignaciones inicializada correctamente');
 }
@@ -25,6 +30,39 @@ document.addEventListener('DOMContentLoaded', initAsignacionesPage);
 
 // Exponer función para reinicializar después de navegación SPA
 window.initAsignacionesPage = initAsignacionesPage;
+
+// ==========================================
+// EXTRACCIÓN DE DATOS DEL CONTEXTO
+// ==========================================
+
+/**
+ * Extraer mes, año y tipo de kardex actual de la página
+ */
+function extraerDatosContexto() {
+    // Extraer del título del calendario
+    const mesAnioElement = document.querySelector('.mes-anio');
+    if (mesAnioElement) {
+        const texto = mesAnioElement.textContent.trim();
+        const match = texto.match(/(\w+)\s+de\s+(\d{4})/);
+        if (match) {
+            const meses = {
+                'Enero': 1, 'Febrero': 2, 'Marzo': 3, 'Abril': 4,
+                'Mayo': 5, 'Junio': 6, 'Julio': 7, 'Agosto': 8,
+                'Septiembre': 9, 'Octubre': 10, 'Noviembre': 11, 'Diciembre': 12
+            };
+            mesActual = meses[match[1]] || new Date().getMonth() + 1;
+            anioActual = parseInt(match[2]);
+        }
+    }
+    
+    // Extraer tipo de kardex de la tab activa
+    const tabActiva = document.querySelector('.kardex-tab.active span');
+    if (tabActiva) {
+        tipoKardexActual = tabActiva.textContent.trim();
+    }
+    
+    console.log(`📅 Contexto: ${tipoKardexActual} - ${mesActual}/${anioActual}`);
+}
 
 // ==========================================
 // ASIGNAR RESPONSABLE
@@ -37,11 +75,9 @@ async function openAsignarModal(tipoKardex, fecha) {
     console.log(`📝 Abriendo modal de asignar: ${tipoKardex} - ${fecha}`);
     
     try {
-        // Configurar datos del modal
         document.getElementById('asignarTipoKardex').value = tipoKardex;
         document.getElementById('asignarFecha').value = fecha;
         
-        // Actualizar subtítulo
         const fechaObj = new Date(fecha + 'T00:00:00');
         const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { 
             year: 'numeric', 
@@ -50,7 +86,6 @@ async function openAsignarModal(tipoKardex, fecha) {
         });
         document.getElementById('asignarSubtitulo').textContent = `${tipoKardex} - ${fechaFormateada}`;
         
-        // Mostrar nota especial para Vajilla
         const notaVajilla = document.getElementById('notaVajilla');
         if (tipoKardex === 'Vajilla') {
             notaVajilla.style.display = 'block';
@@ -58,10 +93,8 @@ async function openAsignarModal(tipoKardex, fecha) {
             notaVajilla.style.display = 'none';
         }
         
-        // Cargar empleados disponibles
         await cargarEmpleadosDisponibles(tipoKardex, fecha);
         
-        // Mostrar modal
         const modal = document.getElementById('asignarResponsableModal');
         modal.style.display = 'flex';
         modal.classList.add('active');
@@ -87,10 +120,8 @@ async function cargarEmpleadosDisponibles(tipoKardex, fecha) {
         const empleados = await response.json();
         const select = document.getElementById('asignarEmpleadoId');
         
-        // Limpiar select
         select.innerHTML = '<option value="">Seleccione un empleado</option>';
         
-        // Agregar empleados
         empleados.forEach(emp => {
             const option = document.createElement('option');
             option.value = emp.id;
@@ -108,13 +139,11 @@ async function cargarEmpleadosDisponibles(tipoKardex, fecha) {
         
         console.log(`✅ Cargados ${empleados.length} empleados`);
         
-        // Setup listener para mostrar info del empleado
         select.addEventListener('change', function() {
             const empleadoInfo = document.getElementById('empleadoInfo');
             const empleadoInfoTexto = document.getElementById('empleadoInfoTexto');
             
             if (this.value) {
-                const selectedOption = this.options[this.selectedIndex];
                 const empleado = empleados.find(e => e.id === this.value);
                 
                 if (empleado) {
@@ -168,10 +197,9 @@ async function confirmarAsignacion() {
             closeModal('asignarResponsableModal');
             showNotification('Asignación agregada. Recuerde guardar para confirmar y notificar.', 'success');
             
-            // Agregar a auditoría
-            agregarAuditoria(`Asignación creada: ${tipoKardex} - Fecha: ${fecha}`);
+            // ✅ RECARGAR asignaciones pendientes desde el servidor
+            await cargarAsignacionesPendientesDesdeServidor();
             
-            // Recargar página para reflejar cambios
             setTimeout(() => {
                 window.location.reload();
             }, 1500);
@@ -191,20 +219,15 @@ async function confirmarAsignacion() {
 // REASIGNAR RESPONSABLE
 // ==========================================
 
-/**
- * Abrir modal de reasignar responsable
- */
 async function openReasignarModal(asignacionId, tipoKardex, fecha, empleadoActualId, empleadoActualNombre, registroIniciado) {
     console.log(`🔄 Abriendo modal de reasignar: ${asignacionId}`);
     
     try {
-        // Configurar datos del modal
         document.getElementById('reasignarAsignacionId').value = asignacionId;
         document.getElementById('reasignarTipoKardex').value = tipoKardex;
         document.getElementById('reasignarFecha').value = fecha;
         document.getElementById('reasignarEmpleadoActualId').value = empleadoActualId;
         
-        // Actualizar subtítulo
         const fechaObj = new Date(fecha + 'T00:00:00');
         const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { 
             year: 'numeric', 
@@ -213,10 +236,8 @@ async function openReasignarModal(asignacionId, tipoKardex, fecha, empleadoActua
         });
         document.getElementById('reasignarSubtitulo').textContent = `${tipoKardex} - ${fechaFormateada}`;
         
-        // Mostrar empleado actual
         document.getElementById('reasignarEmpleadoActual').textContent = empleadoActualNombre;
         
-        // Mostrar/ocultar advertencia de registro iniciado
         const registroWarning = document.getElementById('registroIniciadoWarning');
         if (registroIniciado) {
             registroWarning.style.display = 'block';
@@ -224,10 +245,8 @@ async function openReasignarModal(asignacionId, tipoKardex, fecha, empleadoActua
             registroWarning.style.display = 'none';
         }
         
-        // Cargar empleados disponibles
         await cargarEmpleadosDisponiblesReasignacion(tipoKardex, fecha, empleadoActualId);
         
-        // Mostrar modal
         const modal = document.getElementById('reasignarResponsableModal');
         modal.style.display = 'flex';
         modal.classList.add('active');
@@ -239,9 +258,6 @@ async function openReasignarModal(asignacionId, tipoKardex, fecha, empleadoActua
     }
 }
 
-/**
- * Cargar empleados disponibles para reasignación
- */
 async function cargarEmpleadosDisponiblesReasignacion(tipoKardex, fecha, empleadoActualId) {
     try {
         const response = await fetch(`/Asignaciones/GetEmpleadosDisponibles?tipoKardex=${encodeURIComponent(tipoKardex)}&fecha=${fecha}`);
@@ -253,12 +269,10 @@ async function cargarEmpleadosDisponiblesReasignacion(tipoKardex, fecha, emplead
         const empleados = await response.json();
         const select = document.getElementById('reasignarNuevoEmpleadoId');
         
-        // Limpiar select
         select.innerHTML = '<option value="">Seleccione un empleado</option>';
         
-        // Agregar empleados (excepto el actual)
         empleados.forEach(emp => {
-            if (emp.id === empleadoActualId) return; // Saltar empleado actual
+            if (emp.id === empleadoActualId) return;
             
             const option = document.createElement('option');
             option.value = emp.id;
@@ -280,9 +294,6 @@ async function cargarEmpleadosDisponiblesReasignacion(tipoKardex, fecha, emplead
     }
 }
 
-/**
- * Confirmar reasignación
- */
 async function confirmarReasignacion() {
     const asignacionId = document.getElementById('reasignarAsignacionId').value;
     const nuevoEmpleadoId = document.getElementById('reasignarNuevoEmpleadoId').value;
@@ -316,10 +327,6 @@ async function confirmarReasignacion() {
             closeModal('reasignarResponsableModal');
             showNotification(`Reasignación exitosa. Nuevo responsable: ${result.data.empleadoNuevo}`, 'success');
             
-            // Agregar a auditoría
-            agregarAuditoria(`Reasignación completada - Nuevo responsable: ${result.data.empleadoNuevo}`);
-            
-            // Recargar página para reflejar cambios
             setTimeout(() => {
                 window.location.reload();
             }, 1500);
@@ -336,34 +343,115 @@ async function confirmarReasignacion() {
 }
 
 // ==========================================
+// CANCELAR ASIGNACIÓN
+// ==========================================
+
+/**
+ * Abrir modal de cancelar asignación
+ */
+function openCancelarModal(asignacionId, tipoKardex, fecha, empleadoNombre, estado) {
+    console.log(`❌ Abriendo modal de cancelar: ${asignacionId}`);
+    
+    document.getElementById('cancelarAsignacionId').value = asignacionId;
+    document.getElementById('cancelarTipoKardex').textContent = tipoKardex;
+    
+    const fechaObj = new Date(fecha + 'T00:00:00');
+    const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit' 
+    });
+    document.getElementById('cancelarFecha').textContent = fechaFormateada;
+    document.getElementById('cancelarEmpleado').textContent = empleadoNombre;
+    document.getElementById('cancelarEstado').textContent = estado;
+    
+    const modal = document.getElementById('cancelarAsignacionModal');
+    modal.style.display = 'flex';
+    modal.classList.add('active');
+}
+
+/**
+ * Confirmar cancelación
+ */
+async function confirmarCancelacion() {
+    const asignacionId = document.getElementById('cancelarAsignacionId').value;
+    const motivo = document.getElementById('cancelarMotivo').value;
+    
+    if (!motivo || motivo.trim() === '') {
+        showNotification('Por favor indique el motivo de la cancelación', 'warning');
+        return;
+    }
+    
+    const btnConfirmar = document.getElementById('btnConfirmarCancelar');
+    btnConfirmar.disabled = true;
+    btnConfirmar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cancelando...';
+    
+    try {
+        const response = await fetch('/Asignaciones/CancelarAsignacion', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(motivo)
+        });
+        
+        const url = `/Asignaciones/CancelarAsignacion?id=${asignacionId}`;
+        const responseFinal = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(motivo)
+        });
+        
+        const result = await responseFinal.json();
+        
+        if (result.success) {
+            closeModal('cancelarAsignacionModal');
+            showNotification('Asignación cancelada exitosamente', 'success');
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showNotification(result.message || 'Error al cancelar', 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error al cancelar:', error);
+        showNotification('Error al cancelar la asignación', 'error');
+    } finally {
+        btnConfirmar.disabled = false;
+        btnConfirmar.innerHTML = '<i class="fa-solid fa-ban"></i> Sí, Cancelar Asignación';
+    }
+}
+
+// ==========================================
 // GUARDAR Y NOTIFICAR
 // ==========================================
 
 /**
- * Cargar asignaciones pendientes del calendario
+ * Cargar asignaciones pendientes desde el servidor
  */
-function cargarAsignacionesPendientes() {
-    asignacionesPendientes = [];
-    
-    // Buscar todas las celdas con estado pendiente
-    const diasPendientes = document.querySelectorAll('.calendario-dia.pendiente[data-asignacion-id]');
-    
-    diasPendientes.forEach(dia => {
-        const asignacionId = parseInt(dia.dataset.asignacionId);
-        const fecha = dia.dataset.fecha;
-        const empleadoNombre = dia.querySelector('.empleado-nombre')?.textContent || 'Desconocido';
-        const tipoKardex = dia.closest('.card-body')?.querySelector('.kardex-tab.active span')?.textContent || 'Desconocido';
+async function cargarAsignacionesPendientesDesdeServidor() {
+    try {
+        if (!mesActual || !anioActual || !tipoKardexActual) {
+            console.warn('⚠️ Faltan datos de contexto');
+            return;
+        }
         
-        asignacionesPendientes.push({
-            id: asignacionId,
-            fecha: fecha,
-            empleado: empleadoNombre,
-            tipoKardex: tipoKardex
-        });
-    });
-    
-    console.log(`📊 Asignaciones pendientes: ${asignacionesPendientes.length}`);
-    actualizarContadorPendientes();
+        const response = await fetch(`/Asignaciones/GetAsignacionesPendientes?tipoKardex=${encodeURIComponent(tipoKardexActual)}&mes=${mesActual}&anio=${anioActual}`);
+        
+        if (!response.ok) {
+            throw new Error('Error al cargar asignaciones pendientes');
+        }
+        
+        asignacionesPendientes = await response.json();
+        console.log(`📊 Asignaciones pendientes cargadas: ${asignacionesPendientes.length}`);
+        
+        actualizarContadorPendientes();
+    } catch (error) {
+        console.error('❌ Error al cargar asignaciones pendientes:', error);
+    }
 }
 
 /**
@@ -390,12 +478,10 @@ function openConfirmarAsignacionesModal() {
         return;
     }
     
-    // Actualizar subtítulo
     const plural = asignacionesPendientes.length > 1 ? 's' : '';
     document.getElementById('confirmarSubtitulo').textContent = 
         `Se guardarán ${asignacionesPendientes.length} asignación${plural} y se enviará notificación a cada empleado.`;
     
-    // Cargar lista de asignaciones
     const lista = document.getElementById('listaAsignacionesPendientes');
     lista.innerHTML = '';
     
@@ -414,7 +500,6 @@ function openConfirmarAsignacionesModal() {
         lista.appendChild(item);
     });
     
-    // Mostrar modal
     const modal = document.getElementById('confirmarAsignacionesModal');
     modal.style.display = 'flex';
     modal.classList.add('active');
@@ -450,10 +535,6 @@ async function guardarYNotificar() {
             closeModal('confirmarAsignacionesModal');
             showNotification(result.message, 'success');
             
-            // Agregar a auditoría
-            agregarAuditoria(`Guardado masivo: ${asignacionesPendientes.length} asignación(es) confirmada(s) y notificada(s)`);
-            
-            // Recargar página
             setTimeout(() => {
                 window.location.reload();
             }, 1500);
@@ -470,12 +551,88 @@ async function guardarYNotificar() {
 }
 
 // ==========================================
-// GESTIÓN DE MODALES
+// HISTORIAL
 // ==========================================
 
 /**
- * Cerrar modal
+ * Abrir modal de historial
  */
+async function openHistorialModal() {
+    console.log('📜 Abriendo modal de historial...');
+    
+    const modal = document.getElementById('historialModal');
+    modal.style.display = 'flex';
+    modal.classList.add('active');
+    
+    await cargarHistorial();
+}
+
+/**
+ * Cargar historial desde el servidor
+ */
+async function cargarHistorial() {
+    const listaHistorial = document.getElementById('listaHistorial');
+    listaHistorial.innerHTML = '<p style="color: #94A3B8; font-size: 13px; text-align: center; padding: 2rem;">Cargando historial...</p>';
+    
+    try {
+        if (!mesActual || !anioActual) {
+            throw new Error('Faltan datos de contexto');
+        }
+        
+        const response = await fetch(`/Asignaciones/GetHistorial?mes=${mesActual}&anio=${anioActual}`);
+        
+        if (!response.ok) {
+            throw new Error('Error al cargar historial');
+        }
+        
+        const historial = await response.json();
+        
+        if (historial.length === 0) {
+            listaHistorial.innerHTML = '<p style="color: #94A3B8; font-size: 13px; text-align: center; padding: 2rem;">No hay registros en el historial para este mes.</p>';
+            return;
+        }
+        
+        listaHistorial.innerHTML = '';
+        
+        historial.forEach(item => {
+            const fecha = new Date(item.fechaHora);
+            const fechaFormateada = fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+            const horaFormateada = fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'historial-item';
+            itemDiv.innerHTML = `
+                <div style="display: flex; gap: 1rem; align-items: start;">
+                    <div style="flex-shrink: 0; width: 70px; text-align: center;">
+                        <div style="font-weight: 600; font-size: 13px; color: #1F2937;">${fechaFormateada}</div>
+                        <div style="font-size: 11px; color: #94A3B8;">${horaFormateada}</div>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 600; font-size: 13px; color: #1E293B; margin-bottom: 0.25rem;">${item.accion}</div>
+                        <div style="font-size: 12px; color: #64748B; line-height: 1.5;">${item.descripcion}</div>
+                        <div style="font-size: 11px; color: #94A3B8; margin-top: 0.25rem;">Por: ${item.usuario}</div>
+                    </div>
+                    <div style="flex-shrink: 0;">
+                        <span class="historial-badge ${item.nivelSeveridad.toLowerCase()}">${item.resultado}</span>
+                    </div>
+                </div>
+            `;
+            
+            listaHistorial.appendChild(itemDiv);
+        });
+        
+        console.log(`✅ Historial cargado: ${historial.length} registros`);
+        
+    } catch (error) {
+        console.error('❌ Error al cargar historial:', error);
+        listaHistorial.innerHTML = '<p style="color: #EF4444; font-size: 13px; text-align: center; padding: 2rem;">Error al cargar el historial</p>';
+    }
+}
+
+// ==========================================
+// GESTIÓN DE MODALES
+// ==========================================
+
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
     modal.classList.remove('active');
@@ -484,11 +641,7 @@ function closeModal(modalId) {
     }, 200);
 }
 
-/**
- * Configurar event listeners para los modales
- */
 function setupModalEventListeners() {
-    // Cerrar modal al hacer click fuera
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', function(e) {
             if (e.target === this) {
@@ -500,7 +653,6 @@ function setupModalEventListeners() {
         });
     });
 
-    // Cerrar modal con tecla ESC
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             document.querySelectorAll('.modal-overlay.active').forEach(modal => {
@@ -512,10 +664,14 @@ function setupModalEventListeners() {
         }
     });
     
-    // Listener para botón de guardar asignaciones
     const btnGuardar = document.getElementById('btnGuardarAsignaciones');
     if (btnGuardar) {
         btnGuardar.addEventListener('click', openConfirmarAsignacionesModal);
+    }
+    
+    const btnHistorial = document.getElementById('btnVerHistorial');
+    if (btnHistorial) {
+        btnHistorial.addEventListener('click', openHistorialModal);
     }
 }
 
@@ -523,30 +679,6 @@ function setupModalEventListeners() {
 // UTILIDADES
 // ==========================================
 
-/**
- * Agregar mensaje a la auditoría
- */
-function agregarAuditoria(mensaje) {
-    const auditoriaLista = document.getElementById('auditoriaLista');
-    const item = document.createElement('div');
-    item.className = 'auditoria-item';
-    
-    const ahora = new Date();
-    const tiempo = ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-    
-    item.innerHTML = `<span class="auditoria-tiempo">${tiempo}</span> ${mensaje}`;
-    auditoriaLista.insertBefore(item, auditoriaLista.firstChild);
-    
-    // Limpiar primera línea si existe
-    const primerParrafo = auditoriaLista.querySelector('p');
-    if (primerParrafo) {
-        primerParrafo.remove();
-    }
-}
-
-/**
- * Mostrar notificación
- */
 function showNotification(message, type = 'info') {
     console.log(`[${type.toUpperCase()}] ${message}`);
     
@@ -585,8 +717,11 @@ function showNotification(message, type = 'info') {
 
 window.openAsignarModal = openAsignarModal;
 window.openReasignarModal = openReasignarModal;
+window.openCancelarModal = openCancelarModal;
 window.openConfirmarAsignacionesModal = openConfirmarAsignacionesModal;
+window.openHistorialModal = openHistorialModal;
 window.confirmarAsignacion = confirmarAsignacion;
 window.confirmarReasignacion = confirmarReasignacion;
+window.confirmarCancelacion = confirmarCancelacion;
 window.guardarYNotificar = guardarYNotificar;
 window.closeModal = closeModal;
