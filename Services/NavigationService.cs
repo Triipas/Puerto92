@@ -67,7 +67,20 @@ namespace Puerto92.Services
                 });
             }
 
-            // SOLO CONTADOR - CATÁLOGO DE UTENSILIOS
+            // SUPERVISORA DE CALIDAD - CATÁLOGO DE PRODUCTOS
+            if (user.IsInRole("Supervisora de Calidad"))
+            {
+                items.Add(new NavigationItemViewModel
+                {
+                    Icon = "fa-box",
+                    Title = "Catálogo de Productos",
+                    Controller = "Productos",
+                    Action = "Index",
+                    RequiredRoles = new List<string> { "Supervisora de Calidad" }
+                });
+            }
+
+            // CONTADOR - CATÁLOGO DE UTENSILIOS
             if (user.IsInRole("Contador"))
             {
                 items.Add(new NavigationItemViewModel

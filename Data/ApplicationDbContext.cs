@@ -15,7 +15,8 @@ namespace Puerto92.Data
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<Categoria> Categorias { get; set; }
         public DbSet<AsignacionKardex> AsignacionesKardex { get; set; }
-        public DbSet<Utensilio> Utensilios { get; set; } // ⭐ NUEVO
+        public DbSet<Utensilio> Utensilios { get; set; }
+        public DbSet<Producto> Productos { get; set; } // ⭐ NUEVO
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -31,7 +32,7 @@ namespace Puerto92.Data
                 .HasIndex(l => l.Codigo)
                 .IsUnique();
 
-            // Índices para AuditLogs para mejorar el rendimiento de consultas
+            // Índices para AuditLogs
             builder.Entity<AuditLog>()
                 .HasIndex(a => a.FechaHora);
             builder.Entity<AuditLog>()
@@ -59,7 +60,6 @@ namespace Puerto92.Data
                 entity.Property<byte[]>("RowVersion").IsRowVersion();
             });
 
-            // Configuración de AsignacionKardex
             builder.Entity<AsignacionKardex>(entity =>
             {
                 entity.HasOne(a => a.Empleado)
@@ -84,7 +84,6 @@ namespace Puerto92.Data
                 entity.Property(a => a.NotificacionEnviada).HasDefaultValue(false);
             });
 
-            // ⭐ NUEVO: Configuración de Utensilios
             builder.Entity<Utensilio>(entity =>
             {
                 entity.ToTable("Utensilios");
@@ -124,13 +123,67 @@ namespace Puerto92.Data
                 entity.Property(u => u.ModificadoPor)
                     .HasMaxLength(100);
 
-                // Índices para optimizar consultas
                 entity.HasIndex(u => u.Codigo)
                     .IsUnique();
 
                 entity.HasIndex(u => new { u.Tipo, u.Activo });
 
                 entity.HasIndex(u => u.Nombre);
+            });
+
+            // ⭐ NUEVO: Configuración de Productos
+            builder.Entity<Producto>(entity =>
+            {
+                entity.ToTable("Productos");
+
+                entity.Property(p => p.Codigo)
+                    .HasMaxLength(20)
+                    .IsRequired();
+
+                entity.Property(p => p.Nombre)
+                    .HasMaxLength(100)
+                    .IsRequired();
+
+                entity.Property(p => p.Unidad)
+                    .HasMaxLength(20)
+                    .IsRequired();
+
+                entity.Property(p => p.PrecioCompra)
+                    .HasColumnType("decimal(18,2)")
+                    .IsRequired();
+
+                entity.Property(p => p.PrecioVenta)
+                    .HasColumnType("decimal(18,2)")
+                    .IsRequired();
+
+                entity.Property(p => p.Descripcion)
+                    .HasMaxLength(500);
+
+                entity.Property(p => p.Activo)
+                    .HasDefaultValue(true);
+
+                entity.Property(p => p.FechaCreacion)
+                    .HasDefaultValueSql("getdate()");
+
+                entity.Property(p => p.CreadoPor)
+                    .HasMaxLength(100);
+
+                entity.Property(p => p.ModificadoPor)
+                    .HasMaxLength(100);
+
+                // Relación con Categoría
+                entity.HasOne(p => p.Categoria)
+                    .WithMany()
+                    .HasForeignKey(p => p.CategoriaId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // Índices para optimizar consultas
+                entity.HasIndex(p => p.Codigo)
+                    .IsUnique();
+
+                entity.HasIndex(p => new { p.CategoriaId, p.Activo });
+
+                entity.HasIndex(p => p.Nombre);
             });
         }
     }

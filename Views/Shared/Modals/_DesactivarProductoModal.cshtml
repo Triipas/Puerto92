@@ -1,0 +1,81 @@
+@* Modal para Desactivar Producto *@
+
+<div id="desactivarProductoModal" class="modal-overlay modal-delete" style="display: none;">
+    <div class="modal-container" style="max-width: 550px;">
+        <div class="modal-header">
+            <div>
+                <h2 class="modal-title">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Desactivar Producto
+                </h2>
+                <p class="modal-subtitle">El producto se ocultará de kardex y pedidos futuros</p>
+            </div>
+            <button class="modal-close" onclick="closeModal('desactivarProductoModal')">&times;</button>
+        </div>
+        <form id="desactivarProductoForm" method="post">
+            <input type="hidden" id="desactivarProductoId" name="id" />
+            <div class="modal-body">
+                <p style="margin-bottom: 1rem; color: #374151; font-weight: 500;">Está por desactivar el producto:</p>
+                
+                <!-- Información del Producto -->
+                <div class="delete-info-box">
+                    <div class="delete-info-row">
+                        <span class="delete-info-label">Código:</span>
+                        <span id="desactivarProductoCodigo">-</span>
+                    </div>
+                    <div class="delete-info-row">
+                        <span class="delete-info-label">Nombre:</span>
+                        <span id="desactivarProductoNombre">-</span>
+                    </div>
+                    <div class="delete-info-row">
+                        <span class="delete-info-label">Categoría:</span>
+                        <span id="desactivarProductoCategoria">-</span>
+                    </div>
+                </div>
+
+                <!-- Motivo de Desactivación -->
+                <div class="form-group">
+                    <label class="form-label">Motivo de la desactivación <span style="color: red;">*</span></label>
+                    <textarea name="motivo" class="form-control" rows="3" 
+                              placeholder="Indique el motivo por el cual se desactiva este producto..." 
+                              required></textarea>
+                </div>
+
+                <!-- Consecuencias -->
+                <div class="delete-warning">
+                    <div class="delete-warning-title">
+                        <i class="fa-solid fa-eye-slash"></i>
+                        Al desactivar este producto:
+                    </div>
+                    <ul class="delete-warning-list">
+                        <li><strong>No aparecerá</strong> en kardex futuros de todos los locales</li>
+                        <li><strong>No podrá ser seleccionado</strong> al crear nuevos pedidos</li>
+                        <li><strong>Se mantendrá visible</strong> en kardex históricos y reportes pasados</li>
+                        <li><strong>Se registrará</strong> en el historial de auditoría del sistema</li>
+                    </ul>
+                </div>
+
+                <!-- Información adicional -->
+                <div class="delete-note">
+                    <div class="delete-note-title">
+                        <i class="fa-solid fa-info-circle"></i>
+                        Importante:
+                    </div>
+                    <ul class="delete-note-list">
+                        <li>Los kardex históricos mantendrán este producto visible</li>
+                        <li>Los reportes de períodos pasados no se verán afectados</li>
+                        <li>La desactivación se aplicará en <strong>todos los locales</strong> simultáneamente</li>
+                        <li>Podrá reactivar el producto desde el catálogo si lo necesita</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeModal('desactivarProductoModal')">Cancelar</button>
+                <button type="submit" class="btn btn-delete">
+                    <i class="fa-solid fa-ban"></i>
+                    Sí, Desactivar Producto
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

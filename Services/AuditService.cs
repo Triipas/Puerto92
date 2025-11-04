@@ -369,5 +369,86 @@ namespace Puerto92.Services
                 resultado: ResultadoAuditoria.Exitoso,
                 nivelSeveridad: NivelSeveridad.Info);
         }
+
+        // ⭐ AGREGAR ESTOS MÉTODOS AL FINAL DE LA CLASE AuditService
+
+        /// <summary>
+        /// Registrar creación de producto
+        /// </summary>
+        public async Task RegistrarCreacionProductoAsync(string codigoProducto, string nombreProducto, string categoriaNombre)
+        {
+            await RegistrarAccionAsync(
+                accion: "Crear Producto",
+                descripcion: $"Producto '{nombreProducto}' ({codigoProducto}) de categoría '{categoriaNombre}' creado",
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    Codigo = codigoProducto,
+                    Nombre = nombreProducto,
+                    Categoria = categoriaNombre,
+                    FechaCreacion = DateTime.Now
+                }),
+                modulo: "Catálogo de Productos",
+                resultado: ResultadoAuditoria.Exitoso,
+                nivelSeveridad: NivelSeveridad.Info);
+        }
+
+        /// <summary>
+        /// Registrar edición de producto
+        /// </summary>
+        public async Task RegistrarEdicionProductoAsync(string codigoProducto, string nombreProducto, string cambios)
+        {
+            await RegistrarAccionAsync(
+                accion: "Editar Producto",
+                descripcion: $"Producto '{nombreProducto}' ({codigoProducto}) editado. Cambios: {cambios}",
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    Codigo = codigoProducto,
+                    Nombre = nombreProducto,
+                    Cambios = cambios,
+                    FechaEdicion = DateTime.Now
+                }),
+                modulo: "Catálogo de Productos",
+                resultado: ResultadoAuditoria.Exitoso,
+                nivelSeveridad: NivelSeveridad.Info);
+        }
+
+        /// <summary>
+        /// Registrar desactivación de producto
+        /// </summary>
+        public async Task RegistrarDesactivacionProductoAsync(string codigoProducto, string nombreProducto, string motivo)
+        {
+            await RegistrarAccionAsync(
+                accion: "Desactivar Producto",
+                descripcion: $"Producto '{nombreProducto}' ({codigoProducto}) desactivado del catálogo. Motivo: {motivo}",
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    Codigo = codigoProducto,
+                    Nombre = nombreProducto,
+                    Motivo = motivo,
+                    FechaDesactivacion = DateTime.Now
+                }),
+                modulo: "Catálogo de Productos",
+                resultado: ResultadoAuditoria.Exitoso,
+                nivelSeveridad: NivelSeveridad.Warning);
+        }
+
+        /// <summary>
+        /// Registrar carga masiva de productos
+        /// </summary>
+        public async Task RegistrarCargaMasivaProductosAsync(int cantidad, string resultado)
+        {
+            await RegistrarAccionAsync(
+                accion: "Carga Masiva de Productos",
+                descripcion: $"Carga masiva completada: {cantidad} productos. {resultado}",
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    Cantidad = cantidad,
+                    Resultado = resultado,
+                    FechaCarga = DateTime.Now
+                }),
+                modulo: "Catálogo de Productos",
+                resultado: ResultadoAuditoria.Exitoso,
+                nivelSeveridad: NivelSeveridad.Info);
+        }
     }
 }

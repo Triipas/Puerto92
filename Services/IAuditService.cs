@@ -103,5 +103,27 @@ namespace Puerto92.Services
         /// Registrar carga masiva de utensilios
         /// </summary>
         Task RegistrarCargaMasivaUtensiliosAsync(int cantidad, string resultado);
+
+        // ⭐ NUEVO: Métodos para Productos
+        
+        /// <summary>
+        /// Registrar creación de producto
+        /// </summary>
+        Task RegistrarCreacionProductoAsync(string codigoProducto, string nombreProducto, string categoriaNombre);
+
+        /// <summary>
+        /// Registrar edición de producto
+        /// </summary>
+        Task RegistrarEdicionProductoAsync(string codigoProducto, string nombreProducto, string cambios);
+
+        /// <summary>
+        /// Registrar desactivación de producto
+        /// </summary>
+        Task RegistrarDesactivacionProductoAsync(string codigoProducto, string nombreProducto, string motivo);
+
+        /// <summary>
+        /// Registrar carga masiva de productos
+        /// </summary>
+        Task RegistrarCargaMasivaProductosAsync(int cantidad, string resultado);
     }
 }
