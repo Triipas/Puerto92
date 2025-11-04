@@ -26,8 +26,8 @@ namespace Puerto92.Models
         public string Nombre { get; set; } = string.Empty;
 
         /// <summary>
-        /// Categoría del proveedor (Pescados y Mariscos, Bebidas, etc.)
-        /// Referencia el nombre de una categoría existente
+        /// Categoría del proveedor - REFERENCIA a categoría existente en el sistema
+        /// Puede ser de cualquier tipo: Bebidas, Cocina o Utensilios
         /// </summary>
         [Required]
         [StringLength(100)]
@@ -85,24 +85,5 @@ namespace Puerto92.Models
         /// </summary>
         [StringLength(100)]
         public string? ModificadoPor { get; set; }
-    }
-
-    /// <summary>
-    /// Categorías predefinidas para proveedores (basadas en las imágenes)
-    /// </summary>
-    public static class CategoriaProveedor
-    {
-        public const string PescadosYMariscos = "Pescados y Mariscos";
-        public const string Bebidas = "Bebidas";
-        public const string Condimentos = "Condimentos";
-        public const string Vajilla = "Vajilla y Utensilios";
-
-        public static readonly string[] Todas = 
-        { 
-            PescadosYMariscos, 
-            Bebidas, 
-            Condimentos, 
-            Vajilla 
-        };
     }
 }

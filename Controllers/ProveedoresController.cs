@@ -62,6 +62,8 @@ namespace Puerto92.Controllers
             ViewBag.TotalProveedores = await _context.Proveedores.CountAsync();
             ViewBag.TotalActivos = await _context.Proveedores.CountAsync(p => p.Activo);
             ViewBag.TotalInactivos = await _context.Proveedores.CountAsync(p => !p.Activo);
+            
+            // ⭐ CAMBIO: Contar categorías únicas de proveedores activos
             ViewBag.TotalCategorias = await _context.Proveedores
                 .Where(p => p.Activo)
                 .Select(p => p.Categoria)
@@ -69,7 +71,13 @@ namespace Puerto92.Controllers
                 .CountAsync();
 
             ViewBag.CategoriaFiltro = categoria;
-            ViewBag.Categorias = CategoriaProveedor.Todas;
+            
+            // ⭐ NUEVO: Obtener TODAS las categorías activas del sistema
+            ViewBag.Categorias = await _context.Categorias
+                .Where(c => c.Activo)
+                .OrderBy(c => c.Tipo)
+                .ThenBy(c => c.Orden)
+                .ToListAsync();
 
             return View(proveedores);
         }
@@ -99,6 +107,36 @@ namespace Puerto92.Controllers
             };
 
             return Json(data);
+        }
+
+        // ⭐ NUEVO: GET: Proveedores/GetCategorias (para llenar dropdowns)
+        [HttpGet]
+        public async Task<IActionResult> GetCategorias()
+        {
+            try
+            {
+                // Obtener TODAS las categorías activas, agrupadas por tipo
+                var categorias = await _context.Categorias
+                    .Where(c => c.Activo)
+                    .OrderBy(c => c.Tipo)
+                    .ThenBy(c => c.Orden)
+                    .Select(c => new
+                    {
+                        value = c.Nombre,
+                        text = c.Nombre,
+                        tipo = c.Tipo
+                    })
+                    .ToListAsync();
+
+                _logger.LogInformation($"✅ Se encontraron {categorias.Count} categorías activas en total");
+
+                return Json(categorias);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error al obtener categorías");
+                return Json(new List<object>());
+            }
         }
 
         // GET: Proveedores/BuscarPorRUC?ruc=20123456789
@@ -148,6 +186,19 @@ namespace Puerto92.Controllers
 
             try
             {
+                // ⭐ CAMBIO: Validar que la categoría exista en el sistema
+                var categoriaExiste = await _context.Categorias
+                    .AnyAsync(c => c.Nombre == model.Categoria && c.Activo);
+
+                if (!categoriaExiste)
+                {
+                    if (IsAjaxRequest)
+                        return JsonError($"La categoría '{model.Categoria}' no existe en el sistema.");
+
+                    SetErrorMessage($"La categoría '{model.Categoria}' no existe en el sistema.");
+                    return RedirectToAction(nameof(Index));
+                }
+
                 // Validar que el RUC no exista
                 if (await _context.Proveedores.AnyAsync(p => p.RUC == model.RUC))
                 {
@@ -225,6 +276,16 @@ namespace Puerto92.Controllers
                 if (proveedor == null)
                 {
                     return NotFound();
+                }
+
+                // ⭐ CAMBIO: Validar que la categoría exista en el sistema
+                var categoriaExiste = await _context.Categorias
+                    .AnyAsync(c => c.Nombre == model.Categoria && c.Activo);
+
+                if (!categoriaExiste)
+                {
+                    SetErrorMessage($"La categoría '{model.Categoria}' no existe en el sistema.");
+                    return RedirectToAction(nameof(Index));
                 }
 
                 // Detectar cambios para auditoría

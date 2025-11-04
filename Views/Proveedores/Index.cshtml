@@ -3,7 +3,7 @@
     ViewData["Title"] = "Gestión de Proveedores";
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
     var categoriaFiltro = ViewBag.CategoriaFiltro as string;
-    var categorias = ViewBag.Categorias as string[] ?? new string[0];
+    var categorias = ViewBag.Categorias as List<Puerto92.Models.Categoria> ?? new List<Puerto92.Models.Categoria>();
 }
 
 @section Styles {
@@ -90,9 +90,16 @@
             
             <select id="categoriaFilter" class="form-select" style="max-width: 250px;" onchange="filtrarPorCategoria(this.value)">
                 <option value="">Todas las categorías</option>
-                @foreach (var cat in categorias)
+                @foreach (var cat in categorias.GroupBy(c => c.Tipo))
                 {
-                    <option value="@cat" selected="@(categoriaFiltro == cat ? "selected" : null)">@cat</option>
+                    <optgroup label="@cat.Key">
+                        @foreach (var categoria in cat)
+                        {
+                            <option value="@categoria.Nombre" selected="@(categoriaFiltro == categoria.Nombre ? "selected" : null)">
+                                @categoria.Nombre
+                            </option>
+                        }
+                    </optgroup>
                 }
             </select>
         </div>
