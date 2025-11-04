@@ -80,6 +80,18 @@ namespace Puerto92.Services
                 });
             }
 
+            if (user.IsInRole("Supervisora de Calidad"))
+            {
+                items.Add(new NavigationItemViewModel
+                {
+                    Icon = "fa-truck-field",
+                    Title = "Proveedores",
+                    Controller = "Proveedores",
+                    Action = "Index",
+                    RequiredRoles = new List<string> { "Supervisora de Calidad" }
+                });
+            }
+
             // CONTADOR - CATÁLOGO DE UTENSILIOS
             if (user.IsInRole("Contador"))
             {

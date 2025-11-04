@@ -125,5 +125,21 @@ namespace Puerto92.Services
         /// Registrar carga masiva de productos
         /// </summary>
         Task RegistrarCargaMasivaProductosAsync(int cantidad, string resultado);
+
+        /// <summary>
+        /// Registrar creación de proveedor
+        /// </summary>
+        Task RegistrarCreacionProveedorAsync(string rucProveedor, string nombreProveedor, string categoria);
+
+        /// <summary>
+        /// Registrar edición de proveedor
+        /// </summary>
+        Task RegistrarEdicionProveedorAsync(string rucProveedor, string nombreProveedor, string cambios);
+
+        /// <summary>
+        /// Registrar desactivación de proveedor
+        /// </summary>
+        Task RegistrarDesactivacionProveedorAsync(string rucProveedor, string nombreProveedor);
+
     }
 }

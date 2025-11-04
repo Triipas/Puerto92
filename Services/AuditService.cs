@@ -450,5 +450,64 @@ namespace Puerto92.Services
                 resultado: ResultadoAuditoria.Exitoso,
                 nivelSeveridad: NivelSeveridad.Info);
         }
+
+        /// <summary>
+        /// Registrar creación de proveedor
+        /// </summary>
+        public async Task RegistrarCreacionProveedorAsync(string rucProveedor, string nombreProveedor, string categoria)
+        {
+            await RegistrarAccionAsync(
+                accion: "Crear Proveedor",
+                descripcion: $"Proveedor '{nombreProveedor}' (RUC: {rucProveedor}) de categoría '{categoria}' creado",
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    RUC = rucProveedor,
+                    Nombre = nombreProveedor,
+                    Categoria = categoria,
+                    FechaCreacion = DateTime.Now
+                }),
+                modulo: "Catálogo de Proveedores",
+                resultado: ResultadoAuditoria.Exitoso,
+                nivelSeveridad: NivelSeveridad.Info);
+        }
+
+        /// <summary>
+        /// Registrar edición de proveedor
+        /// </summary>
+        public async Task RegistrarEdicionProveedorAsync(string rucProveedor, string nombreProveedor, string cambios)
+        {
+            await RegistrarAccionAsync(
+                accion: "Editar Proveedor",
+                descripcion: $"Proveedor '{nombreProveedor}' (RUC: {rucProveedor}) editado. Cambios: {cambios}",
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    RUC = rucProveedor,
+                    Nombre = nombreProveedor,
+                    Cambios = cambios,
+                    FechaEdicion = DateTime.Now
+                }),
+                modulo: "Catálogo de Proveedores",
+                resultado: ResultadoAuditoria.Exitoso,
+                nivelSeveridad: NivelSeveridad.Info);
+        }
+
+        /// <summary>
+        /// Registrar desactivación de proveedor
+        /// </summary>
+        public async Task RegistrarDesactivacionProveedorAsync(string rucProveedor, string nombreProveedor)
+        {
+            await RegistrarAccionAsync(
+                accion: "Desactivar Proveedor",
+                descripcion: $"Proveedor '{nombreProveedor}' (RUC: {rucProveedor}) desactivado del catálogo",
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    RUC = rucProveedor,
+                    Nombre = nombreProveedor,
+                    FechaDesactivacion = DateTime.Now
+                }),
+                modulo: "Catálogo de Proveedores",
+                resultado: ResultadoAuditoria.Exitoso,
+                nivelSeveridad: NivelSeveridad.Warning);
+        }
     }
 }

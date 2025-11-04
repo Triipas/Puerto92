@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Puerto92.Migrations
 {
     /// <inheritdoc />
-    public partial class AgregarTablaProductos : Migration
+    public partial class AddProveedoresTable : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -86,6 +86,30 @@ namespace Puerto92.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Locales", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Proveedores",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    RUC = table.Column<string>(type: "TEXT", maxLength: 11, nullable: false),
+                    Nombre = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    Categoria = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Telefono = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Email = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    PersonaContacto = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    Direccion = table.Column<string>(type: "TEXT", maxLength: 300, nullable: true),
+                    Activo = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: true),
+                    FechaCreacion = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "getdate()"),
+                    FechaModificacion = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    CreadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    ModificadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Proveedores", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -448,6 +472,22 @@ namespace Puerto92.Migrations
                 column: "Nombre");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Proveedores_Categoria_Activo",
+                table: "Proveedores",
+                columns: new[] { "Categoria", "Activo" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Proveedores_Nombre",
+                table: "Proveedores",
+                column: "Nombre");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Proveedores_RUC",
+                table: "Proveedores",
+                column: "RUC",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Utensilios_Codigo",
                 table: "Utensilios",
                 column: "Codigo",
@@ -490,6 +530,9 @@ namespace Puerto92.Migrations
 
             migrationBuilder.DropTable(
                 name: "Productos");
+
+            migrationBuilder.DropTable(
+                name: "Proveedores");
 
             migrationBuilder.DropTable(
                 name: "Utensilios");
