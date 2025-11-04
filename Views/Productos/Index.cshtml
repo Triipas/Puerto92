@@ -1,0 +1,220 @@
+@model IEnumerable<Puerto92.ViewModels.ProductoViewModel>
+@{
+    ViewData["Title"] = "Catálogo de Productos";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    var categoriaFiltro = ViewBag.CategoriaFiltro as int?;
+    var categorias = ViewBag.Categorias as List<Puerto92.Models.Categoria> ?? new List<Puerto92.Models.Categoria>();
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/productos.css" asp-append-version="true" />
+}
+
+<div class="page-header">
+    <h1 class="page-title">Catálogo de Productos</h1>
+    <p class="page-subtitle">Gestione el inventario base de productos del sistema</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="fa-solid fa-box"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@ViewBag.TotalProductos</h3>
+            <p>Total Productos</p>
+            <small style="color: #64748B;">En catálogo</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon success">
+            <i class="fa-solid fa-check-circle"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@ViewBag.TotalActivos</h3>
+            <p>Productos Activos</p>
+            <small style="color: #64748B;">Disponibles</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon danger">
+            <i class="fa-solid fa-circle-xmark"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@ViewBag.TotalInactivos</h3>
+            <p>Productos Inactivos</p>
+            <small style="color: #64748B;">Desactivados</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon warning">
+            <i class="fa-solid fa-layer-group"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@ViewBag.TotalCategorias</h3>
+            <p>Categorías</p>
+            <small style="color: #64748B;">En uso</small>
+        </div>
+    </div>
+</div>
+
+<!-- Content Card -->
+<div class="content-card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                @if (categoriaFiltro.HasValue)
+                {
+                    var catNombre = categorias.FirstOrDefault(c => c.Id == categoriaFiltro.Value)?.Nombre ?? "Categoría";
+                    <span>@catNombre</span>
+                }
+                else
+                {
+                    <span>Lista de Productos</span>
+                }
+            </h2>
+            <p style="font-size: 13px; color: #64748B; margin-top: 4px;">
+                @Model.Count() producto(s) encontrado(s)
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <button onclick="openCargaMasivaModal()" class="btn btn-secondary">
+                <i class="fa-solid fa-file-import"></i>
+                Carga Masiva
+            </button>
+            <button onclick="openCreateProductoModal()" class="btn btn-primary">
+                <i class="fa-solid fa-plus"></i>
+                Agregar Producto
+            </button>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <!-- Buscador y Filtro -->
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+            <input type="text" id="searchInput" class="form-control" 
+                   placeholder="🔍 Buscar por código, nombre o categoría..." 
+                   style="flex: 1; min-width: 300px;" />
+            
+            <select id="categoriaFilter" class="form-select" style="max-width: 250px;" onchange="filtrarPorCategoria(this.value)">
+                <option value="">Todas las categorías</option>
+                @foreach (var cat in categorias)
+                {
+                    <option value="@cat.Id" selected="@(categoriaFiltro == cat.Id ? "selected" : null)">@cat.Nombre</option>
+                }
+            </select>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <i class="fa-solid fa-box-open"></i>
+                <h3>No hay productos registrados</h3>
+                <p>
+                    @if (categoriaFiltro.HasValue)
+                    {
+                        <span>No hay productos en esta categoría</span>
+                    }
+                    else
+                    {
+                        <span>Comienza agregando productos usando los botones superiores</span>
+                    }
+                </p>
+            </div>
+        }
+        else
+        {
+            <!-- Tabla -->
+            <div class="table-responsive">
+                <table class="table" id="productosTable">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Categoría</th>
+                            <th>Unidad</th>
+                            <th>Precio Compra</th>
+                            <th>Precio Venta</th>
+                            <th>Estado</th>
+                            <th style="text-align: center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var producto in Model)
+                        {
+                            <tr>
+                                <td style="font-weight: 600; color: #3B82F6;">@producto.Codigo</td>
+                                <td style="font-weight: 500;">@producto.Nombre</td>
+                                <td>
+                                    <span class="badge badge-info">
+                                        <i class="fa-solid fa-layer-group"></i> @producto.CategoriaNombre
+                                    </span>
+                                </td>
+                                <td>@producto.Unidad</td>
+                                <td style="font-weight: 600; color: #F59E0B;">S/ @producto.PrecioCompra.ToString("N2")</td>
+                                <td style="font-weight: 600; color: #10B981;">S/ @producto.PrecioVenta.ToString("N2")</td>
+                                <td>
+                                    @if (producto.Activo)
+                                    {
+                                        <span class="badge badge-success">Activo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-danger">Inactivo</span>
+                                    }
+                                </td>
+                                <td style="text-align: center;">
+                                    <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                                        @if (producto.Activo)
+                                        {
+                                            <!-- Botón Editar -->
+                                            <button onclick="openEditProductoModal(@producto.Id)" 
+                                                    class="btn-icon btn-icon-edit" 
+                                                    title="Editar">
+                                                <i class="fa-regular fa-pen-to-square"></i>
+                                            </button>
+                                            
+                                            <!-- Botón Desactivar -->
+                                            <button onclick="openDesactivarProductoModal(@producto.Id, '@producto.Codigo', '@producto.Nombre', '@producto.CategoriaNombre')" 
+                                                    class="btn-icon btn-icon-delete" 
+                                                    title="Desactivar">
+                                                <i class="fa-regular fa-circle-xmark"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span style="font-size: 12px; color: #94A3B8;">Inactivo</span>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@* Cargar Modales *@
+<partial name="Modals/_CreateProductoModal" />
+<partial name="Modals/_EditProductoModal" />
+<partial name="Modals/_DesactivarProductoModal" />
+<partial name="Modals/_CargaMasivaProductosModal" />
+
+@section Scripts {
+    <script src="~/js/productos-modals.js" asp-append-version="true"></script>
+    <script>
+        function filtrarPorCategoria(categoriaId) {
+            if (categoriaId) {
+                window.location.href = '@Url.Action("Index")?categoriaId=' + categoriaId;
+            } else {
+                window.location.href = '@Url.Action("Index")';
+            }
+        }
+    </script>
+}

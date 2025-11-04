@@ -1,0 +1,134 @@
+@* Modal para Editar Producto *@
+
+<div id="editProductoModal" class="modal-overlay" style="display: none;">
+    <div class="modal-container">
+        <div class="modal-header">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="background: #0092B8; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </div>
+                <div>
+                    <h2 class="modal-title">Editar Producto</h2>
+                    <p class="modal-subtitle">Modifique los datos del producto según sea necesario</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeModal('editProductoModal')">&times;</button>
+        </div>
+        <form id="editProductoForm" method="post">
+            <input type="hidden" id="editProductoId" name="Id" />
+            <div class="modal-body">
+                <!-- Código (no editable) -->
+                <div class="form-group">
+                    <label class="form-label">Código del Producto</label>
+                    <div style="background: #F9FAFB; border: 1px solid #E5E7EB; padding: 0.75rem; border-radius: 8px;">
+                        <div style="font-weight: 600; color: #1E293B; font-size: 16px;" id="editProductoCodigoDisplay">PROD-001</div>
+                        <small style="color: #64748B; font-size: 12px;">El código no puede ser modificado</small>
+                    </div>
+                    <input type="hidden" id="editProductoCodigoInput" name="Codigo" />
+                </div>
+
+                <!-- Categoría (no editable) -->
+                <div class="form-group">
+                    <label class="form-label">Categoría</label>
+                    <div style="background: #F9FAFB; border: 1px solid #E5E7EB; padding: 0.75rem; border-radius: 8px;">
+                        <div id="editProductoCategoriaDisplay" style="font-weight: 500; color: #1E293B;">Abarrotes</div>
+                        <small style="color: #64748B; font-size: 12px;">La categoría no puede ser modificada</small>
+                    </div>
+                    <input type="hidden" id="editProductoCategoriaInput" name="CategoriaId" />
+                </div>
+
+                <!-- Nombre -->
+                <div class="form-group">
+                    <label class="form-label">Nombre del Producto <span style="color: red;">*</span></label>
+                    <input type="text" id="editProductoNombre" name="Nombre" class="form-control" required maxlength="100" />
+                </div>
+
+                <!-- Unidad -->
+                <div class="form-group">
+                    <label class="form-label">Unidad de Medida <span style="color: red;">*</span></label>
+                    <select id="editProductoUnidad" name="Unidad" class="form-select" required>
+                        <option value="Unidad">Unidad</option>
+                        <option value="Kilogramo">Kilogramo</option>
+                        <option value="Litro">Litro</option>
+                        <option value="Caja">Caja</option>
+                        <option value="Docena">Docena</option>
+                        <option value="Bolsa">Bolsa</option>
+                        <option value="Paquete">Paquete</option>
+                    </select>
+                </div>
+
+                <!-- Precios -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label">Precio de Compra (S/) <span style="color: red;">*</span></label>
+                        <input type="number" id="editProductoPrecioCompra" name="PrecioCompra" class="form-control" step="0.01" min="0.01" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Precio de Venta (S/) <span style="color: red;">*</span></label>
+                        <input type="number" id="editProductoPrecioVenta" name="PrecioVenta" class="form-control" step="0.01" min="0.01" required />
+                    </div>
+                </div>
+
+                <!-- Alerta de validación de precios -->
+                <div id="editPrecioWarning" style="background: #FEF3C7; border-left: 3px solid #F59E0B; padding: 0.625rem; border-radius: 4px; margin-bottom: 1rem; display: none;">
+                    <div style="display: flex; align-items: start; gap: 0.5rem;">
+                        <i class="fa-solid fa-exclamation-triangle" style="color: #F59E0B; margin-top: 2px;"></i>
+                        <span style="font-size: 12px; color: #92400E;">
+                            El precio de venta debe ser mayor o igual al precio de compra.
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Descripción -->
+                <div class="form-group">
+                    <label class="form-label">Descripción (opcional)</label>
+                    <textarea id="editProductoDescripcion" name="Descripcion" class="form-control" rows="3" maxlength="500"></textarea>
+                </div>
+
+                <!-- Advertencia de Cambios -->
+                <div style="background: #FEF3C7; border-left: 3px solid #F59E0B; padding: 0.875rem; border-radius: 4px; margin-top: 1rem;">
+                    <div style="display: flex; align-items: start; gap: 0.5rem;">
+                        <i class="fa-solid fa-exclamation-triangle" style="color: #F59E0B; margin-top: 2px;"></i>
+                        <div>
+                            <p style="font-size: 13px; color: #92400E; margin: 0; font-weight: 600;">Importante:</p>
+                            <p style="font-size: 12px; color: #78350F; margin: 0.25rem 0 0 0;">
+                                Los cambios se reflejarán <strong>inmediatamente en todos los locales</strong> donde el producto esté activo.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeModal('editProductoModal')">Cancelar</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-save"></i>
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Validar precios en tiempo real para edición
+document.addEventListener('DOMContentLoaded', function() {
+    const precioCompraInput = document.getElementById('editProductoPrecioCompra');
+    const precioVentaInput = document.getElementById('editProductoPrecioVenta');
+    const warningDiv = document.getElementById('editPrecioWarning');
+
+    function validarPrecios() {
+        const compra = parseFloat(precioCompraInput?.value || 0);
+        const venta = parseFloat(precioVentaInput?.value || 0);
+
+        if (compra > 0 && venta > 0 && venta < compra) {
+            warningDiv.style.display = 'block';
+        } else {
+            warningDiv.style.display = 'none';
+        }
+    }
+
+    precioCompraInput?.addEventListener('input', validarPrecios);
+    precioVentaInput?.addEventListener('input', validarPrecios);
+});
+</script>

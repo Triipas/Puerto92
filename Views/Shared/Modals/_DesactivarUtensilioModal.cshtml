@@ -1,0 +1,79 @@
+@* Modal para Desactivar Utensilio *@
+
+<div id="desactivarUtensilioModal" class="modal-overlay modal-delete" style="display: none;">
+    <div class="modal-container" style="max-width: 550px;">
+        <div class="modal-header">
+            <div>
+                <h2 class="modal-title">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Desactivar Utensilio
+                </h2>
+                <p class="modal-subtitle">Esta acción ocultará el utensilio de asignaciones futuras</p>
+            </div>
+            <button class="modal-close" onclick="closeModal('desactivarUtensilioModal')">&times;</button>
+        </div>
+        <form id="desactivarUtensilioForm" method="post">
+            <input type="hidden" id="desactivarUtensilioId" name="id" />
+            <div class="modal-body">
+                <p style="margin-bottom: 1rem; color: #374151; font-weight: 500;">Está por desactivar el utensilio:</p>
+                
+                <!-- Información del Utensilio -->
+                <div class="delete-info-box">
+                    <div class="delete-info-row">
+                        <span class="delete-info-label">Código:</span>
+                        <span id="desactivarUtensilioCode">-</span>
+                    </div>
+                    <div class="delete-info-row">
+                        <span class="delete-info-label">Nombre:</span>
+                        <span id="desactivarUtensilioNombre">-</span>
+                    </div>
+                    <div class="delete-info-row">
+                        <span class="delete-info-label">Tipo:</span>
+                        <span id="desactivarUtensilioTipo">-</span>
+                    </div>
+                </div>
+
+                <!-- Motivo de Desactivación -->
+                <div class="form-group">
+                    <label class="form-label">Motivo de la desactivación <span style="color: red;">*</span></label>
+                    <textarea name="motivo" class="form-control" rows="3" 
+                              placeholder="Indique el motivo por el cual se desactiva este utensilio..." 
+                              required></textarea>
+                </div>
+
+                <!-- Consecuencias -->
+                <div class="delete-warning">
+                    <div class="delete-warning-title">
+                        <i class="fa-solid fa-eye-slash"></i>
+                        Al desactivar este utensilio:
+                    </div>
+                    <ul class="delete-warning-list">
+                        <li><strong>No aparecerá</strong> en asignaciones futuras de kardex</li>
+                        <li><strong>Se mantendrá visible</strong> en reportes históricos</li>
+                        <li><strong>Se registrará</strong> en el historial de auditoría</li>
+                    </ul>
+                </div>
+
+                <!-- Información adicional -->
+                <div class="delete-note">
+                    <div class="delete-note-title">
+                        <i class="fa-solid fa-info-circle"></i>
+                        Nota importante:
+                    </div>
+                    <ul class="delete-note-list">
+                        <li>Los kardex históricos mantendrán este utensilio visible</li>
+                        <li>Los reportes pasados no se verán afectados</li>
+                        <li>Podrá reactivar el utensilio desde el catálogo si lo necesita</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeModal('desactivarUtensilioModal')">Cancelar</button>
+                <button type="submit" class="btn btn-delete">
+                    <i class="fa-solid fa-ban"></i>
+                    Sí, Desactivar Utensilio
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -28,6 +28,19 @@ namespace Puerto92.Services
                 RequiredRoles = new List<string>()
             });
 
+            // === ADMINISTRADOR LOCAL ===
+            if (user.IsInRole("Administrador Local"))
+            {
+                items.Add(new NavigationItemViewModel
+                {
+                    Icon = "fa-calendar-days",
+                    Title = "Asignaciones",
+                    Controller = "Asignaciones",
+                    Action = "Index",
+                    RequiredRoles = new List<string> { "Administrador Local" }
+                });
+            }
+
             // === ADMIN MAESTRO Y ADMINISTRADOR LOCAL ===
             if (user.IsInRole("Admin Maestro") || user.IsInRole("Administrador Local"))
             {
@@ -54,14 +67,40 @@ namespace Puerto92.Services
                 });
             }
 
-            // === SOLO ADMIN MAESTRO ===
+            // SUPERVISORA DE CALIDAD - CATÁLOGO DE PRODUCTOS
+            if (user.IsInRole("Supervisora de Calidad"))
+            {
+                items.Add(new NavigationItemViewModel
+                {
+                    Icon = "fa-box",
+                    Title = "Catálogo de Productos",
+                    Controller = "Productos",
+                    Action = "Index",
+                    RequiredRoles = new List<string> { "Supervisora de Calidad" }
+                });
+            }
+
+            // CONTADOR - CATÁLOGO DE UTENSILIOS
+            if (user.IsInRole("Contador"))
+            {
+                items.Add(new NavigationItemViewModel
+                {
+                    Icon = "fa-utensils",
+                    Title = "Catálogo de Utensilios",
+                    Controller = "Utensilios",
+                    Action = "Index",
+                    RequiredRoles = new List<string> { "Contador" }
+                });
+            }
+
+            // === SOLO ADMIN MAESTRO - CONFIGURACIÓN ===
             if (user.IsInRole("Admin Maestro"))
             {
                 items.Add(new NavigationItemViewModel
                 {
                     Icon = "fa-gear",
                     Title = "Configuración",
-                    Controller = "Categorias", // ← Cambio principal
+                    Controller = "Categorias",
                     Action = "Index",
                     RequiredRoles = new List<string> { "Admin Maestro" }
                 });

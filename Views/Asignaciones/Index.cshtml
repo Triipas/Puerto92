@@ -1,0 +1,248 @@
+@model Puerto92.ViewModels.CalendarioAsignacionesViewModel
+@{
+    ViewData["Title"] = "Calendario de Responsables de Kardex";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    var tiposTodos = ViewBag.TiposTodos as string[] ?? new string[0];
+    
+    var diasSemana = new[] { "Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb" };
+    var meses = new[] { "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" };
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+        <i class="fa-solid fa-calendar-days" style="color: #0092B8; font-size: 24px;"></i>
+        <h1 class="page-title">Calendario de Responsables de Kardex</h1>
+    </div>
+    <p class="page-subtitle">Asigne y gestione los responsables de kardex por área y fecha</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.2)); color: #F59E0B; border: 2px solid rgba(245, 158, 11, 0.2);">
+            <i class="fa-solid fa-clock"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@Model.Estadisticas.GetValueOrDefault("Pendientes", 0)</h3>
+            <p>Pendientes</p>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.2)); color: #3B82F6; border: 2px solid rgba(59, 130, 246, 0.2);">
+            <i class="fa-solid fa-check-circle"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@Model.Estadisticas.GetValueOrDefault("Asignadas", 0)</h3>
+            <p>Asignadas</p>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.2)); color: #10B981; border: 2px solid rgba(16, 185, 129, 0.2);">
+            <i class="fa-solid fa-user-check"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@(Model.Estadisticas.GetValueOrDefault("EnProceso", 0) + Model.Estadisticas.GetValueOrDefault("Completadas", 0))</h3>
+            <p>Empleadas</p>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.2)); color: #8B5CF6; border: 2px solid rgba(139, 92, 246, 0.2);">
+            <i class="fa-solid fa-arrows-rotate"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@Model.Estadisticas.GetValueOrDefault("Reasignaciones", 0)</h3>
+            <p>Reasignaciones</p>
+        </div>
+    </div>
+</div>
+
+<!-- Content Card -->
+<div class="content-card">
+    <div class="card-header" style="border-bottom: none; padding-bottom: 0;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <i class="fa-solid fa-calendar-check" style="color: #0092B8; font-size: 20px;"></i>
+            <div>
+                <h2 class="card-title">Gestionar Asignaciones</h2>
+                <p style="font-size: 13px; color: #64748B; margin-top: 0.25rem;">
+                    Asigne y gestione los responsables de kardex por área y fecha
+                </p>
+            </div>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <button id="btnVerHistorial" class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                Ver Historial
+            </button>
+            <button id="btnGuardarAsignaciones" class="btn btn-primary" style="display: none;">
+                <i class="fa-solid fa-floppy-disk"></i>
+                Guardar Asignaciones (<span id="contadorPendientes">0</span>)
+            </button>
+        </div>
+    </div>
+
+    <div class="card-body" style="padding-top: 1rem;">
+        <!-- Tabs de Tipos de Kardex -->
+        <div class="kardex-tabs">
+            @foreach (var tipo in tiposTodos)
+            {
+                var activeClass = tipo == Model.TipoKardexActual ? "active" : "";
+                var icon = Puerto92.Models.TipoKardex.ObtenerIcono(tipo);
+                var color = Puerto92.Models.TipoKardex.ObtenerColor(tipo);
+                
+                <a href="@Url.Action("Index", "Asignaciones", new { tipo = tipo, mes = Model.Mes, anio = Model.Anio })" 
+                   class="kardex-tab @activeClass"
+                   data-navigate
+                   style="--tab-color: @color">
+                    <i class="fa-solid fa-@icon"></i>
+                    <span>@tipo</span>
+                </a>
+            }
+        </div>
+
+        <!-- Navegación del Calendario -->
+        <div class="calendario-header">
+            <h3 class="calendario-titulo">Calendario Mensual</h3>
+            <p class="calendario-subtitulo">Seleccione un día para asignar o reasignar responsables</p>
+            <div class="calendario-navegacion">
+                <a href="@Url.Action("Index", "Asignaciones", new { tipo = Model.TipoKardexActual, mes = Model.Mes == 1 ? 12 : Model.Mes - 1, anio = Model.Mes == 1 ? Model.Anio - 1 : Model.Anio })" 
+                   class="btn-nav" data-navigate>
+                    <i class="fa-solid fa-chevron-left"></i>
+                </a>
+                <span class="mes-anio">@meses[Model.Mes] de @Model.Anio</span>
+                <a href="@Url.Action("Index", "Asignaciones", new { tipo = Model.TipoKardexActual, mes = Model.Mes == 12 ? 1 : Model.Mes + 1, anio = Model.Mes == 12 ? Model.Anio + 1 : Model.Anio })" 
+                   class="btn-nav" data-navigate>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Calendario -->
+        <div class="calendario-container">
+            <div class="calendario-grid">
+                <!-- Encabezado de días -->
+                @foreach (var dia in diasSemana)
+                {
+                    <div class="calendario-dia-header">@dia</div>
+                }
+
+                <!-- Días vacíos antes del primer día del mes -->
+                @for (int i = 0; i < Model.DiaSemanaInicio; i++)
+                {
+                    <div class="calendario-dia-vacio"></div>
+                }
+
+                <!-- Días del mes -->
+                @for (int dia = 1; dia <= Model.TotalDiasMes; dia++)
+                {
+                    var fecha = new DateTime(Model.Anio, Model.Mes, dia);
+                    var asignacion = Model.Asignaciones.FirstOrDefault(a => a.Fecha.Date == fecha.Date);
+                    var esHoy = fecha.Date == DateTime.Today;
+                    var esPasado = fecha.Date < DateTime.Today;
+                    
+                    var claseEstado = "";
+                    if (asignacion != null)
+                    {
+                        claseEstado = asignacion.Estado switch
+                        {
+                            "Pendiente" => "pendiente",
+                            "Asignada" => "asignada",
+                            "En Proceso" => "en-curso",
+                            "Completada" => "completada",
+                            _ => ""
+                        };
+                    }
+                    
+                    <div class="calendario-dia @(esHoy ? "hoy" : "") @claseEstado @(esPasado && asignacion == null ? "pasado" : "")" 
+                        data-fecha="@fecha.ToString("yyyy-MM-dd")"
+                        @(asignacion != null ? $"data-asignacion-id=\"{asignacion.Id}\"" : "")>
+                        
+                        <div class="dia-numero">@dia</div>
+                        
+                        @if (asignacion != null)
+                        {
+                            <div class="dia-asignacion">
+                                <div class="empleado-nombre">@asignacion.EmpleadoNombre</div>
+                                <div class="asignacion-badge @claseEstado">
+                                    @if (asignacion.EsReasignacion)
+                                    {
+                                        <i class="fa-solid fa-arrows-rotate"></i>
+                                    }
+                                    @asignacion.Estado
+                                </div>
+                                
+                                @* Botones de acción *@
+                                <div style="display: flex; gap: 0.375rem; margin-top: 0.5rem;">
+                                    @if (esHoy)
+                                    {
+                                        <button onclick="event.stopPropagation(); openReasignarModal(@asignacion.Id, '@asignacion.TipoKardex', '@fecha.ToString("yyyy-MM-dd")', '@asignacion.EmpleadoId', '@asignacion.EmpleadoNombre', @asignacion.RegistroIniciado.ToString().ToLower())"
+                                                class="btn-mini btn-mini-warning"
+                                                title="Reasignar">
+                                            <i class="fa-solid fa-arrows-rotate"></i>
+                                        </button>
+                                    }
+                                    
+                                    @if (!asignacion.RegistroIniciado && (asignacion.Estado == "Pendiente" || asignacion.Estado == "Asignada"))
+                                    {
+                                        <button onclick="event.stopPropagation(); openCancelarModal(@asignacion.Id, '@asignacion.TipoKardex', '@fecha.ToString("yyyy-MM-dd")', '@asignacion.EmpleadoNombre', '@asignacion.Estado')"
+                                                class="btn-mini btn-mini-danger"
+                                                title="Cancelar">
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        else if (!esPasado)
+                        {
+                            <button onclick="openAsignarModal('@Model.TipoKardexActual', '@fecha.ToString("yyyy-MM-dd")')"
+                                    class="btn-asignar-dia">
+                                <i class="fa-solid fa-plus"></i>
+                                Asignar
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Leyenda -->
+            <div class="calendario-leyenda">
+                <div class="leyenda-item">
+                    <span class="leyenda-color pendiente"></span>
+                    <span>Pendiente</span>
+                </div>
+                <div class="leyenda-item">
+                    <span class="leyenda-color asignada"></span>
+                    <span>Asignada</span>
+                </div>
+                <div class="leyenda-item">
+                    <span class="leyenda-color en-curso"></span>
+                    <span>En curso</span>
+                </div>
+                <div class="leyenda-item">
+                    <span class="leyenda-color completada"></span>
+                    <span>Completada</span>
+                </div>
+                <div class="leyenda-item">
+                    <span class="leyenda-color hoy"></span>
+                    <span>Hoy</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@* Cargar Modales *@
+<partial name="Modals/_AsignarResponsableModal" />
+<partial name="Modals/_ReasignarResponsableModal" />
+<partial name="Modals/_ConfirmarAsignacionesModal" />
+<partial name="Modals/_CancelarAsignacionModal" />
+<partial name="Modals/_HistorialModal" />
+
+@section Scripts {
+    <script src="~/js/asignaciones-modals.js" asp-append-version="true"></script>
+}

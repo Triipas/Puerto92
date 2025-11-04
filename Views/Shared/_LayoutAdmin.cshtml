@@ -24,15 +24,16 @@
         <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
         <link rel="stylesheet" href="~/css/app-navigation.css" asp-append-version="true" />
         
-        <!-- ⭐ NUEVO: Estilos de Categorías siempre cargados -->
+        <!-- ⭐ Estilos de módulos siempre cargados -->
         <link rel="stylesheet" href="~/css/categorias.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/css/asignaciones.css" asp-append-version="true" />
         
         <!-- Estilos adicionales de la página -->
         @await RenderSectionAsync("Styles", required: false)
     </head>
     <body>
         <div class="admin-container">
-            @* 🎯 Sidebar usando View Component *@
+            @* Sidebar usando View Component *@
             @await Component.InvokeAsync("Sidebar")
 
             <!-- Main Content -->

@@ -14,6 +14,9 @@ namespace Puerto92.Data
         public DbSet<Local> Locales { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<Categoria> Categorias { get; set; }
+        public DbSet<AsignacionKardex> AsignacionesKardex { get; set; }
+        public DbSet<Utensilio> Utensilios { get; set; }
+        public DbSet<Producto> Productos { get; set; } // ⭐ NUEVO
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -29,7 +32,7 @@ namespace Puerto92.Data
                 .HasIndex(l => l.Codigo)
                 .IsUnique();
 
-            // Índices para AuditLogs para mejorar el rendimiento de consultas
+            // Índices para AuditLogs
             builder.Entity<AuditLog>()
                 .HasIndex(a => a.FechaHora);
             builder.Entity<AuditLog>()
@@ -43,7 +46,6 @@ namespace Puerto92.Data
             {
                 entity.ToTable("Categorias", t =>
                 {
-                    // Check constraint para alinear con [Range(1,999)] del ViewModel
                     t.HasCheckConstraint("CK_Categorias_Orden_Rango", "[Orden] BETWEEN 1 AND 999");
                 });
 
@@ -57,7 +59,132 @@ namespace Puerto92.Data
                 entity.Property(c => c.FechaCreacion).HasDefaultValueSql("getdate()");
                 entity.Property<byte[]>("RowVersion").IsRowVersion();
             });
-            
+
+            builder.Entity<AsignacionKardex>(entity =>
+            {
+                entity.HasOne(a => a.Empleado)
+                    .WithMany()
+                    .HasForeignKey(a => a.EmpleadoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(a => a.Local)
+                    .WithMany()
+                    .HasForeignKey(a => a.LocalId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(a => new { a.LocalId, a.Fecha, a.TipoKardex });
+                entity.HasIndex(a => new { a.EmpleadoId, a.Fecha });
+                entity.HasIndex(a => a.Estado);
+                entity.HasIndex(a => a.FechaCreacion);
+
+                entity.Property(a => a.Estado).HasDefaultValue("Pendiente");
+                entity.Property(a => a.FechaCreacion).HasDefaultValueSql("getdate()");
+                entity.Property(a => a.EsReasignacion).HasDefaultValue(false);
+                entity.Property(a => a.RegistroIniciado).HasDefaultValue(false);
+                entity.Property(a => a.NotificacionEnviada).HasDefaultValue(false);
+            });
+
+            builder.Entity<Utensilio>(entity =>
+            {
+                entity.ToTable("Utensilios");
+
+                entity.Property(u => u.Codigo)
+                    .HasMaxLength(20)
+                    .IsRequired();
+
+                entity.Property(u => u.Nombre)
+                    .HasMaxLength(100)
+                    .IsRequired();
+
+                entity.Property(u => u.Tipo)
+                    .HasMaxLength(20)
+                    .IsRequired();
+
+                entity.Property(u => u.Unidad)
+                    .HasMaxLength(20)
+                    .IsRequired();
+
+                entity.Property(u => u.Precio)
+                    .HasColumnType("decimal(18,2)")
+                    .IsRequired();
+
+                entity.Property(u => u.Descripcion)
+                    .HasMaxLength(500);
+
+                entity.Property(u => u.Activo)
+                    .HasDefaultValue(true);
+
+                entity.Property(u => u.FechaCreacion)
+                    .HasDefaultValueSql("getdate()");
+
+                entity.Property(u => u.CreadoPor)
+                    .HasMaxLength(100);
+
+                entity.Property(u => u.ModificadoPor)
+                    .HasMaxLength(100);
+
+                entity.HasIndex(u => u.Codigo)
+                    .IsUnique();
+
+                entity.HasIndex(u => new { u.Tipo, u.Activo });
+
+                entity.HasIndex(u => u.Nombre);
+            });
+
+            // ⭐ NUEVO: Configuración de Productos
+            builder.Entity<Producto>(entity =>
+            {
+                entity.ToTable("Productos");
+
+                entity.Property(p => p.Codigo)
+                    .HasMaxLength(20)
+                    .IsRequired();
+
+                entity.Property(p => p.Nombre)
+                    .HasMaxLength(100)
+                    .IsRequired();
+
+                entity.Property(p => p.Unidad)
+                    .HasMaxLength(20)
+                    .IsRequired();
+
+                entity.Property(p => p.PrecioCompra)
+                    .HasColumnType("decimal(18,2)")
+                    .IsRequired();
+
+                entity.Property(p => p.PrecioVenta)
+                    .HasColumnType("decimal(18,2)")
+                    .IsRequired();
+
+                entity.Property(p => p.Descripcion)
+                    .HasMaxLength(500);
+
+                entity.Property(p => p.Activo)
+                    .HasDefaultValue(true);
+
+                entity.Property(p => p.FechaCreacion)
+                    .HasDefaultValueSql("getdate()");
+
+                entity.Property(p => p.CreadoPor)
+                    .HasMaxLength(100);
+
+                entity.Property(p => p.ModificadoPor)
+                    .HasMaxLength(100);
+
+                // Relación con Categoría
+                entity.HasOne(p => p.Categoria)
+                    .WithMany()
+                    .HasForeignKey(p => p.CategoriaId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // Índices para optimizar consultas
+                entity.HasIndex(p => p.Codigo)
+                    .IsUnique();
+
+                entity.HasIndex(p => new { p.CategoriaId, p.Activo });
+
+                entity.HasIndex(p => p.Nombre);
+            });
         }
     }
 }

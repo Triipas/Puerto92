@@ -1,0 +1,238 @@
+@model IEnumerable<Puerto92.ViewModels.UtensilioViewModel>
+@{
+    ViewData["Title"] = "Catálogo de Utensilios";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    var tipoFiltro = ViewBag.TipoFiltro as string;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/utensilios.css" asp-append-version="true" />
+}
+
+<div class="page-header">
+    <h1 class="page-title">Catálogo de Utensilios</h1>
+    <p class="page-subtitle">Gestione el inventario base de utensilios para todos los locales</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="fa-solid fa-utensils"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@ViewBag.TotalActivos</h3>
+            <p>Total Activos</p>
+            <small style="color: #64748B;">Disponibles para uso</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon success">
+            <i class="fa-solid fa-fire-burner"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@ViewBag.TotalCocina</h3>
+            <p>Utensilios de Cocina</p>
+            <small style="color: #64748B;">Activos</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon warning">
+            <i class="fa-solid fa-user-tie"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@ViewBag.TotalMozos</h3>
+            <p>Utensilios de Mozos</p>
+            <small style="color: #64748B;">Activos</small>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon danger">
+            <i class="fa-solid fa-plate-wheat"></i>
+        </div>
+        <div class="stat-content">
+            <h3>@ViewBag.TotalVajilla</h3>
+            <p>Vajilla</p>
+            <small style="color: #64748B;">Activos</small>
+        </div>
+    </div>
+</div>
+
+<!-- Content Card -->
+<div class="content-card">
+    <!-- Tabs de Tipos -->
+    <div class="categoria-tabs">
+        <a href="@Url.Action("Index")" 
+           class="categoria-tab @(string.IsNullOrEmpty(tipoFiltro) ? "active" : "")">
+            <i class="fa-solid fa-list"></i>
+            <span>Todos</span>
+        </a>
+        <a href="@Url.Action("Index", new { tipo = "Cocina" })" 
+           class="categoria-tab @(tipoFiltro == "Cocina" ? "active" : "")">
+            <i class="fa-solid fa-fire-burner"></i>
+            <span>Utensilios de Cocina</span>
+        </a>
+        <a href="@Url.Action("Index", new { tipo = "Mozos" })" 
+           class="categoria-tab @(tipoFiltro == "Mozos" ? "active" : "")">
+            <i class="fa-solid fa-user-tie"></i>
+            <span>Utensilios de Mozos</span>
+        </a>
+        <a href="@Url.Action("Index", new { tipo = "Vajilla" })" 
+           class="categoria-tab @(tipoFiltro == "Vajilla" ? "active" : "")">
+            <i class="fa-solid fa-plate-wheat"></i>
+            <span>Vajilla</span>
+        </a>
+    </div>
+
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                @if (string.IsNullOrEmpty(tipoFiltro))
+                {
+                    <span>Todos los Utensilios</span>
+                }
+                else
+                {
+                    <span>@tipoFiltro</span>
+                }
+            </h2>
+            <p style="font-size: 13px; color: #64748B; margin-top: 4px;">
+                @Model.Count() utensilio(s) encontrado(s)
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <button onclick="openCargaMasivaModal()" class="btn btn-secondary">
+                <i class="fa-solid fa-file-import"></i>
+                Carga Masiva
+            </button>
+            <button onclick="openCreateUtensilioModal()" class="btn btn-primary">
+                <i class="fa-solid fa-plus"></i>
+                Agregar Utensilio
+            </button>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <!-- Buscador -->
+        <div style="margin-bottom: 1.5rem;">
+            <input type="text" id="searchInput" class="form-control" 
+                   placeholder="🔍 Buscar por código, nombre o tipo..." 
+                   style="max-width: 400px;" />
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <i class="fa-solid fa-box-open"></i>
+                <h3>No hay utensilios registrados</h3>
+                <p>
+                    @if (string.IsNullOrEmpty(tipoFiltro))
+                    {
+                        <span>Comienza agregando utensilios usando los botones superiores</span>
+                    }
+                    else
+                    {
+                        <span>No hay utensilios de tipo @tipoFiltro registrados</span>
+                    }
+                </p>
+            </div>
+        }
+        else
+        {
+            <!-- Tabla -->
+            <div class="table-responsive">
+                <table class="table" id="utensiliosTable">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Tipo</th>
+                            <th>Unidad</th>
+                            <th>Precio (S/)</th>
+                            <th>Estado</th>
+                            <th style="text-align: center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var utensilio in Model)
+                        {
+                            <tr>
+                                <td style="font-weight: 600; color: #3B82F6;">@utensilio.Codigo</td>
+                                <td style="font-weight: 500;">@utensilio.Nombre</td>
+                                <td>
+                                    @if (utensilio.Tipo == "Cocina")
+                                    {
+                                        <span class="badge badge-success">
+                                            <i class="fa-solid fa-fire-burner"></i> Cocina
+                                        </span>
+                                    }
+                                    else if (utensilio.Tipo == "Mozos")
+                                    {
+                                        <span class="badge badge-warning">
+                                            <i class="fa-solid fa-user-tie"></i> Mozos
+                                        </span>
+                                    }
+                                    else if (utensilio.Tipo == "Vajilla")
+                                    {
+                                        <span class="badge badge-danger">
+                                            <i class="fa-solid fa-plate-wheat"></i> Vajilla
+                                        </span>
+                                    }
+                                </td>
+                                <td>@utensilio.Unidad</td>
+                                <td style="font-weight: 600; color: #10B981;">S/ @utensilio.Precio.ToString("N2")</td>
+                                <td>
+                                    @if (utensilio.Activo)
+                                    {
+                                        <span class="badge badge-success">Activo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-danger">Inactivo</span>
+                                    }
+                                </td>
+                                <td style="text-align: center;">
+                                    <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                                        @if (utensilio.Activo)
+                                        {
+                                            <!-- Botón Editar -->
+                                            <button onclick="openEditUtensilioModal(@utensilio.Id)" 
+                                                    class="btn-icon btn-icon-edit" 
+                                                    title="Editar">
+                                                <i class="fa-regular fa-pen-to-square"></i>
+                                            </button>
+                                            
+                                            <!-- Botón Desactivar -->
+                                            <button onclick="openDesactivarUtensilioModal(@utensilio.Id, '@utensilio.Codigo', '@utensilio.Nombre', '@utensilio.Tipo')" 
+                                                    class="btn-icon btn-icon-delete" 
+                                                    title="Desactivar">
+                                                <i class="fa-regular fa-circle-xmark"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span style="font-size: 12px; color: #94A3B8;">Inactivo</span>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@* Cargar Modales *@
+<partial name="Modals/_CreateUtensilioModal" />
+<partial name="Modals/_EditUtensilioModal" />
+<partial name="Modals/_DesactivarUtensilioModal" />
+<partial name="Modals/_CargaMasivaUtensiliosModal" />
+
+@section Scripts {
+    <script src="~/js/utensilios-modals.js" asp-append-version="true"></script>
+}

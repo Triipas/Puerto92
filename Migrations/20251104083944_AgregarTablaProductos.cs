@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Puerto92.Migrations
 {
     /// <inheritdoc />
-    public partial class AgregarCategorias : Migration
+    public partial class AgregarTablaProductos : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -89,6 +89,29 @@ namespace Puerto92.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Utensilios",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Codigo = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Nombre = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Tipo = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Unidad = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Precio = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Descripcion = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    Activo = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: true),
+                    FechaCreacion = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "getdate()"),
+                    FechaModificacion = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    CreadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    ModificadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Utensilios", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
@@ -107,6 +130,36 @@ namespace Puerto92.Migrations
                         principalTable: "AspNetRoles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Productos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Codigo = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Nombre = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    CategoriaId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Unidad = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    PrecioCompra = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PrecioVenta = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Descripcion = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    Activo = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: true),
+                    FechaCreacion = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "getdate()"),
+                    FechaModificacion = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    CreadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    ModificadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Productos", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Productos_Categorias_CategoriaId",
+                        column: x => x.CategoriaId,
+                        principalTable: "Categorias",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -141,6 +194,47 @@ namespace Puerto92.Migrations
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
                     table.ForeignKey(
                         name: "FK_AspNetUsers_Locales_LocalId",
+                        column: x => x.LocalId,
+                        principalTable: "Locales",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AsignacionesKardex",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    TipoKardex = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    Fecha = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    EmpleadoId = table.Column<string>(type: "TEXT", nullable: false),
+                    LocalId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Estado = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false, defaultValue: "Pendiente"),
+                    FechaCreacion = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "getdate()"),
+                    CreadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    EsReasignacion = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false),
+                    AsignacionOriginalId = table.Column<int>(type: "INTEGER", nullable: true),
+                    EmpleadoOriginal = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    MotivoReasignacion = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    FechaReasignacion = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    ReasignadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    RegistroIniciado = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false),
+                    DatosParciales = table.Column<string>(type: "TEXT", nullable: true),
+                    FechaNotificacion = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    NotificacionEnviada = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AsignacionesKardex", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AsignacionesKardex_AspNetUsers_EmpleadoId",
+                        column: x => x.EmpleadoId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_AsignacionesKardex_Locales_LocalId",
                         column: x => x.LocalId,
                         principalTable: "Locales",
                         principalColumn: "Id",
@@ -233,6 +327,26 @@ namespace Puerto92.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_AsignacionesKardex_EmpleadoId_Fecha",
+                table: "AsignacionesKardex",
+                columns: new[] { "EmpleadoId", "Fecha" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AsignacionesKardex_Estado",
+                table: "AsignacionesKardex",
+                column: "Estado");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AsignacionesKardex_FechaCreacion",
+                table: "AsignacionesKardex",
+                column: "FechaCreacion");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AsignacionesKardex_LocalId_Fecha_TipoKardex",
+                table: "AsignacionesKardex",
+                columns: new[] { "LocalId", "Fecha", "TipoKardex" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
                 column: "RoleId");
@@ -316,11 +430,46 @@ namespace Puerto92.Migrations
                 table: "Locales",
                 column: "Codigo",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Productos_CategoriaId_Activo",
+                table: "Productos",
+                columns: new[] { "CategoriaId", "Activo" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Productos_Codigo",
+                table: "Productos",
+                column: "Codigo",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Productos_Nombre",
+                table: "Productos",
+                column: "Nombre");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Utensilios_Codigo",
+                table: "Utensilios",
+                column: "Codigo",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Utensilios_Nombre",
+                table: "Utensilios",
+                column: "Nombre");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Utensilios_Tipo_Activo",
+                table: "Utensilios",
+                columns: new[] { "Tipo", "Activo" });
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AsignacionesKardex");
+
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
@@ -340,13 +489,19 @@ namespace Puerto92.Migrations
                 name: "AuditLogs");
 
             migrationBuilder.DropTable(
-                name: "Categorias");
+                name: "Productos");
+
+            migrationBuilder.DropTable(
+                name: "Utensilios");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "Categorias");
 
             migrationBuilder.DropTable(
                 name: "Locales");

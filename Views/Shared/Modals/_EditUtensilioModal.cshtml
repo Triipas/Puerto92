@@ -1,0 +1,79 @@
+@* Modal para Editar Utensilio *@
+
+<div id="editUtensilioModal" class="modal-overlay" style="display: none;">
+    <div class="modal-container">
+        <div class="modal-header">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="background: #0092B8; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </div>
+                <div>
+                    <h2 class="modal-title">Editar Utensilio</h2>
+                    <p class="modal-subtitle">Modifique la información del utensilio según sea necesario</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeModal('editUtensilioModal')">&times;</button>
+        </div>
+        <form id="editUtensilioForm" method="post">
+            <input type="hidden" id="editUtensilioId" name="Id" />
+            <div class="modal-body">
+                <!-- Código (no editable) -->
+                <div class="form-group">
+                    <label class="form-label">Código del Utensilio</label>
+                    <div style="background: #F9FAFB; border: 1px solid #E5E7EB; padding: 0.75rem; border-radius: 8px;">
+                        <div style="font-weight: 600; color: #1E293B; font-size: 16px;" id="editUtensilioCodigoDisplay">UTEN-001</div>
+                        <small style="color: #64748B; font-size: 12px;">El código no puede ser modificado</small>
+                    </div>
+                    <input type="hidden" id="editUtensilioCodigoInput" name="Codigo" />
+                </div>
+
+                <!-- Tipo (no editable) -->
+                <div class="form-group">
+                    <label class="form-label">Tipo</label>
+                    <div style="background: #F9FAFB; border: 1px solid #E5E7EB; padding: 0.75rem; border-radius: 8px;">
+                        <div id="editUtensilioTipoDisplay" style="font-weight: 500; color: #1E293B;">Cocina</div>
+                        <small style="color: #64748B; font-size: 12px;">El tipo no puede ser modificado</small>
+                    </div>
+                    <input type="hidden" id="editUtensilioTipoInput" name="Tipo" />
+                </div>
+
+                <!-- Nombre -->
+                <div class="form-group">
+                    <label class="form-label">Nombre del Utensilio <span style="color: red;">*</span></label>
+                    <input type="text" id="editUtensilioNombre" name="Nombre" class="form-control" required maxlength="100" />
+                </div>
+
+                <!-- Unidad -->
+                <div class="form-group">
+                    <label class="form-label">Unidad de Medida <span style="color: red;">*</span></label>
+                    <select id="editUtensilioUnidad" name="Unidad" class="form-select" required>
+                        <option value="Unidad">Unidad</option>
+                        <option value="Juego">Juego</option>
+                        <option value="Docena">Docena</option>
+                        <option value="Par">Par</option>
+                        <option value="Set">Set</option>
+                    </select>
+                </div>
+
+                <!-- Precio -->
+                <div class="form-group">
+                    <label class="form-label">Precio (S/) <span style="color: red;">*</span></label>
+                    <input type="number" id="editUtensilioPrecio" name="Precio" class="form-control" step="0.01" min="0.01" required />
+                </div>
+
+                <!-- Descripción -->
+                <div class="form-group">
+                    <label class="form-label">Descripción (opcional)</label>
+                    <textarea id="editUtensilioDescripcion" name="Descripcion" class="form-control" rows="3" maxlength="500"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeModal('editUtensilioModal')">Cancelar</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-save"></i>
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

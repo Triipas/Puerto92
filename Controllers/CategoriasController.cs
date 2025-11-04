@@ -40,7 +40,7 @@ namespace Puerto92.Controllers
             ViewBag.TipoActual = tipo;
             ViewBag.TiposTodos = TipoCategoria.Todos;
 
-            // Obtener categorías del tipo seleccionado
+            // ⭐ CAMBIO: Obtener categorías con conteo REAL de productos
             var categorias = await _context.Categorias
                 .Where(c => c.Tipo == tipo)
                 .OrderBy(c => c.Orden)
@@ -53,11 +53,17 @@ namespace Puerto92.Controllers
                     Activo = c.Activo,
                     FechaCreacion = c.FechaCreacion,
                     CreadoPor = c.CreadoPor,
-                    CantidadProductos = 0 // TODO: Calcular cuando exista tabla de productos
+                    
+                    // ✅ CONTADOR DINÁMICO según el tipo de categoría
+                    CantidadProductos = c.Tipo == "Cocina" 
+                        ? _context.Productos.Count(p => p.CategoriaId == c.Id && p.Activo)
+                        : c.Tipo == "Utensilios"
+                            ? _context.Utensilios.Count(u => u.Tipo == c.Nombre && u.Activo)
+                            : 0 // Para "Bebidas" u otros tipos sin tabla asociada aún
                 })
                 .ToListAsync();
 
-            // Obtener estadísticas por tipo
+            // Obtener estadísticas por tipo con conteo real
             var estadisticas = new Dictionary<string, int>();
             foreach (var t in TipoCategoria.Todos)
             {
@@ -301,8 +307,22 @@ namespace Puerto92.Controllers
                     return NotFound();
                 }
 
-                // TODO: Cuando existan productos, verificar si tiene productos asignados
-                int productosAsignados = 0; // await _context.Productos.CountAsync(p => p.CategoriaId == id);
+                // ⚠️ VERIFICACIÓN REAL según tipo de categoría
+                int productosAsignados = 0;
+
+                if (categoria.Tipo == "Cocina")
+                {
+                    // ✅ Contar productos REALES asociados a esta categoría
+                    productosAsignados = await _context.Productos
+                        .CountAsync(p => p.CategoriaId == id && p.Activo);
+                }
+                else if (categoria.Tipo == "Utensilios")
+                {
+                    // ✅ Contar utensilios REALES asociados a esta categoría
+                    productosAsignados = await _context.Utensilios
+                        .CountAsync(u => u.Tipo == categoria.Nombre && u.Activo);
+                }
+                // Para "Bebidas" u otros tipos, productosAsignados será 0
 
                 if (productosAsignados > 0)
                 {
