@@ -78,7 +78,7 @@ namespace Puerto92.Controllers
         public async Task<IActionResult> GetUtensilio(int id)
         {
             var utensilio = await _context.Utensilios.FindAsync(id);
-            
+
             if (utensilio == null)
             {
                 return NotFound();
@@ -108,7 +108,7 @@ namespace Puerto92.Controllers
             {
                 if (IsAjaxRequest)
                     return JsonError("Datos inválidos. Por favor verifica los campos.");
-                
+
                 SetErrorMessage("Datos inválidos. Por favor verifica los campos.");
                 return RedirectToAction(nameof(Index), new { tipo = model.Tipo });
             }
@@ -120,7 +120,7 @@ namespace Puerto92.Controllers
                 {
                     if (IsAjaxRequest)
                         return JsonError($"Tipo inválido: {model.Tipo}. Debe ser Cocina, Mozos o Vajilla.");
-                    
+
                     SetErrorMessage($"Tipo inválido: {model.Tipo}");
                     return RedirectToAction(nameof(Index));
                 }
@@ -130,14 +130,14 @@ namespace Puerto92.Controllers
                 {
                     if (IsAjaxRequest)
                         return JsonError($"Unidad inválida: {model.Unidad}");
-                    
+
                     SetErrorMessage($"Unidad inválida: {model.Unidad}");
                     return RedirectToAction(nameof(Index));
                 }
 
                 // Generar código si no se proporciona
-                string codigo = string.IsNullOrWhiteSpace(model.Codigo) 
-                    ? await GenerarCodigoUnico() 
+                string codigo = string.IsNullOrWhiteSpace(model.Codigo)
+                    ? await GenerarCodigoUnico()
                     : model.Codigo.Trim();
 
                 // Verificar que el código no exista
@@ -163,21 +163,21 @@ namespace Puerto92.Controllers
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation($"Utensilio '{utensilio.Nombre}' ({utensilio.Codigo}) creado por {User.Identity!.Name}");
-                
+
                 await _auditService.RegistrarCreacionUtensilioAsync(
                     codigoUtensilio: utensilio.Codigo,
                     nombreUtensilio: utensilio.Nombre,
                     tipo: utensilio.Tipo);
 
                 SetSuccessMessage($"Utensilio '{utensilio.Nombre}' creado exitosamente con código {codigo}");
-                
+
                 // Redirigir a la vista con el filtro de tipo correcto
                 return RedirectToAction(nameof(Index), new { tipo = model.Tipo });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al crear utensilio");
-                
+
                 await _auditService.RegistrarErrorSistemaAsync(
                     error: "Error al crear utensilio",
                     detalles: ex.Message);
@@ -209,7 +209,7 @@ namespace Puerto92.Controllers
             try
             {
                 var utensilio = await _context.Utensilios.FindAsync(id);
-                
+
                 if (utensilio == null)
                 {
                     return NotFound();
@@ -217,16 +217,16 @@ namespace Puerto92.Controllers
 
                 // Detectar cambios para auditoría
                 List<string> cambios = new List<string>();
-                
+
                 if (utensilio.Nombre != model.Nombre)
                     cambios.Add($"Nombre: '{utensilio.Nombre}' → '{model.Nombre}'");
-                
+
                 if (utensilio.Precio != model.Precio)
                     cambios.Add($"Precio: S/ {utensilio.Precio:N2} → S/ {model.Precio:N2}");
-                
+
                 if (utensilio.Unidad != model.Unidad)
                     cambios.Add($"Unidad: '{utensilio.Unidad}' → '{model.Unidad}'");
-                
+
                 if (utensilio.Descripcion != model.Descripcion)
                     cambios.Add($"Descripción modificada");
 
@@ -241,7 +241,7 @@ namespace Puerto92.Controllers
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation($"Utensilio '{utensilio.Nombre}' ({utensilio.Codigo}) editado por {User.Identity!.Name}");
-                
+
                 if (cambios.Any())
                 {
                     await _auditService.RegistrarEdicionUtensilioAsync(
@@ -251,7 +251,7 @@ namespace Puerto92.Controllers
                 }
 
                 SetSuccessMessage("Utensilio actualizado exitosamente");
-                
+
                 return RedirectToAction(nameof(Index), new { tipo = utensilio.Tipo });
             }
             catch (DbUpdateConcurrencyException)
@@ -265,7 +265,7 @@ namespace Puerto92.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al editar utensilio");
-                
+
                 await _auditService.RegistrarErrorSistemaAsync(
                     error: "Error al editar utensilio",
                     detalles: ex.Message);
@@ -297,19 +297,19 @@ namespace Puerto92.Controllers
                 await _context.SaveChangesAsync();
 
                 _logger.LogWarning($"Utensilio '{utensilio.Nombre}' ({utensilio.Codigo}) DESACTIVADO por {User.Identity!.Name}. Motivo: {motivo}");
-                
+
                 await _auditService.RegistrarDesactivacionUtensilioAsync(
                     codigoUtensilio: utensilio.Codigo,
                     nombreUtensilio: utensilio.Nombre);
 
                 SetSuccessMessage($"Utensilio '{utensilio.Nombre}' desactivado exitosamente");
-                
+
                 return RedirectToAction(nameof(Index), new { tipo = utensilio.Tipo });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al desactivar utensilio");
-                
+
                 await _auditService.RegistrarErrorSistemaAsync(
                     error: "Error al desactivar utensilio",
                     detalles: ex.Message);
@@ -326,19 +326,28 @@ namespace Puerto92.Controllers
             try
             {
                 var csv = new StringBuilder();
-                
-                // Usar punto y coma (;) como separador para Excel en español
-                csv.AppendLine("Codigo;Nombre;Tipo;Unidad;Precio;Descripcion");
-                csv.AppendLine(";Sartén Antiadherente 28cm;Cocina;Unidad;85.00;Sartén profesional de 28cm de diámetro");
-                csv.AppendLine(";Cuchillo Chef 20cm;Cocina;Unidad;120.00;Cuchillo de chef profesional acero inoxidable");
-                csv.AppendLine(";Bandeja Rectangular;Mozos;Unidad;45.00;Bandeja antideslizante para servir");
-                csv.AppendLine(";Plato Hondo Porcelana;Vajilla;Unidad;25.00;Plato hondo de porcelana blanca");
 
-                // Agregar BOM UTF-8 para que Excel reconozca el encoding
+                // Header
+                csv.AppendLine("Codigo;Nombre;Tipo;Unidad;Precio;Descripcion");
+
+                // ⭐ Instrucciones claras en comentarios (Excel ignora líneas que empiezan con #)
+                csv.AppendLine("# DEJA EL CODIGO VACIO (;) PARA QUE SE GENERE AUTOMATICAMENTE");
+                csv.AppendLine("# Tipos validos: Cocina, Mozos, Vajilla");
+                csv.AppendLine("# Unidades validas: Unidad, Juego, Docena, Par, Set");
+                csv.AppendLine("# Precio: usa punto como decimal (85.00)");
+                csv.AppendLine("");
+
+                // Ejemplos con código VACÍO
+                csv.AppendLine(";Sartén Antiadherente 28cm;Cocina;Unidad;85.00;Sartén profesional de 28cm");
+                csv.AppendLine(";Cuchillo Chef 20cm;Cocina;Unidad;120.00;Cuchillo de chef acero inoxidable");
+                csv.AppendLine(";Bandeja Rectangular;Mozos;Unidad;45.00;Bandeja antideslizante");
+                csv.AppendLine(";Plato Hondo Porcelana;Vajilla;Unidad;25.00;Plato hondo blanco");
+
+                // Agregar BOM UTF-8 para Excel
                 var bomBytes = Encoding.UTF8.GetPreamble();
                 var csvBytes = Encoding.UTF8.GetBytes(csv.ToString());
                 var bytes = bomBytes.Concat(csvBytes).ToArray();
-                
+
                 return File(bytes, "text/csv", $"Plantilla_Utensilios_{DateTime.Now:yyyyMMdd}.csv");
             }
             catch (Exception ex)
@@ -369,7 +378,7 @@ namespace Puerto92.Controllers
             try
             {
                 _logger.LogInformation($"Iniciando carga masiva. Archivo: {archivo.FileName}, Tamaño: {archivo.Length} bytes");
-                
+
                 var resultado = await ProcesarCargaMasiva(archivo);
 
                 if (resultado.Exitoso)
@@ -383,20 +392,20 @@ namespace Puerto92.Controllers
                 else
                 {
                     _logger.LogWarning($"Carga masiva con errores: {resultado.FilasConError} filas con problemas");
-                    
+
                     // Construir mensaje de error detallado
                     var mensajeError = $"❌ Se encontraron {resultado.FilasConError} fila(s) con errores. ";
-                    
+
                     if (resultado.Errores.Count <= 5)
                     {
                         mensajeError += "Errores: " + string.Join("; ", resultado.Errores);
                     }
                     else
                     {
-                        mensajeError += "Primeros 5 errores: " + string.Join("; ", resultado.Errores.Take(5)) + 
+                        mensajeError += "Primeros 5 errores: " + string.Join("; ", resultado.Errores.Take(5)) +
                                        $" (y {resultado.Errores.Count - 5} más...)";
                     }
-                    
+
                     SetErrorMessage(mensajeError);
                 }
 
@@ -405,7 +414,7 @@ namespace Puerto92.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error en carga masiva");
-                
+
                 await _auditService.RegistrarErrorSistemaAsync(
                     error: "Error en carga masiva de utensilios",
                     detalles: ex.Message);
@@ -416,6 +425,9 @@ namespace Puerto92.Controllers
         }
 
         // Método auxiliar: Generar código único
+        /// <summary>
+        /// Generar código único (para creación individual)
+        /// </summary>
         private async Task<string> GenerarCodigoUnico()
         {
             var ultimoUtensilio = await _context.Utensilios
@@ -432,13 +444,13 @@ namespace Puerto92.Controllers
                 }
             }
 
-            string nuevoCodigo = $"UTEN-{siguienteNumero:D3}";
-
-            while (await _context.Utensilios.AnyAsync(u => u.Codigo == nuevoCodigo))
+            string nuevoCodigo;
+            do
             {
-                siguienteNumero++;
                 nuevoCodigo = $"UTEN-{siguienteNumero:D3}";
+                siguienteNumero++;
             }
+            while (await _context.Utensilios.AnyAsync(u => u.Codigo == nuevoCodigo));
 
             return nuevoCodigo;
         }
@@ -448,11 +460,12 @@ namespace Puerto92.Controllers
         {
             var resultado = new CargaMasivaResultado();
             var utensiliosImportados = new List<Utensilio>();
+            var codigosGenerados = new HashSet<string>(); // ⭐ NUEVO: Rastrear códigos generados
 
             using (var reader = new StreamReader(archivo.OpenReadStream(), Encoding.UTF8))
             {
                 string? headerLine = await reader.ReadLineAsync();
-                
+
                 if (string.IsNullOrWhiteSpace(headerLine))
                 {
                     resultado.Errores.Add("El archivo está vacío");
@@ -463,11 +476,11 @@ namespace Puerto92.Controllers
                 // Detectar separador automáticamente
                 char separador = headerLine.Contains(';') ? ';' : ',';
                 _logger.LogInformation($"Separador detectado: '{separador}'");
-                
+
                 // Validar que el header tenga las columnas esperadas
                 var columnas = headerLine.Split(separador).Select(c => c.Trim()).ToList();
                 _logger.LogInformation($"Columnas encontradas: {string.Join(", ", columnas)}");
-                
+
                 if (columnas.Count < 5)
                 {
                     resultado.Errores.Add($"El archivo debe tener al menos 5 columnas (encontradas: {columnas.Count}). Formato esperado: Codigo;Nombre;Tipo;Unidad;Precio;Descripcion");
@@ -480,10 +493,22 @@ namespace Puerto92.Controllers
                 {
                     numeroFila++;
                     var linea = await reader.ReadLineAsync();
-                    
-                    if (string.IsNullOrWhiteSpace(linea))
+
+                    // Ignorar líneas vacías o con solo separadores
+                    if (string.IsNullOrWhiteSpace(linea) ||
+                        linea.Trim().All(c => c == separador || char.IsWhiteSpace(c)))
                     {
                         _logger.LogDebug($"Fila {numeroFila}: Línea vacía, omitiendo");
+                        continue;
+                    }
+
+                    // Validar que la línea tenga contenido real
+                    var campos = linea.Split(separador);
+                    bool todasVacias = campos.All(c => string.IsNullOrWhiteSpace(c));
+
+                    if (todasVacias)
+                    {
+                        _logger.LogDebug($"Fila {numeroFila}: Todos los campos vacíos, omitiendo");
                         continue;
                     }
 
@@ -497,18 +522,31 @@ namespace Puerto92.Controllers
                         continue;
                     }
 
-                    // Generar código si está vacío
-                    string codigo = string.IsNullOrWhiteSpace(dto.Codigo) 
-                        ? await GenerarCodigoUnico() 
-                        : dto.Codigo.Trim();
-
-                    // Verificar código único
-                    if (await _context.Utensilios.AnyAsync(u => u.Codigo == codigo) || 
-                        utensiliosImportados.Any(u => u.Codigo == codigo))
+                    // ⭐ NUEVO: Generar código único considerando códigos ya generados
+                    string codigo;
+                    if (string.IsNullOrWhiteSpace(dto.Codigo))
                     {
-                        codigo = await GenerarCodigoUnico();
-                        _logger.LogInformation($"Código duplicado en fila {numeroFila}, generado nuevo: {codigo}");
+                        // Generar código único
+                        codigo = await GenerarCodigoUnicoParaLote(codigosGenerados);
+                        _logger.LogInformation($"Fila {numeroFila}: Código generado automáticamente: {codigo}");
                     }
+                    else
+                    {
+                        codigo = dto.Codigo.Trim();
+
+                        // Verificar que no exista en BD ni en el lote actual
+                        if (await _context.Utensilios.AnyAsync(u => u.Codigo == codigo) ||
+                            codigosGenerados.Contains(codigo))
+                        {
+                            resultado.FilasConError++;
+                            resultado.Errores.Add($"Fila {numeroFila}: El código '{codigo}' ya existe");
+                            _logger.LogWarning($"Fila {numeroFila}: Código duplicado: {codigo}");
+                            continue;
+                        }
+                    }
+
+                    // Agregar código a la lista de generados
+                    codigosGenerados.Add(codigo);
 
                     var utensilio = new Utensilio
                     {
@@ -524,7 +562,7 @@ namespace Puerto92.Controllers
                     };
 
                     utensiliosImportados.Add(utensilio);
-                    _logger.LogDebug($"Fila {numeroFila}: Utensilio '{utensilio.Nombre}' listo para importar");
+                    _logger.LogDebug($"Fila {numeroFila}: Utensilio '{utensilio.Nombre}' ({codigo}) listo para importar");
                 }
             }
 
@@ -549,17 +587,47 @@ namespace Puerto92.Controllers
             resultado.Exitoso = true;
             resultado.UtensiliosCargados = utensiliosImportados.Count;
             resultado.Mensaje = $"{utensiliosImportados.Count} utensilio(s) importado(s) correctamente";
-            
-            _logger.LogInformation($"Carga masiva exitosa: {utensiliosImportados.Count} utensilios importados");
+
+            _logger.LogInformation($"Carga masiva exitosa: {utensiliosImportados.Count} utensilios importados con códigos: {string.Join(", ", codigosGenerados)}");
 
             return resultado;
+        }
+        private async Task<string> GenerarCodigoUnicoParaLote(HashSet<string> codigosGenerados)
+        {
+            // Obtener el último utensilio de la base de datos
+            var ultimoUtensilio = await _context.Utensilios
+                .OrderByDescending(u => u.Id)
+                .FirstOrDefaultAsync();
+
+            int siguienteNumero = 1;
+
+            if (ultimoUtensilio != null)
+            {
+                var partes = ultimoUtensilio.Codigo.Split('-');
+                if (partes.Length == 2 && int.TryParse(partes[1], out int numero))
+                {
+                    siguienteNumero = numero + 1;
+                }
+            }
+
+            // Verificar contra BD y códigos ya generados en este lote
+            string nuevoCodigo;
+            do
+            {
+                nuevoCodigo = $"UTEN-{siguienteNumero:D3}";
+                siguienteNumero++;
+            }
+            while (await _context.Utensilios.AnyAsync(u => u.Codigo == nuevoCodigo) ||
+                   codigosGenerados.Contains(nuevoCodigo));
+
+            return nuevoCodigo;
         }
 
         // Método auxiliar: Parsear línea CSV
         private UtensilioImportDto ParsearLineaCSV(string linea, int numeroFila, char separador)
         {
             var dto = new UtensilioImportDto { NumeroFila = numeroFila };
-            
+
             // Dividir por el separador detectado
             var campos = linea.Split(separador);
 
@@ -613,7 +681,7 @@ namespace Puerto92.Controllers
                 {
                     // Intentar parsear con diferentes formatos (. y ,)
                     var precioNormalizado = dto.PrecioStr.Replace(',', '.');
-                    
+
                     if (!decimal.TryParse(precioNormalizado, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal precio) || precio <= 0)
                     {
                         dto.Errores.Add($"Fila {numeroFila}: Precio inválido '{dto.PrecioStr}'. Debe ser un número mayor a 0");
