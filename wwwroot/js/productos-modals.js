@@ -16,13 +16,18 @@ let categorias = [];
 function initProductosPage() {
     console.log('🔄 Inicializando página de productos...');
     
+    // Resetear categorías
     categorias = [];
     
+    // Cargar categorías primero
     cargarCategorias().then(() => {
         setupSearch();
         setupModalEventListeners();
         setupCreateFormHandler();
         console.log('✅ Página de productos inicializada correctamente');
+    }).catch(error => {
+        console.error('❌ Error al inicializar página:', error);
+        showNotification('Error al cargar las categorías', 'error');
     });
 }
 
@@ -40,7 +45,7 @@ window.initProductosPage = initProductosPage;
  * Cargar categorías de productos desde el servidor
  */
 async function cargarCategorias() {
-    console.log('📥 Cargando categorías...');
+    console.log('📥 Intentando cargar categorías...');
     
     try {
         const response = await fetch('/Productos/GetCategorias');
@@ -49,45 +54,72 @@ async function cargarCategorias() {
             throw new Error(`HTTP ${response.status}`);
         }
         
-        categorias = await response.json();
-
-        console.log(`✅ Cargadas ${categorias.length} categorías`);
-
-        // Llenar select de Crear
-        await llenarSelectCategorias('createCategoriaId');
-
-        console.log('✅ Selects llenados correctamente');
+        const data = await response.json();
+        
+        console.log('📦 Respuesta del servidor:', data);
+        
+        // Verificar si es un array
+        if (!Array.isArray(data)) {
+            throw new Error('La respuesta no es un array');
+        }
+        
+        categorias = data;
+        console.log(`✅ Cargadas ${categorias.length} categorías:`, categorias);
+        
+        // Llenar select de Crear inmediatamente
+        llenarSelectCategorias('createCategoriaId');
+        
+        return categorias;
 
     } catch (error) {
         console.error('❌ Error al cargar categorías:', error);
-        showNotification('Error al cargar las categorías. Recargue la página.', 'error');
+        categorias = [];
+        
+        // Actualizar select con mensaje de error
+        const select = document.getElementById('createCategoriaId');
+        if (select) {
+            select.innerHTML = '<option value="">Error al cargar categorías</option>';
+        }
+        
+        throw error;
     }
 }
 
 /**
  * Llenar select de categorías
  */
-async function llenarSelectCategorias(selectId) {
+function llenarSelectCategorias(selectId) {
     const select = document.getElementById(selectId);
+    
     if (!select) {
-        console.warn(`⚠️ Select ${selectId} no encontrado`);
+        console.warn(`⚠️ Select ${selectId} no encontrado en el DOM`);
         return;
     }
     
-    // Limpiar opciones excepto la primera (placeholder)
-    while (select.options.length > 1) {
-        select.remove(1);
-    }
+    console.log(`📝 Llenando select ${selectId} con ${categorias.length} categorías`);
     
+    // Limpiar todas las opciones
+    select.innerHTML = '';
+    
+    // Si no hay categorías
     if (categorias.length === 0) {
         const option = document.createElement('option');
         option.value = '';
         option.textContent = 'No hay categorías disponibles';
         option.disabled = true;
+        option.selected = true;
         select.appendChild(option);
-        console.warn('⚠️ No hay categorías disponibles');
+        console.warn('⚠️ No hay categorías para mostrar');
         return;
     }
+    
+    // Agregar opción placeholder
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Seleccione una categoría';
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    select.appendChild(placeholder);
     
     // Agregar categorías
     categorias.forEach(cat => {
@@ -95,12 +127,10 @@ async function llenarSelectCategorias(selectId) {
         option.value = cat.value;
         option.textContent = cat.text;
         select.appendChild(option);
+        console.log(`  ✓ Agregada: ${cat.text} (ID: ${cat.value})`);
     });
     
-    // Cambiar placeholder
-    select.options[0].textContent = 'Seleccione una categoría';
-    
-    console.log(`✅ Select ${selectId} llenado con ${categorias.length} categorías`);
+    console.log(`✅ Select ${selectId} llenado correctamente con ${categorias.length} opciones`);
 }
 
 // ==========================================
@@ -113,28 +143,59 @@ async function llenarSelectCategorias(selectId) {
 async function openCreateProductoModal() {
     console.log('📝 Abriendo modal de crear producto...');
     
-    // Asegurar que los datos estén cargados
-    if (categorias.length === 0) {
-        console.log('⚠️ Categorías no cargadas, recargando...');
-        await cargarCategorias();
+    try {
+        // Asegurar que los datos estén cargados
+        if (categorias.length === 0) {
+            console.log('⚠️ Categorías no cargadas, recargando...');
+            showNotification('Cargando categorías...', 'info');
+            await cargarCategorias();
+        }
+        
+        // Verificar nuevamente después de cargar
+        if (categorias.length === 0) {
+            showNotification('No hay categorías disponibles. Por favor, cree categorías primero desde Configuración Global.', 'warning');
+            return;
+        }
+        
+        const modal = document.getElementById('createProductoModal');
+        if (!modal) {
+            console.error('❌ Modal createProductoModal no encontrado');
+            return;
+        }
+        
+        // Resetear formulario
+        const form = document.getElementById('createProductoForm');
+        if (form) {
+            form.reset();
+        }
+        
+        // Desmarcar checkbox
+        const checkbox = document.getElementById('guardarYAgregarOtro');
+        if (checkbox) {
+            checkbox.checked = false;
+        }
+        
+        // Ocultar warning de precios
+        const warningDiv = document.getElementById('precioWarning');
+        if (warningDiv) {
+            warningDiv.style.display = 'none';
+        }
+        
+        // Re-llenar los selects
+        llenarSelectCategorias('createCategoriaId');
+        
+        // Mostrar modal
+        modal.style.display = 'flex';
+        setTimeout(() => {
+            modal.classList.add('active');
+        }, 10);
+        
+        console.log('✅ Modal de crear producto abierto');
+        
+    } catch (error) {
+        console.error('❌ Error al abrir modal:', error);
+        showNotification('Error al abrir el modal de crear producto', 'error');
     }
-    
-    const modal = document.getElementById('createProductoModal');
-    modal.style.display = 'flex';
-    modal.classList.add('active');
-    document.getElementById('createProductoForm').reset();
-    document.getElementById('guardarYAgregarOtro').checked = false;
-    
-    // Ocultar warning de precios
-    const warningDiv = document.getElementById('precioWarning');
-    if (warningDiv) {
-        warningDiv.style.display = 'none';
-    }
-    
-    // Re-llenar los selects por si acaso
-    await llenarSelectCategorias('createCategoriaId');
-    
-    console.log('✅ Modal de crear producto abierto');
 }
 
 /**
@@ -157,6 +218,7 @@ async function openEditProductoModal(id) {
         }
 
         const producto = await response.json();
+        console.log('📦 Producto cargado:', producto);
 
         // Llenar formulario
         document.getElementById('editProductoId').value = producto.id;
@@ -186,7 +248,9 @@ async function openEditProductoModal(id) {
         // Mostrar modal
         const modal = document.getElementById('editProductoModal');
         modal.style.display = 'flex';
-        modal.classList.add('active');
+        setTimeout(() => {
+            modal.classList.add('active');
+        }, 10);
         
         console.log('✅ Modal de editar producto abierto');
 
@@ -211,7 +275,9 @@ function openDesactivarProductoModal(id, codigo, nombre, categoria) {
 
     const modal = document.getElementById('desactivarProductoModal');
     modal.style.display = 'flex';
-    modal.classList.add('active');
+    setTimeout(() => {
+        modal.classList.add('active');
+    }, 10);
     
     console.log('✅ Modal de desactivar producto abierto');
 }
@@ -224,7 +290,9 @@ function openCargaMasivaModal() {
     
     const modal = document.getElementById('cargaMasivaModal');
     modal.style.display = 'flex';
-    modal.classList.add('active');
+    setTimeout(() => {
+        modal.classList.add('active');
+    }, 10);
     
     // Limpiar input file
     const fileInput = document.getElementById('archivoInput');
@@ -245,6 +313,8 @@ function openCargaMasivaModal() {
  */
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
+    if (!modal) return;
+    
     modal.classList.remove('active');
     setTimeout(() => {
         modal.style.display = 'none';
@@ -326,6 +396,9 @@ function setupCreateFormHandler() {
                 if (response.ok) {
                     // Limpiar formulario pero mantener el modal abierto
                     this.reset();
+                    
+                    // Re-llenar categorías
+                    llenarSelectCategorias('createCategoriaId');
                     
                     // Mostrar notificación de éxito
                     showNotification('Producto agregado exitosamente. Puede agregar otro.', 'success');
