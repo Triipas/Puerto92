@@ -460,7 +460,7 @@ namespace Puerto92.Controllers
                         cantidad: resultado.ProductosCargados,
                         resultado: resultado.Mensaje);
 
-                    SetSuccessMessage($"✅ {resultado.ProductosCargados} producto(s) cargado(s) exitosamente");
+                    SetSuccessMessage($"{resultado.ProductosCargados} producto(s) cargado(s) exitosamente");
                 }
                 else
                 {

@@ -17,7 +17,7 @@ namespace Puerto92.Services
         public List<NavigationItemViewModel> GetNavigationItems(ClaimsPrincipal user)
         {
             var items = new List<NavigationItemViewModel>();
-
+/*
             // Dashboard - Todos los roles
             items.Add(new NavigationItemViewModel
             {
@@ -27,7 +27,7 @@ namespace Puerto92.Services
                 Action = "Index",
                 RequiredRoles = new List<string>()
             });
-
+*/
             // === ADMINISTRADOR LOCAL ===
             if (user.IsInRole("Administrador Local"))
             {
@@ -42,7 +42,7 @@ namespace Puerto92.Services
             }
 
             // === ADMIN MAESTRO Y ADMINISTRADOR LOCAL ===
-            if (user.IsInRole("Admin Maestro") || user.IsInRole("Administrador Local"))
+            if (user.IsInRole("Admin Maestro")/* || user.IsInRole("Administrador Local")*/)
             {
                 items.Add(new NavigationItemViewModel
                 {
