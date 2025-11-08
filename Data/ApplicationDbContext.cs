@@ -18,6 +18,7 @@ namespace Puerto92.Data
         public DbSet<Utensilio> Utensilios { get; set; }
         public DbSet<Producto> Productos { get; set; }
         public DbSet<Proveedor> Proveedores { get; set; }
+        public DbSet<Notificacion> Notificaciones { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -236,6 +237,24 @@ namespace Puerto92.Data
                 entity.HasIndex(p => new { p.Categoria, p.Activo });
 
                 entity.HasIndex(p => p.Nombre);
+            });
+
+            // Configuración de Notificaciones
+            builder.Entity<Notificacion>(entity =>
+            {
+                entity.ToTable("Notificaciones");
+
+                entity.HasOne(n => n.Usuario)
+                    .WithMany()
+                    .HasForeignKey(n => n.UsuarioId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(n => new { n.UsuarioId, n.Leida, n.FechaCreacion });
+                entity.HasIndex(n => n.FechaExpiracion);
+                entity.HasIndex(n => n.Tipo);
+
+                entity.Property(n => n.FechaCreacion)
+                    .HasDefaultValueSql("getdate()");
             });
 
         }

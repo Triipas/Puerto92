@@ -58,7 +58,8 @@ builder.Services.AddSession(options =>
 // ===== 🎯 SERVICIOS PERSONALIZADOS =====
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuditService, AuditService>();
-builder.Services.AddScoped<INavigationService, NavigationService>(); // ⭐ NUEVO
+builder.Services.AddScoped<INavigationService, NavigationService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 var app = builder.Build();
 

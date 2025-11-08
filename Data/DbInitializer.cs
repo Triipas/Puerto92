@@ -188,6 +188,46 @@ namespace Puerto92.Data
                 localId: localCorp.Id,
                 password: "Puerto92_Sup1"
             );
+
+            await EnsureUserWithRole(
+                userManager,
+                roleManager,
+                userName: "mozo1",
+                nombreCompleto: "Mozo Pruebas1",
+                roleName: "Mozo",
+                localId: localPuerto92.Id,
+                password: "Puerto92_Moz1"
+            );
+
+            await EnsureUserWithRole(
+                userManager,
+                roleManager,
+                userName: "mozo2",
+                nombreCompleto: "Mozo Pruebas2",
+                roleName: "Mozo",
+                localId: localPuerto92.Id,
+                password: "Puerto92_Moz2"
+            );
+
+            await EnsureUserWithRole(
+                userManager,
+                roleManager,
+                userName: "cocinero1",
+                nombreCompleto: "Cocinero Pruebas1",
+                roleName: "Cocinero",
+                localId: localPuerto92.Id,
+                password: "Puerto92_Co1"
+            );
+                        
+            await EnsureUserWithRole(
+                userManager,
+                roleManager,
+                userName: "cocinero2",
+                nombreCompleto: "Cocinero Pruebas2",
+                roleName: "Cocinero",
+                localId: localPuerto92.Id,
+                password: "Puerto92_Co2"
+            );
         }
 
         // Función local para evitar duplicar código

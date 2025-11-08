@@ -11,8 +11,8 @@ using Puerto92.Data;
 namespace Puerto92.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251104215727_InitialDB")]
-    partial class InitialDB
+    [Migration("20251108204438_AgregarSistemaNotificaciones")]
+    partial class AgregarSistemaNotificaciones
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -400,6 +400,85 @@ namespace Puerto92.Migrations
                     b.ToTable("Locales");
                 });
 
+            modelBuilder.Entity("Puerto92.Models.Notificacion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DatosAdicionales")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("getdate()");
+
+                    b.Property<DateTime?>("FechaExpiracion")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FechaLectura")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Icono")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Leida")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Mensaje")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("MostrarPopup")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Prioridad")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TextoAccion")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Titulo")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UrlAccion")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FechaExpiracion");
+
+                    b.HasIndex("Tipo");
+
+                    b.HasIndex("UsuarioId", "Leida", "FechaCreacion");
+
+                    b.ToTable("Notificaciones", (string)null);
+                });
+
             modelBuilder.Entity("Puerto92.Models.Producto", b =>
                 {
                     b.Property<int>("Id")
@@ -761,6 +840,17 @@ namespace Puerto92.Migrations
                     b.Navigation("Empleado");
 
                     b.Navigation("Local");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.Notificacion", b =>
+                {
+                    b.HasOne("Puerto92.Models.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("Puerto92.Models.Producto", b =>
