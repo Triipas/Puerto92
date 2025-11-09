@@ -326,12 +326,25 @@ namespace Puerto92.Controllers
                     return JsonError("Asignación no encontrada");
                 }
 
+                // ⭐ NUEVO: Validar que el estado permita reasignación
+                if (asignacionOriginal.Estado != EstadoAsignacion.Pendiente && 
+                    asignacionOriginal.Estado != EstadoAsignacion.Asignada)
+                {
+                    return JsonError($"No se puede reasignar. El kardex ya está en estado '{asignacionOriginal.Estado}'. Solo se pueden reasignar asignaciones en estado 'Pendiente' o 'Asignada'.");
+                }
+
+                // ⭐ NUEVO: Validar que el empleado no haya iniciado el registro
+                if (asignacionOriginal.RegistroIniciado)
+                {
+                    return JsonError("No se puede reasignar. El empleado ya inició el registro del kardex. Para modificar la asignación, primero debe cancelarla.");
+                }
+
                 // Validar que el nuevo empleado no tenga asignación ese día
                 var existeAsignacion = await _context.AsignacionesKardex
                     .AnyAsync(a => a.EmpleadoId == model.NuevoEmpleadoId &&
-                                  a.Fecha.Date == asignacionOriginal.Fecha.Date &&
-                                  a.LocalId == usuario.LocalId &&
-                                  a.Id != model.AsignacionId);
+                                a.Fecha.Date == asignacionOriginal.Fecha.Date &&
+                                a.LocalId == usuario.LocalId &&
+                                a.Id != model.AsignacionId);
 
                 if (existeAsignacion)
                 {
@@ -369,9 +382,9 @@ namespace Puerto92.Controllers
                     var otrosCocineros = await _context.AsignacionesKardex
                         .Include(a => a.Empleado)
                         .Where(a => a.Fecha.Date == asignacionOriginal.Fecha.Date &&
-                                   a.LocalId == usuario.LocalId &&
-                                   a.TipoKardex == asignacionOriginal.TipoKardex &&
-                                   a.Id != model.AsignacionId)
+                                a.LocalId == usuario.LocalId &&
+                                a.TipoKardex == asignacionOriginal.TipoKardex &&
+                                a.Id != model.AsignacionId)
                         .Select(a => a.Empleado!.NombreCompleto)
                         .ToListAsync();
 
@@ -513,10 +526,10 @@ namespace Puerto92.Controllers
             var asignaciones = await _context.AsignacionesKardex
                 .Include(a => a.Empleado)
                 .Where(a => a.LocalId == usuario.LocalId &&
-                           a.Fecha >= primerDia &&
-                           a.Fecha <= ultimoDia &&
-                           a.TipoKardex == tipoKardex &&
-                           a.Estado == EstadoAsignacion.Pendiente)
+                        a.Fecha >= primerDia &&
+                        a.Fecha <= ultimoDia &&
+                        a.TipoKardex == tipoKardex &&
+                        a.Estado == EstadoAsignacion.Pendiente)
                 .OrderBy(a => a.Fecha)
                 .Select(a => new
                 {

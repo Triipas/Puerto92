@@ -77,7 +77,8 @@
                 <i class="fa-solid fa-clock-rotate-left"></i>
                 Ver Historial
             </button>
-            <button id="btnGuardarAsignaciones" class="btn btn-primary" style="display: none;">
+            @* ⭐ IMPORTANTE: El botón debe tener display:none inicial, NO estar completamente oculto *@
+            <button id="btnGuardarAsignaciones" class="btn btn-primary" style="display: none; align-items: center; gap: 0.5rem;">
                 <i class="fa-solid fa-floppy-disk"></i>
                 Guardar Asignaciones (<span id="contadorPendientes">0</span>)
             </button>
@@ -162,40 +163,42 @@
                         
                         <div class="dia-numero">@dia</div>
                         
-                        @if (asignacion != null)
-                        {
-                            <div class="dia-asignacion">
-                                <div class="empleado-nombre">@asignacion.EmpleadoNombre</div>
-                                <div class="asignacion-badge @claseEstado">
-                                    @if (asignacion.EsReasignacion)
-                                    {
-                                        <i class="fa-solid fa-arrows-rotate"></i>
-                                    }
-                                    @asignacion.Estado
-                                </div>
-                                
-                                @* Botones de acción *@
-                                <div style="display: flex; gap: 0.375rem; margin-top: 0.5rem;">
-                                    @if (esHoy)
-                                    {
-                                        <button onclick="event.stopPropagation(); openReasignarModal(@asignacion.Id, '@asignacion.TipoKardex', '@fecha.ToString("yyyy-MM-dd")', '@asignacion.EmpleadoId', '@asignacion.EmpleadoNombre', @asignacion.RegistroIniciado.ToString().ToLower())"
-                                                class="btn-mini btn-mini-warning"
-                                                title="Reasignar">
-                                            <i class="fa-solid fa-arrows-rotate"></i>
-                                        </button>
-                                    }
-                                    
-                                    @if (!asignacion.RegistroIniciado && (asignacion.Estado == "Pendiente" || asignacion.Estado == "Asignada"))
-                                    {
-                                        <button onclick="event.stopPropagation(); openCancelarModal(@asignacion.Id, '@asignacion.TipoKardex', '@fecha.ToString("yyyy-MM-dd")', '@asignacion.EmpleadoNombre', '@asignacion.Estado')"
-                                                class="btn-mini btn-mini-danger"
-                                                title="Cancelar">
-                                            <i class="fa-solid fa-xmark"></i>
-                                        </button>
-                                    }
-                                </div>
+                    @if (asignacion != null)
+                    {
+                        <div class="dia-asignacion">
+                            <div class="empleado-nombre">@asignacion.EmpleadoNombre</div>
+                            <div class="asignacion-badge @claseEstado">
+                                @if (asignacion.EsReasignacion)
+                                {
+                                    <i class="fa-solid fa-arrows-rotate"></i>
+                                }
+                                @asignacion.Estado
                             </div>
-                        }
+                            
+                            @* ⭐ Botones de acción - Solo si hay acciones disponibles *@
+                            @if (esHoy && 
+                                (asignacion.Estado == "Pendiente" || asignacion.Estado == "Asignada") && 
+                                !asignacion.RegistroIniciado)
+                            {
+                                <div style="display: flex; gap: 0.375rem; margin-top: 0.5rem;">
+                                    @* Botón Reasignar *@
+                                    <button onclick="event.stopPropagation(); openReasignarModal(@asignacion.Id, '@asignacion.TipoKardex', '@fecha.ToString("yyyy-MM-dd")', '@asignacion.EmpleadoId', '@asignacion.EmpleadoNombre', @asignacion.RegistroIniciado.ToString().ToLower())"
+                                            class="btn-mini btn-mini-warning"
+                                            title="Reasignar responsable">
+                                        <i class="fa-solid fa-arrows-rotate"></i>
+                                    </button>
+                                    
+                                    @* Botón Cancelar *@
+                                    <button onclick="event.stopPropagation(); openCancelarModal(@asignacion.Id, '@asignacion.TipoKardex', '@fecha.ToString("yyyy-MM-dd")', '@asignacion.EmpleadoNombre', '@asignacion.Estado')"
+                                            class="btn-mini btn-mini-danger"
+                                            title="Cancelar asignación">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                            }
+                            @* ⭐ Si no hay acciones disponibles, simplemente no mostramos nada *@
+                        </div>
+                    }
                         else if (!esPasado)
                         {
                             <button onclick="openAsignarModal('@Model.TipoKardexActual', '@fecha.ToString("yyyy-MM-dd")')"
