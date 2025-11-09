@@ -40,10 +40,10 @@ namespace Puerto92.Controllers
             ViewBag.TotalProductos = await _context.Productos.CountAsync();
             ViewBag.TotalActivos = todosProductos.Count;
             ViewBag.TotalInactivos = await _context.Productos.CountAsync(p => !p.Activo);
-            
-            // ⚠️ CAMBIO: Contar categorías de tipo "Cocina"
+
+            // Contar TODAS las categorías activas (no solo Cocina)
             ViewBag.TotalCategorias = await _context.Categorias
-                .Where(c => c.Tipo == "Cocina" && c.Activo) // 👈 CAMBIO AQUÍ
+                .Where(c => c.Activo)
                 .CountAsync();
 
             var query = _context.Productos
@@ -78,10 +78,11 @@ namespace Puerto92.Controllers
                 })
                 .ToListAsync();
 
-            // ⚠️ CAMBIO: Obtener categorías de tipo "Cocina" para el filtro
+            // Obtener TODAS las categorías activas para el filtro
             ViewBag.Categorias = await _context.Categorias
-                .Where(c => c.Tipo == "Cocina" && c.Activo) // 👈 CAMBIO AQUÍ
-                .OrderBy(c => c.Orden)
+                .Where(c => c.Activo)
+                .OrderBy(c => c.Tipo)
+                .ThenBy(c => c.Orden)
                 .ToListAsync();
 
             ViewBag.CategoriaFiltro = categoriaId;
@@ -122,17 +123,19 @@ namespace Puerto92.Controllers
         {
             try
             {
+                // ✅ CAMBIO: Obtener TODAS las categorías activas
                 var categorias = await _context.Categorias
-                    .Where(c => c.Tipo == "Cocina" && c.Activo) // 👈 Filtrar por "Cocina"
-                    .OrderBy(c => c.Orden)
+                    .Where(c => c.Activo)
+                    .OrderBy(c => c.Tipo)
+                    .ThenBy(c => c.Orden)
                     .Select(c => new
                     {
                         value = c.Id,
-                        text = c.Nombre
+                        text = $"{c.Tipo} - {c.Nombre}" // Mostrar tipo + nombre para distinguir
                     })
                     .ToListAsync();
 
-                _logger.LogInformation($"✅ Se encontraron {categorias.Count} categorías de tipo Cocina activas");
+                _logger.LogInformation($"✅ Se encontraron {categorias.Count} categorías activas");
 
                 return Json(categorias);
             }
@@ -159,12 +162,12 @@ namespace Puerto92.Controllers
 
             try
             {
-                // ⚠️ CAMBIO IMPORTANTE: Validar que sea tipo "Cocina" en lugar de "Productos"
+                // Validar que la categoría sea válida (cualquier tipo activo)
                 var categoria = await _context.Categorias.FindAsync(model.CategoriaId);
-                if (categoria == null || categoria.Tipo != "Cocina" || !categoria.Activo) // 👈 CAMBIO AQUÍ
+                if (categoria == null || !categoria.Activo)
                 {
-                    _logger.LogWarning($"Categoría inválida: ID {model.CategoriaId}, Tipo: {categoria?.Tipo}, Activo: {categoria?.Activo}");
-                    
+                    _logger.LogWarning($"Categoría inválida: ID {model.CategoriaId}, Activo: {categoria?.Activo}");
+
                     if (IsAjaxRequest)
                         return JsonError("Categoría inválida o inactiva.");
 
@@ -531,13 +534,14 @@ namespace Puerto92.Controllers
             var productosImportados = new List<Producto>();
             var codigosGenerados = new HashSet<string>();
 
+            // Obtener TODAS las categorías activas
             var categorias = await _context.Categorias
-                .Where(c => c.Tipo == "Cocina" && c.Activo)
+                .Where(c => c.Activo)
                 .ToListAsync();
 
             if (!categorias.Any())
             {
-                resultado.Errores.Add("No hay categorías de tipo Cocina activas en el sistema. Cree categorías antes de importar.");
+                resultado.Errores.Add("No hay categorías activas en el sistema. Cree categorías antes de importar.");
                 return resultado;
             }
 
@@ -616,7 +620,7 @@ namespace Puerto92.Controllers
 
                     codigosGenerados.Add(codigo);
 
-                    // Buscar categoría
+                    // Buscar categoría (ahora busca en todas las categorías)
                     var categoria = categorias.FirstOrDefault(c =>
                         c.Nombre.Equals(dto.Categoria, StringComparison.OrdinalIgnoreCase));
 

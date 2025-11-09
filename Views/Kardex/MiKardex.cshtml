@@ -1,0 +1,190 @@
+@model Puerto92.ViewModels.MiKardexViewModel
+@{
+    ViewData["Title"] = "Mi Kardex";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="page-header">
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+        <i class="fa-solid fa-clipboard-list" style="color: #0092B8; font-size: 24px;"></i>
+        <h1 class="page-title">Mi Kardex</h1>
+    </div>
+    <p class="page-subtitle">Registro de inventario asignado para hoy</p>
+</div>
+
+@if (!Model.TieneAsignacionActiva)
+{
+    <div class="content-card">
+        <div class="card-body" style="text-align: center; padding: 3rem;">
+            <div style="font-size: 64px; color: #CBD5E1; margin-bottom: 1rem;">
+                <i class="fa-solid fa-calendar-xmark"></i>
+            </div>
+            <h3 style="font-size: 20px; font-weight: 600; color: #475569; margin-bottom: 0.5rem;">
+                Sin asignación para hoy
+            </h3>
+            <p style="color: #64748B; font-size: 14px;">
+                @Model.MensajeInformativo
+            </p>
+        </div>
+    </div>
+}
+else
+{
+    var tipoKardex = Model.AsignacionActiva!.TipoKardex;
+    var iconoKardex = Puerto92.Models.TipoKardex.ObtenerIcono(tipoKardex);
+    var colorKardex = Puerto92.Models.TipoKardex.ObtenerColor(tipoKardex);
+    
+    <div class="content-card">
+        <div class="card-header" style="background: linear-gradient(135deg, @colorKardex 0%, @colorKardex 100%); color: white; border: none;">
+            <div>
+                <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 0.25rem;">
+                    Kardex Asignado
+                </h2>
+                <p style="font-size: 13px; opacity: 0.9; margin: 0;">
+                    @Model.AsignacionActiva.Fecha.ToString("dddd, dd 'de' MMMM 'de' yyyy")
+                </p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 8px;">
+                <i class="fa-solid fa-@iconoKardex"></i>
+                <span style="font-weight: 600;">@tipoKardex</span>
+            </div>
+        </div>
+        <div class="card-body">
+            @if (!Model.PuedeIniciarRegistro)
+            {
+                <!-- Tipo de kardex no disponible aún -->
+                <div style="background: #FEF3C7; border-left: 3px solid #F59E0B; padding: 1rem; border-radius: 8px;">
+                    <div style="display: flex; align-items: start; gap: 0.75rem;">
+                        <i class="fa-solid fa-hourglass-half" style="color: #F59E0B; font-size: 20px; margin-top: 2px;"></i>
+                        <div style="flex: 1;">
+                            <strong style="color: #92400E; font-size: 14px; display: block; margin-bottom: 0.25rem;">
+                                En desarrollo
+                            </strong>
+                            <p style="color: #92400E; font-size: 13px; margin: 0;">
+                                @Model.MensajeInformativo
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (Model.ExisteKardexBorrador)
+            {
+                <!-- Hay un borrador en progreso -->
+                <div style="background: #FEF3C7; border-left: 3px solid #F59E0B; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: start; gap: 0.75rem;">
+                        <i class="fa-solid fa-clock-rotate-left" style="color: #F59E0B; font-size: 20px; margin-top: 2px;"></i>
+                        <div style="flex: 1;">
+                            <strong style="color: #92400E; font-size: 14px; display: block; margin-bottom: 0.25rem;">
+                                Tienes un registro en progreso
+                            </strong>
+                            <p style="color: #92400E; font-size: 13px; margin: 0; margin-bottom: 0.75rem;">
+                                Avance: <strong>@Model.PorcentajeAvanceBorrador?.ToString("F1")%</strong> completado
+                            </p>
+                            @{
+                                var accionContinuar = ObtenerAccionContinuar(tipoKardex);
+                            }
+                            <a asp-action="@accionContinuar" asp-route-id="@Model.KardexBorradorId" class="btn btn-primary" style="font-size: 13px;">
+                                <i class="fa-solid fa-arrow-right"></i>
+                                Continuar Registro
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- Listo para iniciar -->
+                <div style="text-align: center; padding: 2rem 0;">
+                    <div style="font-size: 48px; color: @colorKardex; margin-bottom: 1rem;">
+                        <i class="fa-solid fa-@iconoKardex"></i>
+                    </div>
+                    <h3 style="font-size: 18px; font-weight: 600; color: #1E293B; margin-bottom: 0.5rem;">
+                        ¿Listo para comenzar?
+                    </h3>
+                    <p style="color: #64748B; font-size: 14px; margin-bottom: 1.5rem;">
+                        Inicia el registro de tu kardex de @tipoKardex
+                    </p>
+                    @{
+                        var accionIniciar = ObtenerAccionIniciar(tipoKardex);
+                    }
+                    <a asp-action="@accionIniciar" asp-route-asignacionId="@Model.AsignacionActiva.Id" class="btn btn-primary" style="font-size: 14px;">
+                        <i class="fa-solid fa-play"></i>
+                        Iniciar Registro
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (Model.PuedeIniciarRegistro)
+    {
+        <!-- Instrucciones según el tipo de kardex -->
+        <div class="content-card">
+            <div class="card-header">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-lightbulb" style="color: #F59E0B;"></i>
+                    <h2 class="card-title">Instrucciones</h2>
+                </div>
+            </div>
+            <div class="card-body">
+                @switch (tipoKardex)
+                {
+                    case "Mozo Bebidas":
+                        <ol style="padding-left: 1.5rem; margin: 0; color: #475569; line-height: 1.8;">
+                            <li><strong>Conteo por ubicación:</strong> Registra las cantidades en cada ubicación (Almacén, Refri 1, Refri 2, Refri 3)</li>
+                            <li><strong>Autoguardado:</strong> Tus cambios se guardan automáticamente después de 2 segundos</li>
+                            <li><strong>Cálculos automáticos:</strong> El sistema calculará el conteo final y las ventas</li>
+                            <li><strong>Diferencias:</strong> Si hay diferencias significativas (>10%), se resaltarán en amarillo</li>
+                            <li><strong>Completar:</strong> Una vez registrados todos los productos, podrás completar el kardex</li>
+                        </ol>
+                        break;
+                    
+                    case "Mozo Salón":
+                        <ol style="padding-left: 1.5rem; margin: 0; color: #475569; line-height: 1.8;">
+                            <li><strong>Mesas y salón:</strong> Registra el estado de las mesas y áreas del salón</li>
+                            <li><strong>Elementos faltantes:</strong> Indica si hay elementos que necesitan reposición</li>
+                            <li><strong>Limpieza:</strong> Verifica el estado de limpieza de cada área</li>
+                            <li><strong>Completar:</strong> Una vez revisadas todas las áreas, podrás completar el kardex</li>
+                        </ol>
+                        break;
+                    
+                    default:
+                        <p style="color: #64748B; margin: 0;">
+                            Las instrucciones específicas se mostrarán cuando inicies el registro.
+                        </p>
+                        break;
+                }
+            </div>
+        </div>
+    }
+}
+
+@functions {
+    string ObtenerAccionIniciar(string tipoKardex)
+    {
+        return tipoKardex switch
+        {
+            "Mozo Bebidas" => "IniciarBebidas",
+            "Mozo Salón" => "IniciarSalon",
+            "Cocina Fría" => "IniciarCocina",
+            "Cocina Caliente" => "IniciarCocina",
+            "Parrilla" => "IniciarCocina",
+            "Vajilla" => "IniciarVajilla",
+            _ => "MiKardex"
+        };
+    }
+    
+    string ObtenerAccionContinuar(string tipoKardex)
+    {
+        return tipoKardex switch
+        {
+            "Mozo Bebidas" => "ConteoUbicacionBebidas",
+            "Mozo Salón" => "ConteoSalon",
+            "Cocina Fría" => "ConteoCocina",
+            "Cocina Caliente" => "ConteoCocina",
+            "Parrilla" => "ConteoCocina",
+            "Vajilla" => "ConteoVajilla",
+            _ => "MiKardex"
+        };
+    }
+}

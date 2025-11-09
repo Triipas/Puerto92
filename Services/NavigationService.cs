@@ -17,17 +17,17 @@ namespace Puerto92.Services
         public List<NavigationItemViewModel> GetNavigationItems(ClaimsPrincipal user)
         {
             var items = new List<NavigationItemViewModel>();
-/*
-            // Dashboard - Todos los roles
-            items.Add(new NavigationItemViewModel
-            {
-                Icon = "fa-chart-line",
-                Title = "Dashboard",
-                Controller = "Home",
-                Action = "Index",
-                RequiredRoles = new List<string>()
-            });
-*/
+            /*
+                        // Dashboard - Todos los roles
+                        items.Add(new NavigationItemViewModel
+                        {
+                            Icon = "fa-chart-line",
+                            Title = "Dashboard",
+                            Controller = "Home",
+                            Action = "Index",
+                            RequiredRoles = new List<string>()
+                        });
+            */
             // === ADMINISTRADOR LOCAL ===
             if (user.IsInRole("Administrador Local"))
             {
@@ -50,7 +50,7 @@ namespace Puerto92.Services
                     Title = "Usuarios",
                     Controller = "Usuarios",
                     Action = "Index",
-                    RequiredRoles = new List<string> { "Admin Maestro", "Administrador Local" }
+                    RequiredRoles = new List<string> { "Admin Maestro"/*, "Administrador Local"*/}
                 });
             }
 
@@ -115,6 +115,20 @@ namespace Puerto92.Services
                     Controller = "Categorias",
                     Action = "Index",
                     RequiredRoles = new List<string> { "Admin Maestro" }
+                });
+            }
+
+            // === MI KARDEX (Verificar con servicio si tiene asignación) ===
+
+            if (user.IsInRole("Mozo") || user.IsInRole("Cocinero") || user.IsInRole("Vajillero"))
+            {
+                items.Add(new NavigationItemViewModel
+                {
+                    Icon = "fa-clipboard-list",
+                    Title = "Mi Kardex",
+                    Controller = "Kardex",
+                    Action = "MiKardex",
+                    RequiredRoles = new List<string> { "Mozo", "Cocinero", "Vajillero" }
                 });
             }
 

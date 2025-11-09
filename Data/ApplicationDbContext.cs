@@ -19,6 +19,9 @@ namespace Puerto92.Data
         public DbSet<Producto> Productos { get; set; }
         public DbSet<Proveedor> Proveedores { get; set; }
         public DbSet<Notificacion> Notificaciones { get; set; }
+        public DbSet<KardexBebidas> KardexBebidas { get; set; }
+        public DbSet<KardexBebidasDetalle> KardexBebidasDetalles { get; set; }
+        
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -255,6 +258,43 @@ namespace Puerto92.Data
 
                 entity.Property(n => n.FechaCreacion)
                     .HasDefaultValueSql("getdate()");
+            });
+
+            // Configuración de Kardex de Bebidas
+            builder.Entity<KardexBebidas>(entity =>
+            {
+                entity.HasOne(k => k.Asignacion)
+                    .WithMany()
+                    .HasForeignKey(k => k.AsignacionId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(k => k.Local)
+                    .WithMany()
+                    .HasForeignKey(k => k.LocalId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(k => k.Empleado)
+                    .WithMany()
+                    .HasForeignKey(k => k.EmpleadoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(k => new { k.LocalId, k.Fecha, k.Estado });
+                entity.HasIndex(k => k.AsignacionId).IsUnique();
+            });
+
+            builder.Entity<KardexBebidasDetalle>(entity =>
+            {
+                entity.HasOne(d => d.KardexBebidas)
+                    .WithMany(k => k.Detalles)
+                    .HasForeignKey(d => d.KardexBebidasId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(d => d.Producto)
+                    .WithMany()
+                    .HasForeignKey(d => d.ProductoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(d => new { d.KardexBebidasId, d.Orden });
             });
 
         }
