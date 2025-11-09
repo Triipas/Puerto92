@@ -1,0 +1,279 @@
+/* ========================================
+   KARDEX DE BEBIDAS - ESTILOS
+   ======================================== */
+
+/* Barra de progreso */
+.kardex-progress-bar {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.progress-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.progress-value {
+    font-size: 13px;
+    color: #64748B;
+}
+
+.progress-track {
+    width: 100%;
+    height: 8px;
+    background: #E2E8F0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0092B8, #00C4B4);
+    transition: width 0.3s ease;
+    border-radius: 4px;
+}
+
+.progress-stats {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 13px;
+    color: #64748B;
+}
+
+.autoguardado-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background: #F0FDF4;
+    color: #10B981;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.autoguardado-indicator.show {
+    opacity: 1;
+}
+
+.autoguardado-indicator.saving {
+    background: #FEF3C7;
+    color: #F59E0B;
+}
+
+/* Search box */
+.search-box {
+    position: relative;
+}
+
+.search-box i {
+    position: absolute;
+    left: 0.875rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    pointer-events: none;
+}
+
+/* Tabla de kardex */
+.kardex-table-container {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #E2E8F0;
+}
+
+.kardex-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+}
+
+.kardex-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.kardex-table thead th {
+    background: linear-gradient(135deg, #0C4A6E, #0369A1);
+    color: white;
+    padding: 0.875rem 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #0092B8;
+    white-space: nowrap;
+}
+
+.kardex-table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.kardex-table tbody tr:hover {
+    background: #F8FAFC;
+}
+
+.kardex-table tbody tr.row-complete {
+    background: #F0FDF4;
+}
+
+.kardex-table tbody tr.row-diferencia {
+    background: #FEF3C7;
+    border-left: 3px solid #F59E0B;
+}
+
+.kardex-table tbody tr.row-diferencia:hover {
+    background: #FDE68A;
+}
+
+.kardex-table tbody td {
+    padding: 0.625rem 0.75rem;
+    border-bottom: 1px solid #E2E8F0;
+    vertical-align: middle;
+}
+
+.td-categoria {
+    font-weight: 600;
+    color: #475569;
+}
+
+.td-codigo {
+    font-family: 'Courier New', monospace;
+    color: #64748B;
+    font-size: 12px;
+}
+
+.td-descripcion {
+    color: #1E293B;
+    font-weight: 500;
+}
+
+.td-unidad {
+    color: #64748B;
+    font-size: 12px;
+    text-align: center;
+}
+
+.td-readonly {
+    background: #F8FAFC;
+    color: #64748B;
+    text-align: right;
+    font-weight: 500;
+}
+
+.td-editable {
+    padding: 0.375rem;
+}
+
+.input-conteo {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1.5px solid #CBD5E1;
+    border-radius: 6px;
+    text-align: right;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1E293B;
+    transition: all 0.2s ease;
+}
+
+.input-conteo:focus {
+    outline: none;
+    border-color: #0092B8;
+    box-shadow: 0 0 0 3px rgba(0, 146, 184, 0.1);
+    background: #F0F9FF;
+}
+
+.input-conteo:disabled {
+    background: #F1F5F9;
+    cursor: not-allowed;
+}
+
+.input-conteo.has-value {
+    background: #F0FDF4;
+    border-color: #10B981;
+}
+
+.td-calculado {
+    background: #F0F9FF;
+    color: #0369A1;
+    font-weight: 700;
+    text-align: right;
+    font-size: 14px;
+}
+
+.td-conteo-final {
+    background: #DBEAFE;
+}
+
+.td-ventas {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+/* Estados de fila */
+.row-incomplete {
+    background: #FEF2F2;
+}
+
+.row-incomplete:hover {
+    background: #FEE2E2;
+}
+
+/* Empty state */
+.kardex-empty {
+    text-align: center;
+    padding: 3rem;
+    color: #94A3B8;
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+    .kardex-table {
+        font-size: 12px;
+    }
+    
+    .kardex-table thead th {
+        padding: 0.75rem 0.5rem;
+        font-size: 11px;
+    }
+    
+    .kardex-table tbody td {
+        padding: 0.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .progress-stats {
+        flex-wrap: wrap;
+    }
+    
+    .kardex-table-container {
+        border-radius: 0;
+        margin: 0 -1rem;
+    }
+}

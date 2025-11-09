@@ -11,8 +11,8 @@ using Puerto92.Data;
 namespace Puerto92.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251108204438_AgregarSistemaNotificaciones")]
-    partial class AgregarSistemaNotificaciones
+    [Migration("20251108232916_InitialDB")]
+    partial class InitialDB
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -352,6 +352,111 @@ namespace Puerto92.Migrations
                         {
                             t.HasCheckConstraint("CK_Categorias_Orden_Rango", "[Orden] BETWEEN 1 AND 999");
                         });
+                });
+
+            modelBuilder.Entity("Puerto92.Models.KardexBebidas", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AsignacionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("EmpleadoId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FechaEnvio")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FechaFinalizacion")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FechaInicio")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("LocalId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Observaciones")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AsignacionId")
+                        .IsUnique();
+
+                    b.HasIndex("EmpleadoId");
+
+                    b.HasIndex("LocalId", "Fecha", "Estado");
+
+                    b.ToTable("KardexBebidas");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.KardexBebidasDetalle", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal?>("ConteoAlmacen")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("ConteoFinal")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("ConteoRefri1")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("ConteoRefri2")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("ConteoRefri3")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("DiferenciaPorcentual")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Ingresos")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("InventarioInicial")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("KardexBebidasId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Observaciones")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ProductoId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("TieneDiferenciaSignificativa")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("Ventas")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductoId");
+
+                    b.HasIndex("KardexBebidasId", "Orden");
+
+                    b.ToTable("KardexBebidasDetalles");
                 });
 
             modelBuilder.Entity("Puerto92.Models.Local", b =>
@@ -842,6 +947,52 @@ namespace Puerto92.Migrations
                     b.Navigation("Local");
                 });
 
+            modelBuilder.Entity("Puerto92.Models.KardexBebidas", b =>
+                {
+                    b.HasOne("Puerto92.Models.AsignacionKardex", "Asignacion")
+                        .WithMany()
+                        .HasForeignKey("AsignacionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Puerto92.Models.Usuario", "Empleado")
+                        .WithMany()
+                        .HasForeignKey("EmpleadoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Puerto92.Models.Local", "Local")
+                        .WithMany()
+                        .HasForeignKey("LocalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Asignacion");
+
+                    b.Navigation("Empleado");
+
+                    b.Navigation("Local");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.KardexBebidasDetalle", b =>
+                {
+                    b.HasOne("Puerto92.Models.KardexBebidas", "KardexBebidas")
+                        .WithMany("Detalles")
+                        .HasForeignKey("KardexBebidasId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Puerto92.Models.Producto", "Producto")
+                        .WithMany()
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("KardexBebidas");
+
+                    b.Navigation("Producto");
+                });
+
             modelBuilder.Entity("Puerto92.Models.Notificacion", b =>
                 {
                     b.HasOne("Puerto92.Models.Usuario", "Usuario")
@@ -873,6 +1024,11 @@ namespace Puerto92.Migrations
                         .IsRequired();
 
                     b.Navigation("Local");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.KardexBebidas", b =>
+                {
+                    b.Navigation("Detalles");
                 });
 
             modelBuilder.Entity("Puerto92.Models.Local", b =>
