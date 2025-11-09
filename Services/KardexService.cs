@@ -607,7 +607,8 @@ namespace Puerto92.Services
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
-            try {
+            try
+            {
                 // ⭐ VALIDAR HORARIO
                 var horaActual = DateTime.Now.TimeOfDay;
                 var horaLimite = new TimeSpan(17, 30, 0); // 5:30 PM
@@ -711,21 +712,21 @@ namespace Puerto92.Services
 
                 // ⭐ NUEVO: Buscar y notificar al administrador local
                 _logger.LogInformation($"🔍 Buscando administrador local para Local ID: {localId}");
-                
+
                 // Query simplificada y más robusta
                 var usuariosLocal = await _context.Users
                     .Where(u => u.LocalId == localId && u.Activo)
                     .ToListAsync();
-                
+
                 _logger.LogInformation($"📋 Total usuarios activos en el local: {usuariosLocal.Count}");
 
                 Usuario? administradorLocal = null;
-                
+
                 foreach (var usuario in usuariosLocal)
                 {
                     var roles = await _userManager.GetRolesAsync(usuario);
                     _logger.LogInformation($"   - Usuario: {usuario.NombreCompleto} | Roles: {string.Join(", ", roles)}");
-                    
+
                     if (roles.Contains("Administrador Local"))
                     {
                         administradorLocal = usuario;
@@ -737,7 +738,7 @@ namespace Puerto92.Services
                 if (administradorLocal != null)
                 {
                     _logger.LogInformation($"📤 Creando notificación para administrador: {administradorLocal.NombreCompleto}");
-                    
+
                     await _notificationService.CrearNotificacionKardexRecibidoAsync(
                         administradorId: administradorLocal.Id,
                         tipoKardex: request.TipoKardex,
@@ -773,6 +774,299 @@ namespace Puerto92.Services
                     Message = $"Error al enviar el kardex: {ex.Message}"
                 };
             }
+        }
+
+        public async Task<KardexSalonViewModel> IniciarKardexSalonAsync(int asignacionId, string usuarioId)
+        {
+            var asignacion = await _context.AsignacionesKardex
+                .Include(a => a.Local)
+                .Include(a => a.Empleado)
+                .FirstOrDefaultAsync(a => a.Id == asignacionId && a.EmpleadoId == usuarioId);
+
+            if (asignacion == null)
+            {
+                throw new Exception("Asignación no encontrada o no autorizada");
+            }
+
+            // Verificar si ya existe un kardex para esta asignación
+            var kardexExistente = await _context.KardexSalon
+                .Include(k => k.Detalles)
+                    .ThenInclude(d => d.Utensilio)
+                        .ThenInclude(u => u.Categoria)
+                .FirstOrDefaultAsync(k => k.AsignacionId == asignacionId);
+
+            if (kardexExistente != null)
+            {
+                return await MapearKardexSalonAViewModel(kardexExistente);
+            }
+
+            // Crear nuevo kardex
+            var kardex = new KardexSalon
+            {
+                AsignacionId = asignacionId,
+                Fecha = asignacion.Fecha,
+                LocalId = asignacion.LocalId,
+                EmpleadoId = usuarioId,
+                Estado = EstadoKardex.Borrador,
+                FechaInicio = DateTime.Now,
+                DescripcionFaltantes = "" // Se llenará al completar
+            };
+
+            _context.KardexSalon.Add(kardex);
+            await _context.SaveChangesAsync();
+
+            // Obtener utensilios de salón activos
+            var utensiliosSalon = await _context.Utensilios
+                .Include(u => u.Categoria)
+                .Where(u => u.Activo && u.Categoria!.Tipo == TipoCategoria.Utensilios)
+                .OrderBy(u => u.Categoria!.Orden)
+                .ThenBy(u => u.Codigo)
+                .ToListAsync();
+
+            var orden = 1;
+            foreach (var utensilio in utensiliosSalon)
+            {
+                var detalle = new KardexSalonDetalle
+                {
+                    KardexSalonId = kardex.Id,
+                    UtensilioId = utensilio.Id,
+                    InventarioInicial = 0, // TODO: Obtener del sistema o cierre anterior
+                    Orden = orden++
+                };
+
+                _context.KardexSalonDetalles.Add(detalle);
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Marcar asignación como en proceso
+            asignacion.Estado = EstadoAsignacion.EnProceso;
+            asignacion.RegistroIniciado = true;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"Kardex de salón iniciado: ID {kardex.Id} por usuario {usuarioId}");
+
+            await _auditService.RegistrarInicioKardexAsync(
+                tipoKardex: TipoKardex.MozoSalon,
+                fecha: asignacion.Fecha,
+                empleadoNombre: asignacion.Empleado?.NombreCompleto ?? "Desconocido",
+                kardexId: kardex.Id
+            );
+
+            return await ObtenerKardexSalonAsync(kardex.Id);
+        }
+
+        public async Task<KardexSalonViewModel> ObtenerKardexSalonAsync(int kardexId)
+        {
+            var kardex = await _context.KardexSalon
+                .Include(k => k.Asignacion)
+                .Include(k => k.Empleado)
+                .Include(k => k.Detalles)
+                    .ThenInclude(d => d.Utensilio)
+                        .ThenInclude(u => u.Categoria)
+                .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+            if (kardex == null)
+            {
+                throw new Exception("Kardex no encontrado");
+            }
+
+            return await MapearKardexSalonAViewModel(kardex);
+        }
+
+        public async Task<bool> AutoguardarDetalleSalonAsync(AutoguardadoKardexSalonRequest request)
+        {
+            try
+            {
+                var detalle = await _context.KardexSalonDetalles
+                    .FirstOrDefaultAsync(d => d.Id == request.DetalleId &&
+                                            d.KardexSalonId == request.KardexId);
+
+                if (detalle == null)
+                {
+                    _logger.LogWarning($"Detalle no encontrado: {request.DetalleId}");
+                    return false;
+                }
+
+                // Actualizar unidades contadas
+                detalle.UnidadesContadas = request.UnidadesContadas;
+
+                // Recalcular diferencia y faltantes
+                RecalcularDetalleSalon(detalle);
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation($"Autoguardado exitoso: Detalle {request.DetalleId}");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error en autoguardado: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<KardexSalonViewModel> CalcularYActualizarSalonAsync(int kardexId)
+        {
+            var kardex = await _context.KardexSalon
+                .Include(k => k.Detalles)
+                .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+            if (kardex == null)
+            {
+                throw new Exception("Kardex no encontrado");
+            }
+
+            foreach (var detalle in kardex.Detalles)
+            {
+                RecalcularDetalleSalon(detalle);
+            }
+
+            await _context.SaveChangesAsync();
+
+            return await ObtenerKardexSalonAsync(kardexId);
+        }
+
+        public async Task<bool> CompletarKardexSalonAsync(int kardexId, string descripcionFaltantes, string? observaciones)
+        {
+            var kardex = await _context.KardexSalon
+                .Include(k => k.Detalles)
+                .Include(k => k.Asignacion)
+                .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+            if (kardex == null)
+            {
+                throw new Exception("Kardex no encontrado");
+            }
+
+            // Validar que todos los campos estén completos
+            var detallesIncompletos = kardex.Detalles.Where(d => !d.UnidadesContadas.HasValue).ToList();
+
+            if (detallesIncompletos.Any())
+            {
+                throw new Exception($"Hay {detallesIncompletos.Count} utensilio(s) con campos incompletos");
+            }
+
+            // Validar descripción de faltantes si hay diferencias
+            var hayFaltantes = kardex.Detalles.Any(d => d.TieneFaltantes);
+            
+            if (hayFaltantes && string.IsNullOrWhiteSpace(descripcionFaltantes))
+            {
+                throw new Exception("La descripción de faltantes es obligatoria cuando hay utensilios faltantes");
+            }
+
+            kardex.Estado = EstadoKardex.Completado;
+            kardex.FechaFinalizacion = DateTime.Now;
+            kardex.DescripcionFaltantes = descripcionFaltantes ?? "";
+            kardex.Observaciones = observaciones;
+
+            if (kardex.Asignacion != null)
+            {
+                kardex.Asignacion.Estado = EstadoAsignacion.Completada;
+            }
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"Kardex de salón completado: ID {kardexId}");
+
+            return true;
+        }
+
+        // Métodos auxiliares privados
+
+        private void RecalcularDetalleSalon(KardexSalonDetalle detalle)
+        {
+            if (!detalle.UnidadesContadas.HasValue)
+            {
+                detalle.Diferencia = 0;
+                detalle.TieneFaltantes = false;
+                return;
+            }
+
+            // Calcular diferencia
+            detalle.Diferencia = detalle.InventarioInicial - detalle.UnidadesContadas.Value;
+
+            // Determinar si hay faltantes (diferencia positiva = faltan utensilios)
+            detalle.TieneFaltantes = detalle.Diferencia > 0;
+        }
+
+        private async Task<KardexSalonViewModel> MapearKardexSalonAViewModel(KardexSalon kardex)
+        {
+            var detalles = kardex.Detalles
+                .OrderBy(d => d.Orden)
+                .Select(d => new KardexSalonDetalleViewModel
+                {
+                    Id = d.Id,
+                    UtensilioId = d.UtensilioId,
+                    Categoria = d.Utensilio?.Categoria?.Nombre ?? "",
+                    Codigo = d.Utensilio?.Codigo ?? "",
+                    Descripcion = d.Utensilio?.Nombre ?? "",
+                    Unidad = d.Utensilio?.Unidad ?? "",
+                    InventarioInicial = d.InventarioInicial,
+                    UnidadesContadas = d.UnidadesContadas,
+                    Diferencia = d.Diferencia,
+                    TieneFaltantes = d.TieneFaltantes,
+                    Orden = d.Orden,
+                    EstaCompleto = d.UnidadesContadas.HasValue
+                })
+                .ToList();
+
+            var totalUtensilios = detalles.Count;
+            var utensiliosCompletos = detalles.Count(d => d.EstaCompleto);
+            var utensiliosConFaltantes = detalles.Count(d => d.TieneFaltantes);
+
+            return new KardexSalonViewModel
+            {
+                Id = kardex.Id,
+                AsignacionId = kardex.AsignacionId,
+                Fecha = kardex.Fecha,
+                LocalId = kardex.LocalId,
+                EmpleadoId = kardex.EmpleadoId,
+                EmpleadoNombre = kardex.Empleado?.NombreCompleto ?? "",
+                Estado = kardex.Estado,
+                FechaInicio = kardex.FechaInicio,
+                FechaFinalizacion = kardex.FechaFinalizacion,
+                FechaEnvio = kardex.FechaEnvio,
+                DescripcionFaltantes = kardex.DescripcionFaltantes,
+                Observaciones = kardex.Observaciones,
+                Detalles = detalles,
+                TotalUtensilios = totalUtensilios,
+                UtensiliosCompletos = utensiliosCompletos,
+                UtensiliosConFaltantes = utensiliosConFaltantes,
+                PorcentajeAvance = totalUtensilios > 0
+                    ? (decimal)utensiliosCompletos / totalUtensilios * 100
+                    : 0,
+                RequiereDescripcionFaltantes = utensiliosConFaltantes > 0
+            };
+        }
+
+        // Actualizar también el método VerificarBorradorSalon en MiKardexViewModel
+        private async Task VerificarBorradorSalon(MiKardexViewModel viewModel, int asignacionId)
+        {
+            var kardexBorrador = await _context.KardexSalon
+                .FirstOrDefaultAsync(k => k.AsignacionId == asignacionId &&
+                                        k.Estado == EstadoKardex.Borrador);
+
+            if (kardexBorrador != null)
+            {
+                viewModel.ExisteKardexBorrador = true;
+                viewModel.KardexBorradorId = kardexBorrador.Id;
+
+                // Calcular porcentaje de avance
+                var totalDetalles = await _context.KardexSalonDetalles
+                    .CountAsync(d => d.KardexSalonId == kardexBorrador.Id);
+
+                var detallesCompletos = await _context.KardexSalonDetalles
+                    .CountAsync(d => d.KardexSalonId == kardexBorrador.Id &&
+                                    d.UnidadesContadas.HasValue);
+
+                viewModel.PorcentajeAvanceBorrador = totalDetalles > 0
+                    ? (decimal)detallesCompletos / totalDetalles * 100
+                    : 0;
+            }
+
+            viewModel.PuedeIniciarRegistro = true;
         }
     }
 }

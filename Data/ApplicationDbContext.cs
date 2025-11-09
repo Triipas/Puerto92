@@ -21,6 +21,8 @@ namespace Puerto92.Data
         public DbSet<Notificacion> Notificaciones { get; set; }
         public DbSet<KardexBebidas> KardexBebidas { get; set; }
         public DbSet<KardexBebidasDetalle> KardexBebidasDetalles { get; set; }
+        public DbSet<KardexSalon> KardexSalon { get; set; }
+        public DbSet<KardexSalonDetalle> KardexSalonDetalles { get; set; }
         public DbSet<PersonalPresente> PersonalPresente { get; set; }
 
 

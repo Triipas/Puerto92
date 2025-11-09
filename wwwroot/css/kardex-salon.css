@@ -1,0 +1,374 @@
+/* ========================================
+   KARDEX DE SALÓN (UTENSILIOS) - Puerto 92
+   ======================================== */
+
+/* ========================================
+   TABLA DE KARDEX DE SALÓN
+   ======================================== */
+
+.kardex-table-salon {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.kardex-table-salon thead {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.kardex-table-salon thead th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.kardex-table-salon tbody tr {
+    border-bottom: 1px solid #E5E7EB;
+    transition: all 0.2s ease;
+}
+
+.kardex-table-salon tbody tr:hover {
+    background: #F9FAFB;
+}
+
+/* Fila completada */
+.kardex-table-salon tbody tr.row-complete {
+    background: #F0FDF4;
+}
+
+.kardex-table-salon tbody tr.row-complete:hover {
+    background: #DCFCE7;
+}
+
+/* Fila con faltantes */
+.kardex-table-salon tbody tr.row-faltante {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+}
+
+.kardex-table-salon tbody tr.row-faltante:hover {
+    background: #FDE68A;
+}
+
+/* Celdas */
+.kardex-table-salon tbody td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.td-numero {
+    font-weight: 700;
+    color: #10B981;
+    font-size: 15px;
+    text-align: center;
+}
+
+.td-descripcion {
+    font-weight: 500;
+    color: #1F2937;
+}
+
+.td-editable {
+    position: relative;
+}
+
+/* ========================================
+   INPUT DE UNIDADES
+   ======================================== */
+
+.input-unidades {
+    width: 100%;
+    max-width: 120px;
+    padding: 0.625rem;
+    border: 2px solid #E5E7EB;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.input-unidades:focus {
+    outline: none;
+    border-color: #10B981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.input-unidades.has-value {
+    border-color: #10B981;
+    background: #F0FDF4;
+}
+
+/* Badge de faltante */
+.faltante-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    background: #FEF3C7;
+    color: #92400E;
+    padding: 0.25rem 0.625rem;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 0.5rem;
+    border: 1px solid #FCD34D;
+}
+
+.faltante-badge i {
+    font-size: 10px;
+}
+
+/* ========================================
+   BARRA DE PROGRESO
+   ======================================== */
+
+.kardex-progress-bar {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.progress-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.progress-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #10B981;
+}
+
+.progress-track {
+    width: 100%;
+    height: 12px;
+    background: #E5E7EB;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10B981 0%, #059669 100%);
+    border-radius: 6px;
+    transition: width 0.5s ease;
+    position: relative;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    animation: progressShine 2s ease-in-out infinite;
+}
+
+@keyframes progressShine {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.progress-stats {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 13px;
+    color: #64748B;
+}
+
+.stat-item i {
+    font-size: 16px;
+}
+
+/* Indicador de autoguardado */
+.autoguardado-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.875rem;
+    background: #F0FDF4;
+    border: 1px solid #BBF7D0;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #059669;
+    transition: all 0.3s ease;
+    opacity: 0;
+}
+
+.autoguardado-indicator.show {
+    opacity: 1;
+}
+
+.autoguardado-indicator.saving {
+    background: #DBEAFE;
+    border-color: #BFDBFE;
+    color: #1E40AF;
+}
+
+.autoguardado-indicator i {
+    font-size: 14px;
+}
+
+/* ========================================
+   SEARCH BOX
+   ======================================== */
+
+.search-box {
+    position: relative;
+}
+
+.search-box i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9CA3AF;
+    pointer-events: none;
+}
+
+/* ========================================
+   TABLA CONTAINER
+   ======================================== */
+
+.kardex-table-container {
+    max-height: 600px;
+    overflow-y: auto;
+    border-radius: 8px;
+    border: 1px solid #E5E7EB;
+}
+
+.kardex-table-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.kardex-table-container::-webkit-scrollbar-track {
+    background: #F3F4F6;
+    border-radius: 4px;
+}
+
+.kardex-table-container::-webkit-scrollbar-thumb {
+    background: #10B981;
+    border-radius: 4px;
+}
+
+.kardex-table-container::-webkit-scrollbar-thumb:hover {
+    background: #059669;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+    .kardex-table-salon {
+        font-size: 13px;
+    }
+    
+    .kardex-table-salon thead th {
+        padding: 0.75rem;
+        font-size: 12px;
+    }
+    
+    .kardex-table-salon tbody td {
+        padding: 0.75rem;
+    }
+    
+    .input-unidades {
+        max-width: 100px;
+        padding: 0.5rem;
+        font-size: 13px;
+    }
+    
+    .progress-stats {
+        gap: 1rem;
+    }
+    
+    .stat-item {
+        font-size: 12px;
+    }
+    
+    .faltante-badge {
+        font-size: 10px;
+        padding: 0.2rem 0.5rem;
+    }
+}
+
+/* ========================================
+   ANIMACIONES
+   ======================================== */
+
+.kardex-table-salon tbody tr {
+    animation: fadeInUp 0.4s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Efecto de guardado exitoso */
+.input-unidades.saving {
+    border-color: #3B82F6;
+    background: #EFF6FF;
+}
+
+.input-unidades.saved {
+    animation: savedPulse 0.5s ease;
+}
+
+@keyframes savedPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}

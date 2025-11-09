@@ -217,15 +217,148 @@ namespace Puerto92.Controllers
         }
 
         // ==========================================
-        // TODO: KARDEX DE SALÓN (Mozo Salón)
+        // KARDEX DE SALÓN (Mozo Salón)
         // ==========================================
 
         // GET: Kardex/IniciarSalon?asignacionId=1
         public async Task<IActionResult> IniciarSalon(int asignacionId)
         {
-            // TODO: Implementar cuando se cree el kardex de salón
-            SetErrorMessage("El kardex de Mozo Salón estará disponible próximamente");
-            return RedirectToAction(nameof(MiKardex));
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            try
+            {
+                // Validar que la asignación sea de tipo "Mozo Salón"
+                var asignacion = await _kardexService.ObtenerAsignacionActivaAsync(usuarioId);
+                
+                if (asignacion == null || asignacion.Id != asignacionId)
+                {
+                    _logger.LogWarning($"Usuario {usuarioId} intenta acceder a asignación {asignacionId} sin autorización");
+                    SetErrorMessage("No tienes autorización para acceder a esta asignación");
+                    return RedirectToAction(nameof(MiKardex));
+                }
+
+                if (asignacion.TipoKardex != TipoKardex.MozoSalon)
+                {
+                    _logger.LogWarning($"Usuario {usuarioId} intenta iniciar kardex de salón con asignación de tipo {asignacion.TipoKardex}");
+                    SetErrorMessage($"Esta asignación es de tipo '{asignacion.TipoKardex}', no de 'Mozo Salón'");
+                    return RedirectToAction(nameof(MiKardex));
+                }
+
+                var kardex = await _kardexService.IniciarKardexSalonAsync(asignacionId, usuarioId);
+                
+                return RedirectToAction(nameof(ConteoUtensiliosSalon), new { id = kardex.Id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al iniciar kardex de salón");
+                SetErrorMessage("Error al iniciar el kardex. Por favor intente nuevamente.");
+                return RedirectToAction(nameof(MiKardex));
+            }
+        }
+
+        // GET: Kardex/ConteoUtensiliosSalon/1
+        public async Task<IActionResult> ConteoUtensiliosSalon(int id)
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            try
+            {
+                var kardex = await _kardexService.ObtenerKardexSalonAsync(id);
+                
+                // Validar que el kardex pertenece al usuario actual
+                if (kardex.EmpleadoId != usuarioId)
+                {
+                    _logger.LogWarning($"Usuario {usuarioId} intenta acceder a kardex {id} de otro usuario");
+                    SetErrorMessage("No tienes autorización para acceder a este kardex");
+                    return RedirectToAction(nameof(MiKardex));
+                }
+                
+                return View(kardex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al cargar kardex {id}");
+                SetErrorMessage("Error al cargar el kardex");
+                return RedirectToAction(nameof(MiKardex));
+            }
+        }
+
+        // POST: Kardex/AutoguardarSalon
+        [HttpPost]
+        public async Task<IActionResult> AutoguardarSalon([FromBody] AutoguardadoKardexSalonRequest request)
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return JsonError("Usuario no autenticado");
+            }
+
+            try
+            {
+                // Validar que el kardex pertenece al usuario
+                var kardex = await _kardexService.ObtenerKardexSalonAsync(request.KardexId);
+                
+                if (kardex.EmpleadoId != usuarioId)
+                {
+                    _logger.LogWarning($"Usuario {usuarioId} intenta autoguardar kardex {request.KardexId} de otro usuario");
+                    return JsonError("No autorizado");
+                }
+
+                var resultado = await _kardexService.AutoguardarDetalleSalonAsync(request);
+                
+                if (resultado)
+                {
+                    return JsonSuccess("Guardado automático exitoso");
+                }
+                else
+                {
+                    return JsonError("Error en el guardado automático");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en autoguardado de salón");
+                return JsonError("Error en el guardado automático");
+            }
+        }
+
+        // GET: Kardex/RecalcularSalon/1
+        [HttpGet]
+        public async Task<IActionResult> RecalcularSalon(int id)
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return JsonError("Usuario no autenticado");
+            }
+
+            try
+            {
+                // Validar que el kardex pertenece al usuario
+                var kardex = await _kardexService.ObtenerKardexSalonAsync(id);
+                
+                if (kardex.EmpleadoId != usuarioId)
+                {
+                    return JsonError("No autorizado");
+                }
+
+                kardex = await _kardexService.CalcularYActualizarSalonAsync(id);
+                
+                return Json(new { success = true, data = kardex });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al recalcular salón");
+                return JsonError("Error al recalcular");
+            }
         }
 
         // ==========================================
