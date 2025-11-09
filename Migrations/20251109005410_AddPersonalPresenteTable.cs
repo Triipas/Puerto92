@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Puerto92.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialDB : Migration
+    public partial class AddPersonalPresenteTable : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -384,6 +384,30 @@ namespace Puerto92.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PersonalPresente",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    KardexId = table.Column<int>(type: "INTEGER", nullable: false),
+                    TipoKardex = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    EmpleadoId = table.Column<string>(type: "TEXT", nullable: false),
+                    FechaRegistro = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "getdate()"),
+                    EsResponsablePrincipal = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Observaciones = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PersonalPresente", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PersonalPresente_AspNetUsers_EmpleadoId",
+                        column: x => x.EmpleadoId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "KardexBebidas",
                 columns: table => new
                 {
@@ -607,6 +631,22 @@ namespace Puerto92.Migrations
                 columns: new[] { "UsuarioId", "Leida", "FechaCreacion" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_PersonalPresente_EmpleadoId",
+                table: "PersonalPresente",
+                column: "EmpleadoId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PersonalPresente_KardexId_TipoKardex",
+                table: "PersonalPresente",
+                columns: new[] { "KardexId", "TipoKardex" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PersonalPresente_KardexId_TipoKardex_EmpleadoId",
+                table: "PersonalPresente",
+                columns: new[] { "KardexId", "TipoKardex", "EmpleadoId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Productos_CategoriaId_Activo",
                 table: "Productos",
                 columns: new[] { "CategoriaId", "Activo" });
@@ -681,6 +721,9 @@ namespace Puerto92.Migrations
 
             migrationBuilder.DropTable(
                 name: "Notificaciones");
+
+            migrationBuilder.DropTable(
+                name: "PersonalPresente");
 
             migrationBuilder.DropTable(
                 name: "Proveedores");

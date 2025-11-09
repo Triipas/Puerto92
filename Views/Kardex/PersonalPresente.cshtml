@@ -1,0 +1,153 @@
+@model Puerto92.ViewModels.PersonalPresenteViewModel
+@{
+    ViewData["Title"] = "Personal Presente Hoy";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="page-header">
+    <div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+            <i class="fa-solid fa-users" style="color: #0092B8; font-size: 24px;"></i>
+            <h1 class="page-title">Personal Presente Hoy</h1>
+        </div>
+        <p class="page-subtitle">
+            @Model.TipoKardex - @Model.Fecha.ToString("dddd, dd 'de' MMMM 'de' yyyy")
+        </p>
+    </div>
+</div>
+
+<!-- Instrucciones -->
+<div class="content-card" style="margin-bottom: 1.5rem;">
+    <div class="card-body" style="background: #F0F9FF; border-left: 3px solid #0092B8;">
+        <div style="display: flex; align-items: start; gap: 0.75rem;">
+            <i class="fa-solid fa-info-circle" style="color: #0092B8; font-size: 20px; margin-top: 2px;"></i>
+            <div>
+                <h3 style="font-size: 15px; font-weight: 600; color: #0C4A6E; margin-bottom: 0.5rem;">
+                    Instrucciones de registro
+                </h3>
+                <p style="font-size: 13px; color: #075985; margin: 0; line-height: 1.6;">
+                    Marque los checkboxes de todos los empleados que estuvieron presentes durante el turno. 
+                    Su nombre ya está seleccionado y no puede ser desmarcado. Si trabajó solo, puede continuar sin seleccionar otros empleados.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Personal -->
+<div class="content-card">
+    <div class="card-header" style="background: linear-gradient(135deg, #0092B8 0%, #0369A1 100%); color: white; border: none;">
+        <div>
+            <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 0.25rem;">
+                Empleados - @Model.TipoKardex
+            </h2>
+            <p style="font-size: 13px; opacity: 0.9; margin: 0;">
+                Total de empleados en el sistema: @Model.TotalEmpleados
+            </p>
+        </div>
+    </div>
+
+    <div class="card-body" style="padding: 0;">
+        <div class="personal-presente-container">
+            <!-- Lista de empleados -->
+            <div class="personal-list">
+                @foreach (var empleado in Model.EmpleadosDisponibles)
+                {
+                    var isResponsable = empleado.EsResponsablePrincipal;
+                    var checkboxClass = isResponsable ? "personal-checkbox-main" : "personal-checkbox";
+                    var itemClass = isResponsable ? "personal-item personal-item-main" : "personal-item";
+                    
+                    <div class="@itemClass" data-empleado-id="@empleado.Id">
+                        <label class="personal-label">
+                            <input type="checkbox" 
+                                   class="@checkboxClass" 
+                                   data-empleado-id="@empleado.Id"
+                                   data-empleado-nombre="@empleado.NombreCompleto"
+                                   value="@empleado.Id"
+                                   @(empleado.Seleccionado ? "checked" : "")
+                                   @(isResponsable ? "disabled" : "") />
+                            <div class="personal-info">
+                                <div class="personal-name">
+                                    @empleado.NombreCompleto
+                                    @if (isResponsable)
+                                    {
+                                        <span class="badge-responsable">
+                                            <i class="fa-solid fa-star"></i>
+                                            Usted (Obligatorio)
+                                        </span>
+                                    }
+                                </div>
+                                <div class="personal-role">@empleado.Rol</div>
+                            </div>
+                        </label>
+                    </div>
+                }
+            </div>
+
+            <!-- Contador de seleccionados -->
+            <div class="personal-counter">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-user-check" style="color: #0092B8; font-size: 20px;"></i>
+                    <div>
+                        <div style="font-size: 14px; color: #64748B; margin-bottom: 0.25rem;">
+                            Personal seleccionado
+                        </div>
+                        <div style="font-size: 24px; font-weight: 700; color: #0092B8;">
+                            <span id="contadorSeleccionados">@Model.TotalSeleccionados</span> 
+                            <span style="font-size: 16px; color: #64748B;">de @Model.TotalEmpleados</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Advertencia de responsabilidad colectiva -->
+<div class="content-card" style="margin-top: 1.5rem;">
+    <div class="card-body" style="background: #FEF3C7; border-left: 3px solid #F59E0B;">
+        <div style="display: flex; align-items: start; gap: 0.75rem;">
+            <i class="fa-solid fa-users" style="color: #F59E0B; font-size: 20px; margin-top: 2px;"></i>
+            <div>
+                <h3 style="font-size: 15px; font-weight: 600; color: #92400E; margin-bottom: 0.5rem;">
+                    Responsabilidad colectiva
+                </h3>
+                <p style="font-size: 13px; color: #92400E; margin: 0; line-height: 1.6;">
+                    En caso de faltantes detectados, la responsabilidad será compartida entre todos los empleados presentes que ha seleccionado (<strong><span id="textoCantidadEmpleados">@Model.TotalSeleccionados empleado@(Model.TotalSeleccionados != 1 ? "s" : "")</span></strong>).
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botones de acción -->
+<div class="content-card" style="margin-top: 1.5rem;">
+    <div class="card-body">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+            <a href="@Url.Action("ConteoUbicacionBebidas", "Kardex", new { id = Model.KardexId })" 
+               class="btn btn-secondary"
+               style="min-width: 140px;">
+                <i class="fa-solid fa-arrow-left"></i>
+                Volver
+            </a>
+            <button type="button" 
+                    id="btnEnviarAlAdministrador" 
+                    class="btn btn-primary"
+                    style="min-width: 200px;"
+                    onclick="enviarAlAdministrador()">
+                <i class="fa-solid fa-paper-plane"></i>
+                Enviar al Administrador
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const KARDEX_ID = @Model.KardexId;
+        const TIPO_KARDEX = '@Model.TipoKardex';
+        const EMPLEADO_RESPONSABLE_ID = '@Model.EmpleadoResponsableId';
+        const TOTAL_EMPLEADOS = @Model.TotalEmpleados;
+    </script>
+    <script src="~/js/personal-presente.js" asp-append-version="true"></script>
+}

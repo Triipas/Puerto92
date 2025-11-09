@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Puerto92.Data;
 using Puerto92.Models;
@@ -9,13 +10,16 @@ namespace Puerto92.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<KardexService> _logger;
+        private readonly UserManager<Usuario> _userManager;
 
         public KardexService(
             ApplicationDbContext context,
-            ILogger<KardexService> logger)
+            ILogger<KardexService> logger,
+            UserManager<Usuario> userManager)  // ⭐ AGREGAR
         {
             _context = context;
             _logger = logger;
+            _userManager = userManager;  // ⭐ AGREGAR
         }
 
         public async Task<bool> TieneAsignacionActivaAsync(string usuarioId)
@@ -491,6 +495,183 @@ namespace Puerto92.Services
                     ? (decimal)productosCompletos / totalProductos * 100
                     : 0
             };
+        }
+
+        public async Task<PersonalPresenteViewModel> ObtenerPersonalPresenteAsync(int kardexId, string tipoKardex)
+        {
+            var viewModel = new PersonalPresenteViewModel
+            {
+                KardexId = kardexId,
+                TipoKardex = tipoKardex
+            };
+
+            // Obtener información del kardex según el tipo
+            if (tipoKardex == TipoKardex.MozoBebidas)
+            {
+                var kardex = await _context.KardexBebidas
+                    .Include(k => k.Empleado)
+                    .Include(k => k.Local)
+                    .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+                if (kardex == null)
+                {
+                    throw new Exception("Kardex no encontrado");
+                }
+
+                viewModel.Fecha = kardex.Fecha;
+                viewModel.LocalId = kardex.LocalId;
+                viewModel.EmpleadoResponsableId = kardex.EmpleadoId;
+                viewModel.EmpleadoResponsableNombre = kardex.Empleado?.NombreCompleto ?? "";
+            }
+            // TODO: Agregar casos para otros tipos de kardex
+
+            // Obtener empleados del área
+            viewModel.EmpleadosDisponibles = await ObtenerEmpleadosDelAreaAsync(
+                tipoKardex, 
+                viewModel.LocalId, 
+                viewModel.EmpleadoResponsableId
+            );
+
+            viewModel.TotalEmpleados = viewModel.EmpleadosDisponibles.Count;
+            viewModel.TotalSeleccionados = viewModel.EmpleadosDisponibles.Count(e => e.Seleccionado);
+
+            return viewModel;
+        }
+
+        public async Task<List<EmpleadoDisponibleDto>> ObtenerEmpleadosDelAreaAsync(
+            string tipoKardex, 
+            int localId, 
+            string empleadoResponsableId)
+        {
+            // Determinar roles permitidos según el tipo de kardex
+            var rolesPermitidos = TipoKardex.ObtenerRolesPermitidos(tipoKardex);
+
+            // Obtener empleados activos del local con los roles permitidos
+            var empleados = await _context.Users
+                .Where(u => u.Activo && u.LocalId == localId)
+                .ToListAsync();
+
+            var empleadosDto = new List<EmpleadoDisponibleDto>();
+
+            foreach (var empleado in empleados)
+            {
+                var roles = await _userManager.GetRolesAsync(empleado);
+                var tieneRolPermitido = roles.Any(r => rolesPermitidos.Contains(r));
+
+                if (tieneRolPermitido)
+                {
+                    var dto = new EmpleadoDisponibleDto
+                    {
+                        Id = empleado.Id,
+                        NombreCompleto = empleado.NombreCompleto,
+                        UserName = empleado.UserName ?? "",
+                        Rol = roles.FirstOrDefault() ?? "",
+                        EsResponsablePrincipal = empleado.Id == empleadoResponsableId,
+                        Seleccionado = empleado.Id == empleadoResponsableId // Pre-seleccionar al responsable
+                    };
+
+                    empleadosDto.Add(dto);
+                }
+            }
+
+            // Ordenar: responsable primero, luego por nombre
+            return empleadosDto
+                .OrderByDescending(e => e.EsResponsablePrincipal)
+                .ThenBy(e => e.NombreCompleto)
+                .ToList();
+        }
+
+        public async Task<PersonalPresenteResponse> GuardarPersonalPresenteYCompletarAsync(PersonalPresenteRequest request)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                // Validar que hay al menos un empleado presente
+                if (request.EmpleadosPresentes == null || request.EmpleadosPresentes.Count == 0)
+                {
+                    return new PersonalPresenteResponse
+                    {
+                        Success = false,
+                        Message = "Debe seleccionar al menos un empleado presente"
+                    };
+                }
+
+                // Obtener información del kardex
+                string empleadoResponsableId = "";
+
+                if (request.TipoKardex == TipoKardex.MozoBebidas)
+                {
+                    var kardex = await _context.KardexBebidas
+                        .FirstOrDefaultAsync(k => k.Id == request.KardexId);
+
+                    if (kardex == null)
+                    {
+                        throw new Exception("Kardex no encontrado");
+                    }
+
+                    empleadoResponsableId = kardex.EmpleadoId;
+
+                    // Completar el kardex
+                    kardex.Estado = EstadoKardex.Completado;
+                    kardex.FechaFinalizacion = DateTime.Now;
+                    kardex.Observaciones = request.ObservacionesKardex;
+
+                    // Actualizar asignación
+                    if (kardex.Asignacion != null)
+                    {
+                        kardex.Asignacion.Estado = EstadoAsignacion.Completada;
+                    }
+                }
+                // TODO: Agregar casos para otros tipos de kardex
+
+                // Eliminar registros anteriores de personal presente para este kardex
+                var registrosAnteriores = await _context.Set<PersonalPresente>()
+                    .Where(p => p.KardexId == request.KardexId && p.TipoKardex == request.TipoKardex)
+                    .ToListAsync();
+
+                _context.Set<PersonalPresente>().RemoveRange(registrosAnteriores);
+
+                // Guardar personal presente
+                foreach (var empleadoId in request.EmpleadosPresentes)
+                {
+                    var personalPresente = new PersonalPresente
+                    {
+                        KardexId = request.KardexId,
+                        TipoKardex = request.TipoKardex,
+                        EmpleadoId = empleadoId,
+                        EsResponsablePrincipal = empleadoId == empleadoResponsableId,
+                        FechaRegistro = DateTime.Now
+                    };
+
+                    _context.Set<PersonalPresente>().Add(personalPresente);
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                _logger.LogInformation(
+                    $"Personal presente guardado: Kardex {request.KardexId} ({request.TipoKardex}) - {request.EmpleadosPresentes.Count} empleados"
+                );
+
+                return new PersonalPresenteResponse
+                {
+                    Success = true,
+                    Message = "Kardex completado exitosamente",
+                    TotalRegistrados = request.EmpleadosPresentes.Count
+                };
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error al guardar personal presente");
+
+                return new PersonalPresenteResponse
+                {
+                    Success = false,
+                    Message = $"Error al guardar: {ex.Message}"
+                };
+            }
         }
     }
 }

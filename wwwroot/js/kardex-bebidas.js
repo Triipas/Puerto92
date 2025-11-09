@@ -403,9 +403,39 @@ async function recalcularTodo() {
 // ==========================================
 
 /**
- * Abrir modal de completar
+ * Abrir modal de completar - VERSIÓN MODIFICADA
+ * Solo valida y pide observaciones, luego redirige a Personal Presente
  */
 function openCompletarModal() {
+    const validacionDiv = document.getElementById('validacionResultado');
+    
+    // Limpiar mensaje anterior
+    if (validacionDiv) {
+        validacionDiv.innerHTML = '';
+    }
+    
+    // Actualizar subtítulo del modal
+    const modalSubtitle = document.querySelector('#completarKardexModal .modal-subtitle');
+    if (modalSubtitle) {
+        modalSubtitle.textContent = 'Revisa los datos antes de continuar al registro de personal';
+    }
+    
+    // Cambiar texto del botón
+    const btnConfirmar = document.getElementById('btnConfirmarCompletar');
+    if (btnConfirmar) {
+        btnConfirmar.innerHTML = '<i class="fa-solid fa-arrow-right"></i> Siguiente: Personal Presente';
+        btnConfirmar.disabled = false;
+    }
+    
+    const modal = document.getElementById('completarKardexModal');
+    modal.style.display = 'flex';
+    modal.classList.add('active');
+}
+
+/**
+ * Confirmar y completar kardex
+ */
+async function confirmarCompletar() {
     // Validar que todos los campos estén completos
     const rows = document.querySelectorAll('#kardexTable tbody tr:not([style*="display: none"])');
     const incompletas = [];
@@ -427,94 +457,33 @@ function openCompletarModal() {
         }
     });
     
-    const validacionDiv = document.getElementById('validacionResultado');
-    
     if (incompletas.length > 0) {
-        validacionDiv.innerHTML = `
-            <div style="background: #FEF2F2; border-left: 3px solid #EF4444; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                <div style="display: flex; align-items: start; gap: 0.75rem;">
-                    <i class="fa-solid fa-exclamation-circle" style="color: #EF4444; font-size: 20px; margin-top: 2px;"></i>
-                    <div>
-                        <strong style="color: #991B1B; display: block; margin-bottom: 0.5rem;">
-                            Hay ${incompletas.length} producto(s) con campos incompletos
-                        </strong>
-                        <p style="color: #991B1B; font-size: 13px; margin: 0;">
-                            Por favor, complete todos los campos de conteo antes de enviar el kardex.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.getElementById('btnConfirmarCompletar').disabled = true;
+        showNotification(
+            `Hay ${incompletas.length} producto(s) con campos incompletos. Por favor complete todos los campos antes de continuar.`,
+            'warning'
+        );
         
         // Scroll a la primera fila incompleta
         const primeraIncompleta = document.querySelector('.row-incomplete');
         if (primeraIncompleta) {
             primeraIncompleta.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-    } else {
-        validacionDiv.innerHTML = `
-            <div style="background: #F0FDF4; border-left: 3px solid #10B981; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    <i class="fa-solid fa-check-circle" style="color: #10B981; font-size: 20px;"></i>
-                    <div>
-                        <strong style="color: #065F46; display: block;">
-                            ✅ Todos los productos están completos
-                        </strong>
-                        <p style="color: #065F46; font-size: 13px; margin: 0;">
-                            El kardex está listo para ser enviado.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        `;
         
-        document.getElementById('btnConfirmarCompletar').disabled = false;
+        return;
     }
     
-    const modal = document.getElementById('completarKardexModal');
-    modal.style.display = 'flex';
-    modal.classList.add('active');
-}
-
-/**
- * Confirmar y completar kardex
- */
-async function confirmarCompletar() {
-    const observaciones = document.getElementById('observacionesGenerales').value;
-    const btnConfirmar = document.getElementById('btnConfirmarCompletar');
+    // Obtener observaciones
+    const observaciones = document.getElementById('observacionesGenerales')?.value || '';
     
-    btnConfirmar.disabled = true;
-    btnConfirmar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+    // Guardar observaciones en sessionStorage para pasarlas a Personal Presente
+    sessionStorage.setItem('kardexObservaciones', observaciones);
     
-    try {
-        const response = await fetch('/Kardex/CompletarBebidas', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: `id=${KARDEX_ID}&observaciones=${encodeURIComponent(observaciones)}`
-        });
-        
-        if (response.ok) {
-            showNotification('Kardex completado exitosamente', 'success');
-            
-            setTimeout(() => {
-                window.location.href = '/Kardex/MiKardex';
-            }, 1500);
-        } else {
-            const text = await response.text();
-            showNotification(text || 'Error al completar el kardex', 'error');
-            btnConfirmar.disabled = false;
-            btnConfirmar.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar Kardex';
-        }
-    } catch (error) {
-        console.error('Error al completar:', error);
-        showNotification('Error al completar el kardex', 'error');
-        btnConfirmar.disabled = false;
-        btnConfirmar.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar Kardex';
-    }
+    // Cerrar modal
+    closeModal('completarKardexModal');
+    
+    // Redirigir a Personal Presente
+    console.log('✅ Redirigiendo a Personal Presente...');
+    window.location.href = `/Kardex/PersonalPresente?id=${KARDEX_ID}&tipo=${encodeURIComponent('Mozo Bebidas')}`;
 }
 
 // ==========================================
