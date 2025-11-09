@@ -11,8 +11,8 @@ using Puerto92.Data;
 namespace Puerto92.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251109181319_AsegurarLocalIdEnKardexSalon")]
-    partial class AsegurarLocalIdEnKardexSalon
+    [Migration("20251109183327_InitialDBz")]
+    partial class InitialDBz
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

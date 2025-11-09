@@ -662,8 +662,9 @@ namespace Puerto92.Services
                 {
                     var kardex = await _context.KardexBebidas
                         .Include(k => k.Empleado)
-                        .Include(k => k.Local)  // ⭐ IMPORTANTE: Incluir Local
+                        .Include(k => k.Local)
                         .Include(k => k.Asignacion)
+                            .ThenInclude(a => a.Local)  // ⭐ Incluir Local de Asignación como fallback
                         .FirstOrDefaultAsync(k => k.Id == request.KardexId);
 
                     if (kardex == null)
@@ -673,7 +674,21 @@ namespace Puerto92.Services
 
                     empleadoResponsableId = kardex.EmpleadoId;
                     empleadoResponsableNombre = kardex.Empleado?.NombreCompleto ?? "Desconocido";
+                    
+                    // ⭐ CRÍTICO: Obtener LocalId con fallback a Asignación
                     localId = kardex.LocalId;
+                    if (localId <= 0 && kardex.Asignacion != null)
+                    {
+                        _logger.LogWarning($"⚠️ Kardex Bebidas {kardex.Id} tiene LocalId inválido ({localId}), obteniendo de Asignación...");
+                        localId = kardex.Asignacion.LocalId;
+                        
+                        if (localId > 0)
+                        {
+                            kardex.LocalId = localId;
+                            _logger.LogInformation($"✅ LocalId corregido a {localId} desde Asignación {kardex.AsignacionId}");
+                        }
+                    }
+                    
                     fechaKardex = kardex.Fecha;
                     asignacionId = kardex.AsignacionId;
 
@@ -696,8 +711,9 @@ namespace Puerto92.Services
                 {
                     var kardex = await _context.KardexSalon
                         .Include(k => k.Empleado)
-                        .Include(k => k.Local)  // ⭐ IMPORTANTE: Incluir Local
+                        .Include(k => k.Local)
                         .Include(k => k.Asignacion)
+                            .ThenInclude(a => a.Local)  // ⭐ NUEVO: Incluir Local de Asignación como fallback
                         .FirstOrDefaultAsync(k => k.Id == request.KardexId);
 
                     if (kardex == null)
@@ -707,7 +723,22 @@ namespace Puerto92.Services
 
                     empleadoResponsableId = kardex.EmpleadoId;
                     empleadoResponsableNombre = kardex.Empleado?.NombreCompleto ?? "Desconocido";
+                    
+                    // ⭐ CRÍTICO: Obtener LocalId con fallback a Asignación
                     localId = kardex.LocalId;
+                    if (localId <= 0 && kardex.Asignacion != null)
+                    {
+                        _logger.LogWarning($"⚠️ Kardex Salón {kardex.Id} tiene LocalId inválido ({localId}), obteniendo de Asignación...");
+                        localId = kardex.Asignacion.LocalId;
+                        
+                        // Actualizar el kardex con el LocalId correcto
+                        if (localId > 0)
+                        {
+                            kardex.LocalId = localId;
+                            _logger.LogInformation($"✅ LocalId corregido a {localId} desde Asignación {kardex.AsignacionId}");
+                        }
+                    }
+                    
                     fechaKardex = kardex.Fecha;
                     asignacionId = kardex.AsignacionId;
 
@@ -730,8 +761,8 @@ namespace Puerto92.Services
                 // ⭐ VALIDAR QUE TENEMOS UN LOCAL ID VÁLIDO
                 if (localId <= 0)
                 {
-                    _logger.LogError($"❌ LocalId inválido: {localId}");
-                    throw new Exception("Error: No se pudo determinar el local del kardex");
+                    _logger.LogError($"❌ LocalId inválido después de intentar corrección: {localId}");
+                    throw new Exception("Error: No se pudo determinar el local del kardex. Verifique que la asignación tenga un local válido.");
                 }
 
                 // Eliminar registros anteriores de personal presente
@@ -914,7 +945,7 @@ namespace Puerto92.Services
             _logger.LogInformation($"📝 Creando nuevo kardex - LocalId: {kardex.LocalId}, AsignacionId: {kardex.AsignacionId}");
 
             _context.KardexSalon.Add(kardex);
-            
+
             // ⭐ GUARDAR PRIMERO EL KARDEX
             await _context.SaveChangesAsync();
 
@@ -935,7 +966,7 @@ namespace Puerto92.Services
 
             if (kardexVerificado.LocalId <= 0)
             {
-                _logger.LogError($"❌ El kardex se guardó pero el LocalId es 0");
+                _logger.LogError($"❌ El kardex se guardó pero el LocalId es {kardexVerificado.LocalId}");
                 throw new Exception("Error: El LocalId no se guardó correctamente. Verifique la base de datos.");
             }
 
