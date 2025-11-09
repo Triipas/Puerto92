@@ -216,8 +216,8 @@ namespace Puerto92.Data
                         new Categoria { Tipo = TipoCategoria.Cocina, Nombre = "Carnes", Orden = 2, Activo = true, FechaCreacion = DateTime.Now, CreadoPor = "Sistema" },
                         
                         // Utensilios
-                        new Categoria { Tipo = TipoCategoria.Utensilios, Nombre = "Cubiertos", Orden = 1, Activo = true, FechaCreacion = DateTime.Now, CreadoPor = "Sistema" },
-                        new Categoria { Tipo = TipoCategoria.Utensilios, Nombre = "Vajilla", Orden = 2, Activo = true, FechaCreacion = DateTime.Now, CreadoPor = "Sistema" }
+                        new Categoria { Tipo = TipoCategoria.Utensilios, Nombre = "Mozo", Orden = 1, Activo = true, FechaCreacion = DateTime.Now, CreadoPor = "Sistema" },
+                        new Categoria { Tipo = TipoCategoria.Utensilios, Nombre = "Cocina", Orden = 2, Activo = true, FechaCreacion = DateTime.Now, CreadoPor = "Sistema" }
                     };
 
                     Console.WriteLine($"   Agregando {categorias.Count} categorías...");
@@ -262,37 +262,37 @@ namespace Puerto92.Data
                     {
                         Console.WriteLine("🍴 Creando utensilios de ejemplo...");
 
-                        var catCubiertos = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre == "Cubiertos");
-                        var catVajilla = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre == "Vajilla");
+                        var catMozo = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre == "Mozo");
+                        var catCocina = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre == "Cocina");
 
-                        if (catCubiertos != null && catVajilla != null)
+                        if (catMozo != null && catCocina != null)
                         {
                             var utensilios = new List<Utensilio>
                             {
                                 new Utensilio 
-{ 
-    Codigo = "CUB-001", 
-    Nombre = "Cuchara de Mesa", 
-    CategoriaId = catCubiertos.Id,  // ✅ Usar el Id de la categoría
-    Unidad = "Unidad", 
-    Precio = 2.50m, 
-    Descripcion = "Cuchara de acero inoxidable", 
-    Activo = true, 
-    FechaCreacion = DateTime.Now, 
-    CreadoPor = "Sistema" 
-},
-new Utensilio 
-{ 
-    Codigo = "VAJ-001", 
-    Nombre = "Plato Hondo", 
-    CategoriaId = catVajilla.Id,  // ✅ Usar el Id de la categoría
-    Unidad = "Unidad", 
-    Precio = 5.00m, 
-    Descripcion = "Plato hondo de cerámica blanca", 
-    Activo = true, 
-    FechaCreacion = DateTime.Now, 
-    CreadoPor = "Sistema" 
-}
+                                { 
+                                    Codigo = "CUB-001", 
+                                    Nombre = "Cuchara de Mesa", 
+                                    CategoriaId = catMozo.Id,  // ✅ Usar el Id de la categoría
+                                    Unidad = "Unidad", 
+                                    Precio = 2.50m, 
+                                    Descripcion = "Cuchara de acero inoxidable", 
+                                    Activo = true, 
+                                    FechaCreacion = DateTime.Now, 
+                                    CreadoPor = "Sistema" 
+                                },
+                                new Utensilio 
+                                { 
+                                    Codigo = "VAJ-001", 
+                                    Nombre = "Plato Hondo", 
+                                    CategoriaId = catCocina.Id,  // ✅ Usar el Id de la categoría
+                                    Unidad = "Unidad", 
+                                    Precio = 5.00m, 
+                                    Descripcion = "Plato hondo de cerámica blanca", 
+                                    Activo = true, 
+                                    FechaCreacion = DateTime.Now, 
+                                    CreadoPor = "Sistema" 
+                                }
                             };
 
                             context.Utensilios.AddRange(utensilios);
