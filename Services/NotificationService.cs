@@ -37,6 +37,11 @@ namespace Puerto92.Services
         {
             try
             {
+                _logger.LogInformation($"🔔 Iniciando creación de notificación:");
+                _logger.LogInformation($"   Usuario ID: {usuarioId}");
+                _logger.LogInformation($"   Tipo: {tipo}");
+                _logger.LogInformation($"   Título: {titulo}");
+                
                 var notificacion = new Notificacion
                 {
                     UsuarioId = usuarioId,
@@ -56,16 +61,20 @@ namespace Puerto92.Services
                 };
 
                 _context.Notificaciones.Add(notificacion);
-                await _context.SaveChangesAsync();
+                
+                _logger.LogInformation($"💾 Guardando notificación en base de datos...");
+                var cambiosGuardados = await _context.SaveChangesAsync();
+                _logger.LogInformation($"✅ Cambios guardados: {cambiosGuardados}");
 
-                _logger.LogInformation(
-                    $"✅ Notificación creada: {tipo} para usuario {usuarioId}");
+                _logger.LogInformation($"✅ Notificación creada exitosamente con ID: {notificacion.Id} para usuario {usuarioId}");
 
                 return notificacion;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"❌ Error al crear notificación para usuario {usuarioId}");
+                _logger.LogError($"   Tipo: {tipo}, Título: {titulo}");
+                _logger.LogError($"   Stack Trace: {ex.StackTrace}");
                 throw;
             }
         }
@@ -340,20 +349,28 @@ namespace Puerto92.Services
                 EstadoPendiente = true
             });
 
-            return await CrearNotificacionAsync(
+            _logger.LogInformation($"📝 Creando notificación KardexRecibido para: {administradorId}");
+            _logger.LogInformation($"   Título: {titulo}");
+            _logger.LogInformation($"   Mensaje: {mensaje}");
+
+            var notificacion = await CrearNotificacionAsync(
                 usuarioId: administradorId,
-                tipo: "KardexRecibido",
+                tipo: TipoNotificacion.KardexRecibido,
                 titulo: titulo,
                 mensaje: mensaje,
-                urlAccion: "/Asignaciones/Index", // Redirigir a la página de asignaciones
+                urlAccion: "/Asignaciones/Index",
                 textoAccion: "Ver Asignaciones",
                 icono: "clipboard-check",
                 color: ColorNotificacion.Success,
                 prioridad: PrioridadNotificacion.Alta,
                 mostrarPopup: true,
                 datosAdicionales: datosAdicionales,
-                fechaExpiracion: fecha.AddDays(7) // Expira en 7 días
+                fechaExpiracion: fecha.AddDays(7)
             );
+
+            _logger.LogInformation($"✅ Notificación creada con ID: {notificacion.Id}");
+            
+            return notificacion;
         }
 
     }

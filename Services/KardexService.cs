@@ -691,16 +691,34 @@ namespace Puerto92.Services
                 );
 
                 // ⭐ NUEVO: Buscar y notificar al administrador local
-                var administradorLocal = await _context.Users
+                _logger.LogInformation($"🔍 Buscando administrador local para Local ID: {localId}");
+                
+                // Query simplificada y más robusta
+                var usuariosLocal = await _context.Users
                     .Where(u => u.LocalId == localId && u.Activo)
-                    .Join(_context.UserRoles, u => u.Id, ur => ur.UserId, (u, ur) => new { u, ur })
-                    .Join(_context.Roles, x => x.ur.RoleId, r => r.Id, (x, r) => new { x.u, r })
-                    .Where(x => x.r.Name == "Administrador Local")
-                    .Select(x => x.u)
-                    .FirstOrDefaultAsync();
+                    .ToListAsync();
+                
+                _logger.LogInformation($"📋 Total usuarios activos en el local: {usuariosLocal.Count}");
+
+                Usuario? administradorLocal = null;
+                
+                foreach (var usuario in usuariosLocal)
+                {
+                    var roles = await _userManager.GetRolesAsync(usuario);
+                    _logger.LogInformation($"   - Usuario: {usuario.NombreCompleto} | Roles: {string.Join(", ", roles)}");
+                    
+                    if (roles.Contains("Administrador Local"))
+                    {
+                        administradorLocal = usuario;
+                        _logger.LogInformation($"✅ Administrador Local encontrado: {administradorLocal.NombreCompleto} (ID: {administradorLocal.Id})");
+                        break;
+                    }
+                }
 
                 if (administradorLocal != null)
                 {
+                    _logger.LogInformation($"📤 Creando notificación para administrador: {administradorLocal.NombreCompleto}");
+                    
                     await _notificationService.CrearNotificacionKardexRecibidoAsync(
                         administradorId: administradorLocal.Id,
                         tipoKardex: request.TipoKardex,
@@ -709,12 +727,13 @@ namespace Puerto92.Services
                     );
 
                     _logger.LogInformation(
-                        $"🔔 Notificación enviada al administrador: {administradorLocal.NombreCompleto} - Kardex {request.TipoKardex} de {empleadoResponsableNombre}"
+                        $"🔔 Notificación enviada exitosamente al administrador: {administradorLocal.NombreCompleto} - Kardex {request.TipoKardex} de {empleadoResponsableNombre}"
                     );
                 }
                 else
                 {
                     _logger.LogWarning($"⚠️ No se encontró administrador local para el local ID {localId}");
+                    _logger.LogWarning($"⚠️ Usuarios revisados: {usuariosLocal.Count}");
                 }
 
                 return new PersonalPresenteResponse
