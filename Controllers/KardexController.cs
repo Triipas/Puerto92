@@ -4,6 +4,7 @@ using Puerto92.Services;
 using Puerto92.ViewModels;
 using Puerto92.Models;
 using System.Security.Claims;
+using System.Net;
 
 namespace Puerto92.Controllers
 {
@@ -455,7 +456,7 @@ namespace Puerto92.Controllers
                 if (request.TipoKardex == TipoKardex.MozoBebidas)
                 {
                     var kardex = await _kardexService.ObtenerKardexBebidasAsync(request.KardexId);
-                    
+
                     if (kardex.EmpleadoId != usuarioId)
                     {
                         return Json(new { success = false, message = "No autorizado" });
@@ -490,5 +491,28 @@ namespace Puerto92.Controllers
                 return Json(new { success = false, message = "Error al procesar la solicitud" });
             }
         }
+        
+        // ==========================================
+        // MÉTODO AUXILIAR PRIVADO
+        // ==========================================
+
+        /// <summary>
+        /// Normaliza el tipo de kardex (decodifica HTML y trim)
+        /// </summary>
+        private string NormalizarTipoKardex(string? tipoKardex)
+        {
+            if (string.IsNullOrEmpty(tipoKardex))
+                return string.Empty;
+            
+            // Decodificar HTML (convierte &#xF3; a ó)
+            var normalizado = WebUtility.HtmlDecode(tipoKardex);
+            
+            // Trim
+            normalizado = normalizado.Trim();
+            
+            _logger.LogDebug($"🔄 TipoKardex normalizado: '{tipoKardex}' → '{normalizado}'");
+            
+            return normalizado;
+}
     }
 }
