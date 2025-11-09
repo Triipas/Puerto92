@@ -12,17 +12,20 @@ namespace Puerto92.Services
         private readonly ILogger<KardexService> _logger;
         private readonly UserManager<Usuario> _userManager;
         private readonly INotificationService _notificationService;
+        private readonly IAuditService _auditService;
 
         public KardexService(
             ApplicationDbContext context,
             ILogger<KardexService> logger,
             UserManager<Usuario> userManager,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            IAuditService auditService)
         {
             _context = context;
             _logger = logger;
             _userManager = userManager;
             _notificationService = notificationService;
+            _auditService = auditService;
         }
 
         public async Task<bool> TieneAsignacionActivaAsync(string usuarioId)
@@ -277,6 +280,14 @@ namespace Puerto92.Services
             await _context.SaveChangesAsync();
 
             _logger.LogInformation($"Kardex de bebidas iniciado: ID {kardex.Id} por usuario {usuarioId}");
+
+            // ⭐ NUEVO: Registrar en auditoría
+            await _auditService.RegistrarInicioKardexAsync(
+                tipoKardex: TipoKardex.MozoBebidas,
+                fecha: asignacion.Fecha,
+                empleadoNombre: asignacion.Empleado?.NombreCompleto ?? "Desconocido",
+                kardexId: kardex.Id
+            );
 
             // Cargar kardex completo con detalles
             return await ObtenerKardexBebidasAsync(kardex.Id);
@@ -688,6 +699,14 @@ namespace Puerto92.Services
 
                 _logger.LogInformation(
                     $"✅ Kardex ENVIADO al administrador: Kardex {request.KardexId} ({request.TipoKardex}) - {request.EmpleadosPresentes.Count} empleados - Enviado a las {DateTime.Now:HH:mm:ss}"
+                );
+
+                await _auditService.RegistrarEnvioKardexAsync(
+                    tipoKardex: request.TipoKardex,
+                    fecha: fechaKardex,
+                    empleadoNombre: empleadoResponsableNombre,
+                    kardexId: request.KardexId,
+                    totalPersonalPresente: request.EmpleadosPresentes.Count
                 );
 
                 // ⭐ NUEVO: Buscar y notificar al administrador local

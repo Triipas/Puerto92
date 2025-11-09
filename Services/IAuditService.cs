@@ -141,5 +141,39 @@ namespace Puerto92.Services
         /// </summary>
         Task RegistrarDesactivacionProveedorAsync(string rucProveedor, string nombreProveedor);
 
+        /// <summary>
+        /// Registrar creación de asignación de kardex
+        /// </summary>
+        Task RegistrarCreacionAsignacionAsync(string tipoKardex, DateTime fecha, string empleadoNombre, string localNombre);
+
+        /// <summary>
+        /// Registrar eliminación de asignación de kardex
+        /// </summary>
+        Task RegistrarEliminacionAsignacionAsync(string tipoKardex, DateTime fecha, string empleadoNombre, string motivo);
+
+        /// <summary>
+        /// Registrar inicio de kardex
+        /// </summary>
+        Task RegistrarInicioKardexAsync(string tipoKardex, DateTime fecha, string empleadoNombre, int kardexId);
+
+        /// <summary>
+        /// Registrar completado de kardex
+        /// </summary>
+        Task RegistrarCompletadoKardexAsync(string tipoKardex, DateTime fecha, string empleadoNombre, int kardexId);
+
+        /// <summary>
+        /// Registrar envío de kardex al administrador
+        /// </summary>
+        Task RegistrarEnvioKardexAsync(string tipoKardex, DateTime fecha, string empleadoNombre, int kardexId, int totalPersonalPresente);
+
+        /// <summary>
+        /// Registrar aprobación de kardex
+        /// </summary>
+        Task RegistrarAprobacionKardexAsync(string tipoKardex, DateTime fecha, string empleadoResponsable, int kardexId, string administrador);
+
+        /// <summary>
+        /// Registrar rechazo de kardex
+        /// </summary>
+        Task RegistrarRechazoKardexAsync(string tipoKardex, DateTime fecha, string empleadoResponsable, int kardexId, string administrador, string motivo);
     }
 }

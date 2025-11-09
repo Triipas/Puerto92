@@ -11,7 +11,7 @@ using Puerto92.Data;
 namespace Puerto92.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251109185217_DBinicial")]
+    [Migration("20251109202525_DBinicial")]
     partial class DBinicial
     {
         /// <inheritdoc />

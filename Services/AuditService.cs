@@ -281,29 +281,6 @@ namespace Puerto92.Services
                 nivelSeveridad: NivelSeveridad.Error);
         }
 
-        /// <summary>
-        /// Obtener la dirección IP del cliente
-        /// </summary>
-        private string ObtenerDireccionIP()
-        {
-            var httpContext = _httpContextAccessor.HttpContext;
-            if (httpContext == null)
-                return "0.0.0.0";
-
-            // Intentar obtener la IP real si está detrás de un proxy
-            var forwardedFor = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-            if (!string.IsNullOrEmpty(forwardedFor))
-            {
-                var ips = forwardedFor.Split(',');
-                if (ips.Length > 0)
-                    return ips[0].Trim();
-            }
-
-            var remoteIp = httpContext.Connection.RemoteIpAddress?.ToString();
-            return remoteIp ?? "0.0.0.0";
-        }
-        // Agregar estos métodos a AuditService.cs
-
         public async Task RegistrarCreacionUtensilioAsync(string codigoUtensilio, string nombreUtensilio, string tipo)
         {
             await RegistrarAccionAsync(
@@ -370,11 +347,6 @@ namespace Puerto92.Services
                 nivelSeveridad: NivelSeveridad.Info);
         }
 
-        // ⭐ AGREGAR ESTOS MÉTODOS AL FINAL DE LA CLASE AuditService
-
-        /// <summary>
-        /// Registrar creación de producto
-        /// </summary>
         public async Task RegistrarCreacionProductoAsync(string codigoProducto, string nombreProducto, string categoriaNombre)
         {
             await RegistrarAccionAsync(
@@ -392,9 +364,6 @@ namespace Puerto92.Services
                 nivelSeveridad: NivelSeveridad.Info);
         }
 
-        /// <summary>
-        /// Registrar edición de producto
-        /// </summary>
         public async Task RegistrarEdicionProductoAsync(string codigoProducto, string nombreProducto, string cambios)
         {
             await RegistrarAccionAsync(
@@ -412,9 +381,6 @@ namespace Puerto92.Services
                 nivelSeveridad: NivelSeveridad.Info);
         }
 
-        /// <summary>
-        /// Registrar desactivación de producto
-        /// </summary>
         public async Task RegistrarDesactivacionProductoAsync(string codigoProducto, string nombreProducto, string motivo)
         {
             await RegistrarAccionAsync(
@@ -432,9 +398,6 @@ namespace Puerto92.Services
                 nivelSeveridad: NivelSeveridad.Warning);
         }
 
-        /// <summary>
-        /// Registrar carga masiva de productos
-        /// </summary>
         public async Task RegistrarCargaMasivaProductosAsync(int cantidad, string resultado)
         {
             await RegistrarAccionAsync(
@@ -451,9 +414,6 @@ namespace Puerto92.Services
                 nivelSeveridad: NivelSeveridad.Info);
         }
 
-        /// <summary>
-        /// Registrar creación de proveedor
-        /// </summary>
         public async Task RegistrarCreacionProveedorAsync(string rucProveedor, string nombreProveedor, string categoria)
         {
             await RegistrarAccionAsync(
@@ -471,9 +431,6 @@ namespace Puerto92.Services
                 nivelSeveridad: NivelSeveridad.Info);
         }
 
-        /// <summary>
-        /// Registrar edición de proveedor
-        /// </summary>
         public async Task RegistrarEdicionProveedorAsync(string rucProveedor, string nombreProveedor, string cambios)
         {
             await RegistrarAccionAsync(
@@ -491,9 +448,6 @@ namespace Puerto92.Services
                 nivelSeveridad: NivelSeveridad.Info);
         }
 
-        /// <summary>
-        /// Registrar desactivación de proveedor
-        /// </summary>
         public async Task RegistrarDesactivacionProveedorAsync(string rucProveedor, string nombreProveedor)
         {
             await RegistrarAccionAsync(
@@ -506,6 +460,143 @@ namespace Puerto92.Services
                     FechaDesactivacion = DateTime.Now
                 }),
                 modulo: "Catálogo de Proveedores",
+                resultado: ResultadoAuditoria.Exitoso,
+                nivelSeveridad: NivelSeveridad.Warning);
+        }
+
+        public async Task RegistrarCreacionAsignacionAsync(string tipoKardex, DateTime fecha, string empleadoNombre, string localNombre)
+        {
+            await RegistrarAccionAsync(
+                accion: "Crear Asignación Kardex",
+                descripcion: $"Asignación de {tipoKardex} creada para {empleadoNombre} en {localNombre} para el {fecha:dd/MM/yyyy}",
+                usuarioAfectado: empleadoNombre,
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    TipoKardex = tipoKardex,
+                    Fecha = fecha.ToString("dd/MM/yyyy"),
+                    Empleado = empleadoNombre,
+                    Local = localNombre,
+                    FechaCreacion = DateTime.Now
+                }),
+                modulo: "Asignaciones",
+                resultado: ResultadoAuditoria.Exitoso,
+                nivelSeveridad: NivelSeveridad.Info);
+        }
+
+        public async Task RegistrarEliminacionAsignacionAsync(string tipoKardex, DateTime fecha, string empleadoNombre, string motivo)
+        {
+            await RegistrarAccionAsync(
+                accion: "Eliminar Asignación Kardex",
+                descripcion: $"Asignación de {tipoKardex} para {empleadoNombre} del {fecha:dd/MM/yyyy} eliminada. Motivo: {motivo}",
+                usuarioAfectado: empleadoNombre,
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    TipoKardex = tipoKardex,
+                    Fecha = fecha.ToString("dd/MM/yyyy"),
+                    Empleado = empleadoNombre,
+                    Motivo = motivo,
+                    FechaEliminacion = DateTime.Now
+                }),
+                modulo: "Asignaciones",
+                resultado: ResultadoAuditoria.Exitoso,
+                nivelSeveridad: NivelSeveridad.Warning);
+        }
+
+        public async Task RegistrarInicioKardexAsync(string tipoKardex, DateTime fecha, string empleadoNombre, int kardexId)
+        {
+            await RegistrarAccionAsync(
+                accion: "Iniciar Kardex",
+                descripcion: $"{empleadoNombre} inició el registro del Kardex de {tipoKardex} del {fecha:dd/MM/yyyy} (ID: {kardexId})",
+                usuarioAfectado: empleadoNombre,
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    KardexId = kardexId,
+                    TipoKardex = tipoKardex,
+                    Fecha = fecha.ToString("dd/MM/yyyy"),
+                    Empleado = empleadoNombre,
+                    FechaInicio = DateTime.Now
+                }),
+                modulo: "Kardex",
+                resultado: ResultadoAuditoria.Exitoso,
+                nivelSeveridad: NivelSeveridad.Info);
+        }
+
+        public async Task RegistrarCompletadoKardexAsync(string tipoKardex, DateTime fecha, string empleadoNombre, int kardexId)
+        {
+            await RegistrarAccionAsync(
+                accion: "Completar Kardex",
+                descripcion: $"{empleadoNombre} completó el Kardex de {tipoKardex} del {fecha:dd/MM/yyyy} (ID: {kardexId})",
+                usuarioAfectado: empleadoNombre,
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    KardexId = kardexId,
+                    TipoKardex = tipoKardex,
+                    Fecha = fecha.ToString("dd/MM/yyyy"),
+                    Empleado = empleadoNombre,
+                    FechaCompletado = DateTime.Now
+                }),
+                modulo: "Kardex",
+                resultado: ResultadoAuditoria.Exitoso,
+                nivelSeveridad: NivelSeveridad.Info);
+        }
+
+        public async Task RegistrarEnvioKardexAsync(string tipoKardex, DateTime fecha, string empleadoNombre, int kardexId, int totalPersonalPresente)
+        {
+            await RegistrarAccionAsync(
+                accion: "Enviar Kardex al Administrador",
+                descripcion: $"{empleadoNombre} envió el Kardex de {tipoKardex} del {fecha:dd/MM/yyyy} al administrador. Personal presente: {totalPersonalPresente} empleado(s). (ID: {kardexId})",
+                usuarioAfectado: empleadoNombre,
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    KardexId = kardexId,
+                    TipoKardex = tipoKardex,
+                    Fecha = fecha.ToString("dd/MM/yyyy"),
+                    Empleado = empleadoNombre,
+                    TotalPersonalPresente = totalPersonalPresente,
+                    FechaEnvio = DateTime.Now
+                }),
+                modulo: "Kardex",
+                resultado: ResultadoAuditoria.Exitoso,
+                nivelSeveridad: NivelSeveridad.Info);
+        }
+
+        public async Task RegistrarAprobacionKardexAsync(string tipoKardex, DateTime fecha, string empleadoResponsable, int kardexId, string administrador)
+        {
+            await RegistrarAccionAsync(
+                accion: "Aprobar Kardex",
+                descripcion: $"{administrador} aprobó el Kardex de {tipoKardex} de {empleadoResponsable} del {fecha:dd/MM/yyyy} (ID: {kardexId})",
+                usuarioAfectado: empleadoResponsable,
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    KardexId = kardexId,
+                    TipoKardex = tipoKardex,
+                    Fecha = fecha.ToString("dd/MM/yyyy"),
+                    EmpleadoResponsable = empleadoResponsable,
+                    Administrador = administrador,
+                    FechaAprobacion = DateTime.Now
+                }),
+                modulo: "Kardex",
+                resultado: ResultadoAuditoria.Exitoso,
+                nivelSeveridad: NivelSeveridad.Info);
+        }
+
+        public async Task RegistrarRechazoKardexAsync(string tipoKardex, DateTime fecha, string empleadoResponsable, int kardexId, string administrador, string motivo)
+        {
+            await RegistrarAccionAsync(
+                accion: "Rechazar Kardex",
+                descripcion: $"{administrador} rechazó el Kardex de {tipoKardex} de {empleadoResponsable} del {fecha:dd/MM/yyyy}. Motivo: {motivo} (ID: {kardexId})",
+                usuarioAfectado: empleadoResponsable,
+                datosAdicionales: JsonSerializer.Serialize(new
+                {
+                    KardexId = kardexId,
+                    TipoKardex = tipoKardex,
+                    Fecha = fecha.ToString("dd/MM/yyyy"),
+                    EmpleadoResponsable = empleadoResponsable,
+                    Administrador = administrador,
+                    Motivo = motivo,
+                    FechaRechazo = DateTime.Now
+                }),
+                modulo: "Kardex",
                 resultado: ResultadoAuditoria.Exitoso,
                 nivelSeveridad: NivelSeveridad.Warning);
         }
