@@ -11,15 +11,18 @@ namespace Puerto92.Services
         private readonly ApplicationDbContext _context;
         private readonly ILogger<KardexService> _logger;
         private readonly UserManager<Usuario> _userManager;
+        private readonly INotificationService _notificationService;
 
         public KardexService(
             ApplicationDbContext context,
             ILogger<KardexService> logger,
-            UserManager<Usuario> userManager)  // ⭐ AGREGAR
+            UserManager<Usuario> userManager,
+            INotificationService notificationService)
         {
             _context = context;
             _logger = logger;
-            _userManager = userManager;  // ⭐ AGREGAR
+            _userManager = userManager;
+            _notificationService = notificationService;
         }
 
         public async Task<bool> TieneAsignacionActivaAsync(string usuarioId)
@@ -589,127 +592,149 @@ namespace Puerto92.Services
                 .ToList();
         }
 
-    public async Task<PersonalPresenteResponse> GuardarPersonalPresenteYCompletarAsync(PersonalPresenteRequest request)
-    {
-        using var transaction = await _context.Database.BeginTransactionAsync();
-
-        try {
-            // ⭐ VALIDAR HORARIO
-            var horaActual = DateTime.Now.TimeOfDay;
-            var horaLimite = new TimeSpan(17, 30, 0); // 5:30 PM
-            var dentroDeHorario = horaActual < horaLimite;
-
-            // TODO: Verificar si hay habilitación manual para este kardex
-            var envioHabilitadoManualmente = false;
-
-            if (!dentroDeHorario && !envioHabilitadoManualmente)
-            {
-                return new PersonalPresenteResponse
-                {
-                    Success = false,
-                    Message = "Fuera de horario. El envío ha sido bloqueado. El horario límite de envío es 5:30 PM. Si necesita enviar este kardex, contacte al administrador para solicitar habilitación manual."
-                };
-            }
-
-            // Validar que hay al menos un empleado presente
-            if (request.EmpleadosPresentes == null || request.EmpleadosPresentes.Count == 0)
-            {
-                return new PersonalPresenteResponse
-                {
-                    Success = false,
-                    Message = "Debe seleccionar al menos un empleado presente"
-                };
-            }
-
-            // Obtener información del kardex
-            string empleadoResponsableId = "";
-            string empleadoResponsableNombre = "";
-
-            if (request.TipoKardex == TipoKardex.MozoBebidas)
-            {
-                var kardex = await _context.KardexBebidas
-                    .Include(k => k.Empleado)
-                    .Include(k => k.Asignacion)
-                    .FirstOrDefaultAsync(k => k.Id == request.KardexId);
-
-                if (kardex == null)
-                {
-                    throw new Exception("Kardex no encontrado");
-                }
-
-                empleadoResponsableId = kardex.EmpleadoId;
-                empleadoResponsableNombre = kardex.Empleado?.NombreCompleto ?? "";
-
-                // ⭐ CAMBIAR ESTADO A "ENVIADO"
-                kardex.Estado = EstadoKardex.Enviado;
-                kardex.FechaFinalizacion = DateTime.Now;
-                kardex.FechaEnvio = DateTime.Now;
-                kardex.Observaciones = request.ObservacionesKardex;
-
-                // Actualizar asignación
-                if (kardex.Asignacion != null)
-                {
-                    kardex.Asignacion.Estado = EstadoAsignacion.Completada;
-                }
-            }
-            // TODO: Agregar casos para otros tipos de kardex
-
-            // Eliminar registros anteriores de personal presente para este kardex
-            var registrosAnteriores = await _context.Set<PersonalPresente>()
-                .Where(p => p.KardexId == request.KardexId && p.TipoKardex == request.TipoKardex)
-                .ToListAsync();
-
-            _context.Set<PersonalPresente>().RemoveRange(registrosAnteriores);
-
-            // Guardar personal presente
-            foreach (var empleadoId in request.EmpleadosPresentes)
-            {
-                var personalPresente = new PersonalPresente
-                {
-                    KardexId = request.KardexId,
-                    TipoKardex = request.TipoKardex,
-                    EmpleadoId = empleadoId,
-                    EsResponsablePrincipal = empleadoId == empleadoResponsableId,
-                    FechaRegistro = DateTime.Now
-                };
-
-                _context.Set<PersonalPresente>().Add(personalPresente);
-            }
-
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-
-            _logger.LogInformation(
-                $"✅ Kardex ENVIADO al administrador: Kardex {request.KardexId} ({request.TipoKardex}) - {request.EmpleadosPresentes.Count} empleados - Enviado a las {DateTime.Now:HH:mm:ss}"
-            );
-
-            // ⭐ NOTIFICAR AL ADMINISTRADOR
-            // TODO: Implementar notificación al administrador cuando esté creado el servicio
-            // await _notificationService.CrearNotificacionKardexRecibidoAsync(
-            //     administradorId: ...,
-            //     tipoKardex: request.TipoKardex,
-            //     empleado: empleadoResponsableNombre,
-            //     fecha: DateTime.Now
-            // );
-
-            return new PersonalPresenteResponse
-            {
-                Success = true,
-                Message = "Kardex enviado exitosamente",
-                TotalRegistrados = request.EmpleadosPresentes.Count
-            };
-        }
-        catch (Exception ex)
+        public async Task<PersonalPresenteResponse> GuardarPersonalPresenteYCompletarAsync(PersonalPresenteRequest request)
         {
-            await transaction.RollbackAsync();
-            _logger.LogError(ex, "❌ Error al enviar kardex al administrador");
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-            return new PersonalPresenteResponse
+            try {
+                // ⭐ VALIDAR HORARIO
+                var horaActual = DateTime.Now.TimeOfDay;
+                var horaLimite = new TimeSpan(17, 30, 0); // 5:30 PM
+                var dentroDeHorario = horaActual < horaLimite;
+
+                // TODO: Verificar si hay habilitación manual para este kardex
+                var envioHabilitadoManualmente = false;
+
+                if (!dentroDeHorario && !envioHabilitadoManualmente)
+                {
+                    return new PersonalPresenteResponse
+                    {
+                        Success = false,
+                        Message = "Fuera de horario. El envío ha sido bloqueado. El horario límite de envío es 5:30 PM. Si necesita enviar este kardex, contacte al administrador para solicitar habilitación manual."
+                    };
+                }
+
+                // Validar que hay al menos un empleado presente
+                if (request.EmpleadosPresentes == null || request.EmpleadosPresentes.Count == 0)
+                {
+                    return new PersonalPresenteResponse
+                    {
+                        Success = false,
+                        Message = "Debe seleccionar al menos un empleado presente"
+                    };
+                }
+
+                // Obtener información del kardex
+                string empleadoResponsableId = "";
+                string empleadoResponsableNombre = "";
+                int localId = 0;
+                DateTime fechaKardex = DateTime.Today;
+
+                if (request.TipoKardex == TipoKardex.MozoBebidas)
+                {
+                    var kardex = await _context.KardexBebidas
+                        .Include(k => k.Empleado)
+                        .Include(k => k.Asignacion)
+                        .FirstOrDefaultAsync(k => k.Id == request.KardexId);
+
+                    if (kardex == null)
+                    {
+                        throw new Exception("Kardex no encontrado");
+                    }
+
+                    empleadoResponsableId = kardex.EmpleadoId;
+                    empleadoResponsableNombre = kardex.Empleado?.NombreCompleto ?? "";
+                    localId = kardex.LocalId;
+                    fechaKardex = kardex.Fecha;
+
+                    // ⭐ CAMBIAR ESTADO A "ENVIADO"
+                    kardex.Estado = EstadoKardex.Enviado;
+                    kardex.FechaFinalizacion = DateTime.Now;
+                    kardex.FechaEnvio = DateTime.Now;
+                    kardex.Observaciones = request.ObservacionesKardex;
+
+                    // Actualizar asignación
+                    if (kardex.Asignacion != null)
+                    {
+                        kardex.Asignacion.Estado = EstadoAsignacion.Completada;
+                    }
+                }
+                // TODO: Agregar casos para otros tipos de kardex
+
+                // Eliminar registros anteriores de personal presente para este kardex
+                var registrosAnteriores = await _context.Set<PersonalPresente>()
+                    .Where(p => p.KardexId == request.KardexId && p.TipoKardex == request.TipoKardex)
+                    .ToListAsync();
+
+                _context.Set<PersonalPresente>().RemoveRange(registrosAnteriores);
+
+                // Guardar personal presente
+                foreach (var empleadoId in request.EmpleadosPresentes)
+                {
+                    var personalPresente = new PersonalPresente
+                    {
+                        KardexId = request.KardexId,
+                        TipoKardex = request.TipoKardex,
+                        EmpleadoId = empleadoId,
+                        EsResponsablePrincipal = empleadoId == empleadoResponsableId,
+                        FechaRegistro = DateTime.Now
+                    };
+
+                    _context.Set<PersonalPresente>().Add(personalPresente);
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                _logger.LogInformation(
+                    $"✅ Kardex ENVIADO al administrador: Kardex {request.KardexId} ({request.TipoKardex}) - {request.EmpleadosPresentes.Count} empleados - Enviado a las {DateTime.Now:HH:mm:ss}"
+                );
+
+                // ⭐ NUEVO: Buscar y notificar al administrador local
+                var administradorLocal = await _context.Users
+                    .Where(u => u.LocalId == localId && u.Activo)
+                    .Join(_context.UserRoles, u => u.Id, ur => ur.UserId, (u, ur) => new { u, ur })
+                    .Join(_context.Roles, x => x.ur.RoleId, r => r.Id, (x, r) => new { x.u, r })
+                    .Where(x => x.r.Name == "Administrador Local")
+                    .Select(x => x.u)
+                    .FirstOrDefaultAsync();
+
+                if (administradorLocal != null)
+                {
+                    await _notificationService.CrearNotificacionKardexRecibidoAsync(
+                        administradorId: administradorLocal.Id,
+                        tipoKardex: request.TipoKardex,
+                        empleadoResponsable: empleadoResponsableNombre,
+                        fecha: fechaKardex
+                    );
+
+                    _logger.LogInformation(
+                        $"🔔 Notificación enviada al administrador: {administradorLocal.NombreCompleto} - Kardex {request.TipoKardex} de {empleadoResponsableNombre}"
+                    );
+                }
+                else
+                {
+                    _logger.LogWarning($"⚠️ No se encontró administrador local para el local ID {localId}");
+                }
+
+                return new PersonalPresenteResponse
+                {
+                    Success = true,
+                    Message = "Kardex enviado exitosamente",
+                    TotalRegistrados = request.EmpleadosPresentes.Count
+                };
+            }
+            catch (Exception ex)
             {
-                Success = false,
-                Message = $"Error al enviar el kardex: {ex.Message}"
-            };
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "❌ Error al enviar kardex al administrador");
+
+                return new PersonalPresenteResponse
+                {
+                    Success = false,
+                    Message = $"Error al enviar el kardex: {ex.Message}"
+                };
+            }
         }
-    }
     }
 }

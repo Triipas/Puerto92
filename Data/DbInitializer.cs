@@ -218,7 +218,7 @@ namespace Puerto92.Data
                 localId: localPuerto92.Id,
                 password: "Puerto92_Co1"
             );
-                        
+
             await EnsureUserWithRole(
                 userManager,
                 roleManager,
@@ -228,6 +228,222 @@ namespace Puerto92.Data
                 localId: localPuerto92.Id,
                 password: "Puerto92_Co2"
             );
+
+            // ===== 6. CREAR CATEGORÍAS Y PRODUCTOS DE EJEMPLO =====
+
+            // Verificar si ya existen categorías
+            if (!await context.Categorias.AnyAsync())
+            {
+                Console.WriteLine("📦 Creando categorías de ejemplo...");
+
+                var categorias = new List<Categoria>
+                {
+                    // Bebidas
+                    new Categoria
+                    {
+                        Tipo = TipoCategoria.Bebidas,
+                        Nombre = "Gaseosas",
+                        Orden = 1,
+                        Activo = true,
+                        FechaCreacion = DateTime.Now,
+                        CreadoPor = "Sistema"
+                    },
+                    new Categoria
+                    {
+                        Tipo = TipoCategoria.Bebidas,
+                        Nombre = "Jugos",
+                        Orden = 2,
+                        Activo = true,
+                        FechaCreacion = DateTime.Now,
+                        CreadoPor = "Sistema"
+                    },
+
+                    // Cocina
+                    new Categoria
+                    {
+                        Tipo = TipoCategoria.Cocina,
+                        Nombre = "Abarrotes",
+                        Orden = 1,
+                        Activo = true,
+                        FechaCreacion = DateTime.Now,
+                        CreadoPor = "Sistema"
+                    },
+                    new Categoria
+                    {
+                        Tipo = TipoCategoria.Cocina,
+                        Nombre = "Carnes",
+                        Orden = 2,
+                        Activo = true,
+                        FechaCreacion = DateTime.Now,
+                        CreadoPor = "Sistema"
+                    },
+
+                    // Utensilios
+                    new Categoria
+                    {
+                        Tipo = TipoCategoria.Utensilios,
+                        Nombre = "Cubiertos",
+                        Orden = 1,
+                        Activo = true,
+                        FechaCreacion = DateTime.Now,
+                        CreadoPor = "Sistema"
+                    },
+                    new Categoria
+                    {
+                        Tipo = TipoCategoria.Utensilios,
+                        Nombre = "Vajilla",
+                        Orden = 2,
+                        Activo = true,
+                        FechaCreacion = DateTime.Now,
+                        CreadoPor = "Sistema"
+                    }
+                };
+
+                context.Categorias.AddRange(categorias);
+                await context.SaveChangesAsync();
+
+                Console.WriteLine($"✅ {categorias.Count} categorías creadas exitosamente");
+
+                // ===== CREAR PRODUCTOS ASOCIADOS A LAS CATEGORÍAS =====
+
+                // Obtener las categorías recién creadas
+                var catGaseosas = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre == "Gaseosas");
+                var catJugos = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre == "Jugos");
+                var catAbarrotes = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre == "Abarrotes");
+                var catCarnes = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre == "Carnes");
+
+                if (catGaseosas == null || catJugos == null || catAbarrotes == null || catCarnes == null)
+                {
+                    Console.WriteLine("⚠️ No se pudieron cargar las categorías para crear productos");
+                }
+                else
+                {
+                    Console.WriteLine("📦 Creando productos de ejemplo...");
+
+                    var productos = new List<Producto>
+                    {
+                        // Productos de Bebidas - Gaseosas
+                        new Producto
+                        {
+                            Codigo = "BEB-001",
+                            Nombre = "Coca Cola 2L",
+                            CategoriaId = catGaseosas.Id,
+                            Unidad = "Unidad",
+                            PrecioCompra = 4.50m,
+                            PrecioVenta = 6.00m,
+                            Descripcion = "Gaseosa Coca Cola 2 litros",
+                            Activo = true,
+                            FechaCreacion = DateTime.Now,
+                            CreadoPor = "Sistema"
+                        },
+
+                        // Productos de Bebidas - Jugos
+                        new Producto
+                        {
+                            Codigo = "BEB-002",
+                            Nombre = "Jugo Naranja Gloria 1L",
+                            CategoriaId = catJugos.Id,
+                            Unidad = "Unidad",
+                            PrecioCompra = 5.00m,
+                            PrecioVenta = 7.00m,
+                            Descripcion = "Jugo de naranja Gloria 1 litro",
+                            Activo = true,
+                            FechaCreacion = DateTime.Now,
+                            CreadoPor = "Sistema"
+                        },
+
+                        // Productos de Cocina - Abarrotes
+                        new Producto
+                        {
+                            Codigo = "COC-001",
+                            Nombre = "Arroz Superior 1kg",
+                            CategoriaId = catAbarrotes.Id,
+                            Unidad = "Kilogramo",
+                            PrecioCompra = 3.50m,
+                            PrecioVenta = 4.50m,
+                            Descripcion = "Arroz superior extra de 1 kilogramo",
+                            Activo = true,
+                            FechaCreacion = DateTime.Now,
+                            CreadoPor = "Sistema"
+                        },
+
+                        // Productos de Cocina - Carnes
+                        new Producto
+                        {
+                            Codigo = "COC-002",
+                            Nombre = "Pollo Entero",
+                            CategoriaId = catCarnes.Id,
+                            Unidad = "Kilogramo",
+                            PrecioCompra = 8.00m,
+                            PrecioVenta = 12.00m,
+                            Descripcion = "Pollo fresco entero por kilogramo",
+                            Activo = true,
+                            FechaCreacion = DateTime.Now,
+                            CreadoPor = "Sistema"
+                        }
+                    };
+
+                    context.Productos.AddRange(productos);
+                    await context.SaveChangesAsync();
+
+                    Console.WriteLine($"✅ {productos.Count} productos creados exitosamente");
+                }
+
+                // ===== CREAR UTENSILIOS ASOCIADOS A LAS CATEGORÍAS DE UTENSILIOS =====
+
+                var catCubiertos = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre == "Cubiertos");
+                var catVajilla = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre == "Vajilla");
+
+                if (catCubiertos == null || catVajilla == null)
+                {
+                    Console.WriteLine("⚠️ No se pudieron cargar las categorías de utensilios");
+                }
+                else
+                {
+                    Console.WriteLine("🍴 Creando utensilios de ejemplo...");
+
+                    var utensilios = new List<Utensilio>
+                    {
+                        // Cubiertos
+                        new Utensilio
+                        {
+                            Codigo = "CUB-001",
+                            Nombre = "Cuchara de Mesa",
+                            Tipo = catCubiertos.Nombre,
+                            Unidad = "Unidad",
+                            Precio = 2.50m,
+                            Descripcion = "Cuchara de acero inoxidable",
+                            Activo = true,
+                            FechaCreacion = DateTime.Now,
+                            CreadoPor = "Sistema"
+                        },
+
+                        // Vajilla
+                        new Utensilio
+                        {
+                            Codigo = "VAJ-001",
+                            Nombre = "Plato Hondo",
+                            Tipo = catVajilla.Nombre,
+                            Unidad = "Unidad",
+                            Precio = 5.00m,
+                            Descripcion = "Plato hondo de cerámica blanca",
+                            Activo = true,
+                            FechaCreacion = DateTime.Now,
+                            CreadoPor = "Sistema"
+                        }
+                    };
+
+                    context.Utensilios.AddRange(utensilios);
+                    await context.SaveChangesAsync();
+
+                    Console.WriteLine($"✅ {utensilios.Count} utensilios creados exitosamente");
+                }
+            }
+            else
+            {
+                Console.WriteLine("ℹ️ Las categorías ya existen, omitiendo seeding de categorías y productos");
+            }
+        
         }
 
         // Función local para evitar duplicar código
