@@ -11,8 +11,8 @@ using Puerto92.Data;
 namespace Puerto92.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251109222937_AgregarKardexSalon")]
-    partial class AgregarKardexSalon
+    [Migration("20251109181319_AsegurarLocalIdEnKardexSalon")]
+    partial class AsegurarLocalIdEnKardexSalon
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -470,6 +470,7 @@ namespace Puerto92.Migrations
 
                     b.Property<string>("EmpleadoId")
                         .IsRequired()
+                        .HasMaxLength(450)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Estado")

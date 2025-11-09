@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Puerto92.Migrations
 {
     /// <inheritdoc />
-    public partial class AgregarKardexSalon : Migration
+    public partial class AsegurarLocalIdEnKardexSalon : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -461,7 +461,7 @@ namespace Puerto92.Migrations
                     AsignacionId = table.Column<int>(type: "INTEGER", nullable: false),
                     Fecha = table.Column<DateTime>(type: "TEXT", nullable: false),
                     LocalId = table.Column<int>(type: "INTEGER", nullable: false),
-                    EmpleadoId = table.Column<string>(type: "TEXT", nullable: false),
+                    EmpleadoId = table.Column<string>(type: "TEXT", maxLength: 450, nullable: false),
                     Estado = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
                     FechaInicio = table.Column<DateTime>(type: "TEXT", nullable: true),
                     FechaFinalizacion = table.Column<DateTime>(type: "TEXT", nullable: true),

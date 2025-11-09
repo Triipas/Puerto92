@@ -467,6 +467,7 @@ namespace Puerto92.Migrations
 
                     b.Property<string>("EmpleadoId")
                         .IsRequired()
+                        .HasMaxLength(450)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Estado")

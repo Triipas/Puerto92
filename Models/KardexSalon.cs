@@ -24,7 +24,7 @@ namespace Puerto92.Models
         public DateTime Fecha { get; set; }
 
         /// <summary>
-        /// ID del local
+        /// ID del local - REQUERIDO
         /// </summary>
         [Required]
         public int LocalId { get; set; }
@@ -34,12 +34,14 @@ namespace Puerto92.Models
         /// ID del empleado responsable (mozo)
         /// </summary>
         [Required]
+        [StringLength(450)]
         public string EmpleadoId { get; set; } = string.Empty;
         public Usuario? Empleado { get; set; }
 
         /// <summary>
         /// Estado del kardex: Borrador, Enviado, Aprobado, Rechazado
         /// </summary>
+        [Required]
         [StringLength(20)]
         public string Estado { get; set; } = "Borrador";
 
@@ -127,4 +129,5 @@ namespace Puerto92.Models
         /// </summary>
         public int Orden { get; set; }
     }
+
 }

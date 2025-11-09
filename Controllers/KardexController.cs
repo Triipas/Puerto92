@@ -247,6 +247,14 @@ namespace Puerto92.Controllers
                     return RedirectToAction(nameof(MiKardex));
                 }
 
+                // ⭐ NUEVO: Validar que la asignación no esté ya completada
+                if (asignacion.Estado == EstadoAsignacion.Completada)
+                {
+                    _logger.LogWarning($"Usuario {usuarioId} intenta iniciar kardex de asignación {asignacionId} que ya está completada");
+                    SetErrorMessage("Este kardex ya fue completado y enviado. No puede ser modificado.");
+                    return RedirectToAction(nameof(MiKardex));
+                }
+
                 var kardex = await _kardexService.IniciarKardexSalonAsync(asignacionId, usuarioId);
                 
                 return RedirectToAction(nameof(ConteoUtensiliosSalon), new { id = kardex.Id });
@@ -271,7 +279,8 @@ namespace Puerto92.Controllers
             try
             {
                 var kardex = await _kardexService.ObtenerKardexSalonAsync(id);
-
+                
+                // ⭐ Validar que el kardex pertenece al usuario actual
                 if (kardex.EmpleadoId != usuarioId)
                 {
                     _logger.LogWarning($"Usuario {usuarioId} intenta acceder a kardex {id} de otro usuario");
@@ -279,6 +288,16 @@ namespace Puerto92.Controllers
                     return RedirectToAction(nameof(MiKardex));
                 }
 
+                // ⭐ NUEVO: Validar que el kardex no esté ya enviado
+                if (kardex.Estado == EstadoKardex.Enviado || 
+                    kardex.Estado == EstadoKardex.Aprobado || 
+                    kardex.Estado == EstadoKardex.Rechazado)
+                {
+                    _logger.LogWarning($"Usuario {usuarioId} intenta acceder a kardex {id} que ya está en estado {kardex.Estado}");
+                    SetErrorMessage($"Este kardex ya fue enviado y está en estado '{kardex.Estado}'. No puede ser modificado.");
+                    return RedirectToAction(nameof(MiKardex));
+                }
+                
                 return View(kardex);
             }
             catch (Exception ex)
