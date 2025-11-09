@@ -1,0 +1,232 @@
+/* === KARDEX DE SALÓN - ESTILOS ESPECÍFICOS === */
+
+/* Tabla de utensilios */
+.kardex-table .td-numero {
+    text-align: center;
+    font-weight: 600;
+    color: #64748B;
+    font-size: 14px;
+}
+
+.kardex-table .td-categoria {
+    font-weight: 500;
+    color: #475569;
+    font-size: 13px;
+}
+
+.kardex-table .td-codigo {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: #1E293B;
+    font-size: 13px;
+}
+
+.kardex-table .td-nombre {
+    font-weight: 500;
+    color: #1E293B;
+    font-size: 14px;
+}
+
+.kardex-table .td-unidad {
+    text-align: center;
+    color: #64748B;
+    font-size: 13px;
+}
+
+/* Input de unidades contadas */
+.input-unidades {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.input-unidades:focus {
+    outline: none;
+    border-color: #10B981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.input-unidades.has-value {
+    background: #F0FDF4;
+    border-color: #86EFAC;
+}
+
+/* Validación: Solo números enteros */
+.input-unidades:invalid {
+    border-color: #EF4444;
+}
+
+/* Diferencia */
+.td-diferencia {
+    text-align: center;
+    font-weight: 600;
+    font-size: 14px;
+    position: relative;
+}
+
+.td-diferencia[data-tiene-faltantes="false"] {
+    color: #10B981;
+}
+
+.td-diferencia[data-tiene-faltantes="true"] {
+    color: #EF4444;
+}
+
+/* Botón de justificar faltantes */
+.btn-justificar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: #FEE2E2;
+    color: #EF4444;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-left: 0.5rem;
+    transition: all 0.2s ease;
+    vertical-align: middle;
+}
+
+.btn-justificar:hover {
+    background: #EF4444;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+.btn-justificar i {
+    font-size: 14px;
+}
+
+/* Fila con faltantes */
+.row-faltantes {
+    background: #FEF2F2 !important;
+}
+
+.row-faltantes:hover {
+    background: #FEE2E2 !important;
+}
+
+/* Fila completa */
+.row-complete {
+    background: #F0FDF4;
+}
+
+.row-complete:hover {
+    background: #DCFCE7;
+}
+
+/* Fila incompleta (sin contar) */
+.row-incomplete {
+    animation: pulse-warning 2s infinite;
+}
+
+@keyframes pulse-warning {
+    0%, 100% {
+        background: #FFFBEB;
+    }
+    50% {
+        background: #FEF3C7;
+    }
+}
+
+/* Modal de faltantes */
+#faltantesModal .modal-subtitle {
+    color: #64748B;
+    font-size: 13px;
+}
+
+#faltantesModal textarea {
+    font-family: inherit;
+    line-height: 1.6;
+}
+
+/* Indicador de autoguardado */
+.autoguardado-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #F0FDF4;
+    color: #10B981;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.autoguardado-indicator.show {
+    opacity: 1;
+}
+
+.autoguardado-indicator.saving {
+    background: #EFF6FF;
+    color: #3B82F6;
+}
+
+/* Validación en modal de siguiente */
+#validacionResultado {
+    margin-bottom: 1rem;
+}
+
+.validacion-error {
+    background: #FEE2E2;
+    border-left: 3px solid #EF4444;
+    padding: 1rem;
+    border-radius: 6px;
+    color: #991B1B;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.validacion-error strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #7F1D1D;
+}
+
+.validacion-error ul {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.validacion-error li {
+    margin-bottom: 0.25rem;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .kardex-table-container {
+        overflow-x: auto;
+    }
+    
+    .kardex-table {
+        min-width: 1000px;
+    }
+}
+
+/* Animación de guardado */
+@keyframes save-flash {
+    0% {
+        background: #F0FDF4;
+    }
+    50% {
+        background: #86EFAC;
+    }
+    100% {
+        background: #F0FDF4;
+    }
+}
+
+.input-unidades.saving {
+    animation: save-flash 0.5s ease;
+}

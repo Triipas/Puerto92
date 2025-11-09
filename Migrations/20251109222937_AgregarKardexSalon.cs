@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Puerto92.Migrations
 {
     /// <inheritdoc />
-    public partial class DBinicial : Migration
+    public partial class AgregarKardexSalon : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -113,29 +113,6 @@ namespace Puerto92.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Utensilios",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Codigo = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
-                    Nombre = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Tipo = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
-                    Unidad = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
-                    Precio = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Descripcion = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
-                    Activo = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: true),
-                    FechaCreacion = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "getdate()"),
-                    FechaModificacion = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    CreadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
-                    ModificadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Utensilios", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
@@ -180,6 +157,35 @@ namespace Puerto92.Migrations
                     table.PrimaryKey("PK_Productos", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Productos_Categorias_CategoriaId",
+                        column: x => x.CategoriaId,
+                        principalTable: "Categorias",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Utensilios",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Codigo = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Nombre = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    CategoriaId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Unidad = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Precio = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Descripcion = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    Activo = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: true),
+                    FechaCreacion = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "getdate()"),
+                    FechaModificacion = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    CreadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    ModificadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Utensilios", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Utensilios_Categorias_CategoriaId",
                         column: x => x.CategoriaId,
                         principalTable: "Categorias",
                         principalColumn: "Id",
@@ -447,6 +453,45 @@ namespace Puerto92.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "KardexSalon",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    AsignacionId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Fecha = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    LocalId = table.Column<int>(type: "INTEGER", nullable: false),
+                    EmpleadoId = table.Column<string>(type: "TEXT", nullable: false),
+                    Estado = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    FechaInicio = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    FechaFinalizacion = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    FechaEnvio = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    Observaciones = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_KardexSalon", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_KardexSalon_AsignacionesKardex_AsignacionId",
+                        column: x => x.AsignacionId,
+                        principalTable: "AsignacionesKardex",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_KardexSalon_AspNetUsers_EmpleadoId",
+                        column: x => x.EmpleadoId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_KardexSalon_Locales_LocalId",
+                        column: x => x.LocalId,
+                        principalTable: "Locales",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "KardexBebidasDetalles",
                 columns: table => new
                 {
@@ -480,6 +525,39 @@ namespace Puerto92.Migrations
                         name: "FK_KardexBebidasDetalles_Productos_ProductoId",
                         column: x => x.ProductoId,
                         principalTable: "Productos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "KardexSalonDetalles",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    KardexSalonId = table.Column<int>(type: "INTEGER", nullable: false),
+                    UtensilioId = table.Column<int>(type: "INTEGER", nullable: false),
+                    InventarioInicial = table.Column<int>(type: "INTEGER", nullable: false),
+                    UnidadesContadas = table.Column<int>(type: "INTEGER", nullable: true),
+                    Diferencia = table.Column<int>(type: "INTEGER", nullable: false),
+                    TieneFaltantes = table.Column<bool>(type: "INTEGER", nullable: false),
+                    DescripcionFaltantes = table.Column<string>(type: "TEXT", nullable: true),
+                    Observaciones = table.Column<string>(type: "TEXT", nullable: true),
+                    Orden = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_KardexSalonDetalles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_KardexSalonDetalles_KardexSalon_KardexSalonId",
+                        column: x => x.KardexSalonId,
+                        principalTable: "KardexSalon",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_KardexSalonDetalles_Utensilios_UtensilioId",
+                        column: x => x.UtensilioId,
+                        principalTable: "Utensilios",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -610,6 +688,32 @@ namespace Puerto92.Migrations
                 column: "ProductoId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_KardexSalon_AsignacionId",
+                table: "KardexSalon",
+                column: "AsignacionId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KardexSalon_EmpleadoId",
+                table: "KardexSalon",
+                column: "EmpleadoId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KardexSalon_LocalId_Fecha_Estado",
+                table: "KardexSalon",
+                columns: new[] { "LocalId", "Fecha", "Estado" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KardexSalonDetalles_KardexSalonId_Orden",
+                table: "KardexSalonDetalles",
+                columns: new[] { "KardexSalonId", "Orden" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KardexSalonDetalles_UtensilioId",
+                table: "KardexSalonDetalles",
+                column: "UtensilioId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Locales_Codigo",
                 table: "Locales",
                 column: "Codigo",
@@ -679,6 +783,11 @@ namespace Puerto92.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Utensilios_CategoriaId_Activo",
+                table: "Utensilios",
+                columns: new[] { "CategoriaId", "Activo" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Utensilios_Codigo",
                 table: "Utensilios",
                 column: "Codigo",
@@ -688,11 +797,6 @@ namespace Puerto92.Migrations
                 name: "IX_Utensilios_Nombre",
                 table: "Utensilios",
                 column: "Nombre");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Utensilios_Tipo_Activo",
-                table: "Utensilios",
-                columns: new[] { "Tipo", "Activo" });
         }
 
         /// <inheritdoc />
@@ -720,6 +824,9 @@ namespace Puerto92.Migrations
                 name: "KardexBebidasDetalles");
 
             migrationBuilder.DropTable(
+                name: "KardexSalonDetalles");
+
+            migrationBuilder.DropTable(
                 name: "Notificaciones");
 
             migrationBuilder.DropTable(
@@ -729,9 +836,6 @@ namespace Puerto92.Migrations
                 name: "Proveedores");
 
             migrationBuilder.DropTable(
-                name: "Utensilios");
-
-            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
@@ -739,6 +843,12 @@ namespace Puerto92.Migrations
 
             migrationBuilder.DropTable(
                 name: "Productos");
+
+            migrationBuilder.DropTable(
+                name: "KardexSalon");
+
+            migrationBuilder.DropTable(
+                name: "Utensilios");
 
             migrationBuilder.DropTable(
                 name: "AsignacionesKardex");

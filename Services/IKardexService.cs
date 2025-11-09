@@ -19,10 +19,11 @@ namespace Puerto92.Services
         Task<bool> AutoguardarDetalleBebidasAsync(AutoguardadoKardexRequest request);
         Task<KardexBebidasViewModel> CalcularYActualizarBebidasAsync(int kardexId);
         Task<bool> CompletarKardexBebidasAsync(int kardexId, string observaciones);
-        
-        // TODO: Salón (Mozo Salón)
-        // Task<KardexSalonViewModel> IniciarKardexSalonAsync(int asignacionId, string usuarioId);
-        // Task<KardexSalonViewModel> ObtenerKardexSalonAsync(int kardexId);
+        Task<KardexSalonViewModel> IniciarKardexSalonAsync(int asignacionId, string usuarioId);
+        Task<KardexSalonViewModel> ObtenerKardexSalonAsync(int kardexId);
+        Task<bool> AutoguardarDetalleSalonAsync(AutoguardadoKardexSalonRequest request);
+        Task<bool> GuardarDescripcionFaltantesAsync(DescripcionFaltantesRequest request);
+        Task<bool> CompletarKardexSalonAsync(int kardexId, string observaciones);
         
         // TODO: Cocina
         // Task<KardexCocinaViewModel> IniciarKardexCocinaAsync(int asignacionId, string usuarioId);
