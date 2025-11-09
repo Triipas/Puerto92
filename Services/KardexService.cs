@@ -77,9 +77,8 @@ namespace Puerto92.Services
                     break;
 
                 case TipoKardex.MozoSalon:
-                    // TODO: Implementar cuando se cree el kardex de salón
-                    viewModel.MensajeInformativo = "El kardex de Mozo Salón estará disponible próximamente.";
-                    viewModel.PuedeIniciarRegistro = false;
+                    // ✅ ACTUALIZADO: Ya está implementado
+                    await VerificarBorradorSalon(viewModel, asignacion.Id);
                     break;
 
                 case TipoKardex.CocinaFria:
@@ -112,7 +111,7 @@ namespace Puerto92.Services
         {
             var kardexBorrador = await _context.KardexBebidas
                 .FirstOrDefaultAsync(k => k.AsignacionId == asignacionId &&
-                                         k.Estado == EstadoKardex.Borrador);
+                                        k.Estado == EstadoKardex.Borrador);
 
             if (kardexBorrador != null)
             {
@@ -129,6 +128,36 @@ namespace Puerto92.Services
                                     d.ConteoRefri1.HasValue &&
                                     d.ConteoRefri2.HasValue &&
                                     d.ConteoRefri3.HasValue);
+
+                viewModel.PorcentajeAvanceBorrador = totalDetalles > 0
+                    ? (decimal)detallesCompletos / totalDetalles * 100
+                    : 0;
+            }
+
+            viewModel.PuedeIniciarRegistro = true;
+        }
+
+        /// <summary>
+        /// ⭐ NUEVO: Verificar si existe borrador de kardex de salón
+        /// </summary>
+        private async Task VerificarBorradorSalon(MiKardexViewModel viewModel, int asignacionId)
+        {
+            var kardexBorrador = await _context.KardexSalon
+                .FirstOrDefaultAsync(k => k.AsignacionId == asignacionId &&
+                                        k.Estado == EstadoKardex.Borrador);
+
+            if (kardexBorrador != null)
+            {
+                viewModel.ExisteKardexBorrador = true;
+                viewModel.KardexBorradorId = kardexBorrador.Id;
+
+                // Calcular porcentaje de avance
+                var totalDetalles = await _context.KardexSalonDetalle
+                    .CountAsync(d => d.KardexSalonId == kardexBorrador.Id);
+
+                var detallesCompletos = await _context.KardexSalonDetalle
+                    .CountAsync(d => d.KardexSalonId == kardexBorrador.Id &&
+                                    d.UnidadesContadas.HasValue);
 
                 viewModel.PorcentajeAvanceBorrador = totalDetalles > 0
                     ? (decimal)detallesCompletos / totalDetalles * 100
@@ -537,7 +566,25 @@ namespace Puerto92.Services
                 viewModel.EmpleadoResponsableId = kardex.EmpleadoId;
                 viewModel.EmpleadoResponsableNombre = kardex.Empleado?.NombreCompleto ?? "";
             }
-            // TODO: Agregar casos para otros tipos de kardex
+            // ⭐ NUEVO: Agregar caso para Mozo Salón
+            else if (tipoKardex == TipoKardex.MozoSalon)
+            {
+                var kardex = await _context.KardexSalon
+                    .Include(k => k.Empleado)
+                    .Include(k => k.Local)
+                    .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+                if (kardex == null)
+                {
+                    throw new Exception("Kardex no encontrado");
+                }
+
+                viewModel.Fecha = kardex.Fecha;
+                viewModel.LocalId = kardex.LocalId;
+                viewModel.EmpleadoResponsableId = kardex.EmpleadoId;
+                viewModel.EmpleadoResponsableNombre = kardex.Empleado?.NombreCompleto ?? "";
+            }
+            // TODO: Agregar casos para otros tipos de kardex (Cocina, Vajilla)
 
             // ⭐ NUEVO: Verificar horario
             viewModel.HoraActual = DateTime.Now;
@@ -567,11 +614,16 @@ namespace Puerto92.Services
         {
             // Determinar roles permitidos según el tipo de kardex
             var rolesPermitidos = TipoKardex.ObtenerRolesPermitidos(tipoKardex);
+            
+            _logger.LogInformation($"🔍 Buscando empleados para {tipoKardex} en Local {localId}");
+            _logger.LogInformation($"   Roles permitidos: {string.Join(", ", rolesPermitidos)}");
 
             // Obtener empleados activos del local con los roles permitidos
             var empleados = await _context.Users
                 .Where(u => u.Activo && u.LocalId == localId)
                 .ToListAsync();
+
+            _logger.LogInformation($"   Total empleados activos en el local: {empleados.Count}");
 
             var empleadosDto = new List<EmpleadoDisponibleDto>();
 
@@ -579,6 +631,8 @@ namespace Puerto92.Services
             {
                 var roles = await _userManager.GetRolesAsync(empleado);
                 var tieneRolPermitido = roles.Any(r => rolesPermitidos.Contains(r));
+
+                _logger.LogDebug($"   - {empleado.NombreCompleto}: Roles={string.Join(",", roles)}, Permitido={tieneRolPermitido}");
 
                 if (tieneRolPermitido)
                 {
@@ -595,6 +649,8 @@ namespace Puerto92.Services
                     empleadosDto.Add(dto);
                 }
             }
+
+            _logger.LogInformation($"✅ {empleadosDto.Count} empleados encontrados con roles permitidos");
 
             // Ordenar: responsable primero, luego por nombre
             return empleadosDto
@@ -642,9 +698,40 @@ namespace Puerto92.Services
                 int localId = 0;
                 DateTime fechaKardex = DateTime.Today;
 
+                // ⭐ MANEJO SEGÚN TIPO DE KARDEX
                 if (request.TipoKardex == TipoKardex.MozoBebidas)
                 {
                     var kardex = await _context.KardexBebidas
+                        .Include(k => k.Empleado)
+                        .Include(k => k.Asignacion)
+                        .FirstOrDefaultAsync(k => k.Id == request.KardexId);
+
+                    if (kardex == null)
+                    {
+                        throw new Exception("Kardex no encontrado");
+                    }
+
+                    empleadoResponsableId = kardex.EmpleadoId;
+                    empleadoResponsableNombre = kardex.Empleado?.NombreCompleto ?? "";
+                    localId = kardex.LocalId;
+                    fechaKardex = kardex.Fecha;
+
+                    // Cambiar estado a "Enviado"
+                    kardex.Estado = EstadoKardex.Enviado;
+                    kardex.FechaFinalizacion = DateTime.Now;
+                    kardex.FechaEnvio = DateTime.Now;
+                    kardex.Observaciones = request.ObservacionesKardex;
+
+                    // Actualizar asignación
+                    if (kardex.Asignacion != null)
+                    {
+                        kardex.Asignacion.Estado = EstadoAsignacion.Completada;
+                    }
+                }
+                // ⭐ NUEVO: KARDEX DE SALÓN
+                else if (request.TipoKardex == TipoKardex.MozoSalon)
+                {
+                    var kardex = await _context.KardexSalon
                         .Include(k => k.Empleado)
                         .Include(k => k.Asignacion)
                         .FirstOrDefaultAsync(k => k.Id == request.KardexId);
@@ -663,6 +750,7 @@ namespace Puerto92.Services
                     kardex.Estado = EstadoKardex.Enviado;
                     kardex.FechaFinalizacion = DateTime.Now;
                     kardex.FechaEnvio = DateTime.Now;
+                    kardex.DescripcionFaltantes = request.DescripcionFaltantes;
                     kardex.Observaciones = request.ObservacionesKardex;
 
                     // Actualizar asignación
@@ -670,6 +758,10 @@ namespace Puerto92.Services
                     {
                         kardex.Asignacion.Estado = EstadoAsignacion.Completada;
                     }
+
+                    _logger.LogInformation(
+                        $"📋 Kardex de Salón completado: ID {kardex.Id} - Faltantes: {(!string.IsNullOrEmpty(kardex.DescripcionFaltantes) ? "Sí" : "No")}"
+                    );
                 }
                 // TODO: Agregar casos para otros tipos de kardex
 
@@ -710,10 +802,9 @@ namespace Puerto92.Services
                     totalPersonalPresente: request.EmpleadosPresentes.Count
                 );
 
-                // ⭐ NUEVO: Buscar y notificar al administrador local
+                // ⭐ Buscar y notificar al administrador local
                 _logger.LogInformation($"🔍 Buscando administrador local para Local ID: {localId}");
 
-                // Query simplificada y más robusta
                 var usuariosLocal = await _context.Users
                     .Where(u => u.LocalId == localId && u.Activo)
                     .ToListAsync();

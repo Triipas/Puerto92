@@ -411,7 +411,18 @@ namespace Puerto92.Controllers
                         return RedirectToAction(nameof(MiKardex));
                     }
                 }
-                // TODO: Agregar validaciones para otros tipos de kardex
+                // ⭐ AGREGAR: Validación para Kardex de Salón
+                else if (tipo == TipoKardex.MozoSalon)
+                {
+                    var kardex = await _kardexService.ObtenerKardexSalonAsync(id);
+                    
+                    if (kardex.EmpleadoId != usuarioId)
+                    {
+                        _logger.LogWarning($"Usuario {usuarioId} intenta acceder a personal presente de kardex {id} de otro usuario");
+                        SetErrorMessage("No tienes autorización para acceder a este kardex");
+                        return RedirectToAction(nameof(MiKardex));
+                    }
+                }
 
                 var viewModel = await _kardexService.ObtenerPersonalPresenteAsync(id, tipo);
                 
