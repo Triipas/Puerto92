@@ -29,10 +29,11 @@ function initUsuariosPage() {
     
     // Cargar datos y configurar listeners
     cargarRolesYLocales().then(() => {
-        setupSearch(); // ← IMPORTANTE: Configurar búsqueda
+        setupSearch();
         setupModalEventListeners();
-        setupCreateFormSubmit();
         setupRolChangeListeners();
+        // ⚠️ IMPORTANTE: Configurar DESPUÉS de que el DOM esté listo
+        setupCreateFormSubmit();
         console.log('✅ Página de usuarios inicializada correctamente');
     });
 }
@@ -40,7 +41,7 @@ function initUsuariosPage() {
 // Ejecutar al cargar el documento
 document.addEventListener('DOMContentLoaded', initUsuariosPage);
 
-// ⭐ NUEVO: Exponer función para reinicializar después de navegación SPA
+// ⭐ Exponer función para reinicializar después de navegación SPA
 window.initUsuariosPage = initUsuariosPage;
 
 // ==========================================
@@ -344,6 +345,9 @@ async function openCreateModal() {
         filterLocales('createLocalId', false);
     }, 100);
     
+    // ⚠️ RE-CONFIGURAR el submit cada vez que se abre el modal
+    setupCreateFormSubmit();
+    
     console.log('✅ Modal de crear usuario abierto');
 }
 
@@ -524,71 +528,151 @@ async function copyGeneratedPassword() {
 
 /**
  * Configurar submit del formulario de crear usuario
+ * ⚠️ VERSIÓN CORREGIDA - SE CONFIGURA CADA VEZ QUE SE ABRE EL MODAL
  */
 function setupCreateFormSubmit() {
     const createForm = document.getElementById('createForm');
-    if (!createForm) return;
-
-    // Remover listener anterior si existe
-    createForm.onsubmit = null;
     
-    createForm.addEventListener('submit', async function (e) {
-        e.preventDefault();
+    if (!createForm) {
+        console.warn('⚠️ Formulario createForm no encontrado');
+        return;
+    }
+
+    console.log('📝 Configurando submit del formulario de crear usuario');
+
+    // ⚠️ IMPORTANTE: Remover TODOS los listeners anteriores
+    const newForm = createForm.cloneNode(true);
+    createForm.parentNode.replaceChild(newForm, createForm);
+    
+    // Obtener referencia al nuevo formulario
+    const form = document.getElementById('createForm');
+    
+    // Agregar listener de submit
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault(); // ⚠️ PREVENIR submit tradicional
+        e.stopPropagation(); // ⚠️ DETENER propagación
+
+        console.log('🚀 Formulario de crear usuario enviado');
 
         const formData = new FormData(this);
         const submitButton = this.querySelector('button[type="submit"]');
+
+        if (!submitButton) {
+            console.error('❌ Botón de submit no encontrado');
+            return;
+        }
 
         submitButton.disabled = true;
         submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creando...';
 
         try {
+            console.log('📤 Enviando datos para crear usuario...');
+            
             const response = await fetch('/Usuarios/CreateAjax', {
                 method: 'POST',
                 body: formData
             });
 
-            const result = await response.json();
+            console.log('📥 Respuesta recibida:', response.status);
 
-            if (result.success) {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log('✅ Resultado:', result);
+
+            if (result.success && result.data) {
+                console.log('🎉 Usuario creado exitosamente');
+                console.log('📋 Datos recibidos:', {
+                    nombre: result.data.nombreCompleto,
+                    username: result.data.userName,
+                    rol: result.data.rolNombre,
+                    passwordLength: result.data.password ? result.data.password.length : 0
+                });
+                
+                // Cerrar modal de crear
                 closeModal('createModal');
 
-                document.getElementById('generatedUserNombre').textContent = result.data.nombreCompleto;
-                document.getElementById('generatedUserUsername').textContent = result.data.userName;
-                document.getElementById('generatedUserRol').textContent = result.data.rolNombre;
-                document.getElementById('generatedPassword').textContent = result.data.password;
-
-                const passwordModal = document.getElementById('passwordGeneratedModal');
-                passwordModal.style.display = 'flex';
-                passwordModal.classList.add('active');
-
+                // Esperar un momento para que se cierre el modal
                 setTimeout(() => {
-                    window.location.reload();
-                }, 5000);
+                    // Llenar datos en el modal de contraseña generada
+                    const nombreElem = document.getElementById('generatedUserNombre');
+                    const usernameElem = document.getElementById('generatedUserUsername');
+                    const rolElem = document.getElementById('generatedUserRol');
+                    const passwordElem = document.getElementById('generatedPassword');
+
+                    if (nombreElem) nombreElem.textContent = result.data.nombreCompleto || 'N/A';
+                    if (usernameElem) usernameElem.textContent = result.data.userName || 'N/A';
+                    if (rolElem) rolElem.textContent = result.data.rolNombre || 'N/A';
+                    if (passwordElem) passwordElem.textContent = result.data.password || 'N/A';
+
+                    console.log('📝 Datos llenados en modal de contraseña');
+
+                    // Abrir modal de contraseña generada
+                    const passwordModal = document.getElementById('passwordGeneratedModal');
+                    
+                    if (!passwordModal) {
+                        console.error('❌ Modal passwordGeneratedModal no encontrado en el DOM');
+                        alert(`Usuario creado exitosamente.\n\nContraseña temporal: ${result.data.password}\n\n⚠️ IMPORTANTE: Anote esta contraseña, no se volverá a mostrar.`);
+                        window.location.reload();
+                        return;
+                    }
+
+                    console.log('🔓 Abriendo modal de contraseña generada...');
+                    passwordModal.style.display = 'flex';
+                    
+                    // Forzar reflow
+                    void passwordModal.offsetWidth;
+                    
+                    passwordModal.classList.add('active');
+                    console.log('✅ Modal de contraseña generada visible');
+
+                    // Recargar después de 10 segundos
+                    setTimeout(() => {
+                        console.log('🔄 Recargando página...');
+                        window.location.reload();
+                    }, 10000);
+
+                }, 400);
 
             } else {
-                alert('Error: ' + result.message);
+                console.error('❌ Error en respuesta:', result.message);
+                showNotification(result.message || 'Error al crear usuario', 'error');
             }
 
         } catch (error) {
-            console.error('Error al crear usuario:', error);
-            alert('Error al crear el usuario. Por favor intenta nuevamente.');
+            console.error('❌ Error al crear usuario:', error);
+            showNotification('Error al crear el usuario. Por favor intenta nuevamente.', 'error');
         } finally {
             submitButton.disabled = false;
             submitButton.innerHTML = '<i class="fa-solid fa-plus"></i> Crear Usuario';
         }
     });
+    
+    console.log('✅ Submit del formulario configurado correctamente');
 }
 
 /**
  * Cerrar modal de contraseña generada
  */
 function closePasswordGeneratedModal() {
+    console.log('🔒 Cerrando modal de contraseña generada...');
+    
     const modal = document.getElementById('passwordGeneratedModal');
+    if (!modal) {
+        console.warn('⚠️ Modal passwordGeneratedModal no encontrado');
+        window.location.reload();
+        return;
+    }
+    
     modal.classList.remove('active');
+    
     setTimeout(() => {
         modal.style.display = 'none';
+        console.log('✅ Modal cerrado, recargando página...');
         window.location.reload();
-    }, 200);
+    }, 300);
 }
 
 /**
@@ -624,9 +708,34 @@ function setupModalEventListeners() {
 
 function showNotification(message, type = 'info') {
     console.log(`[${type.toUpperCase()}] ${message}`);
-    if (type === 'error') {
-        alert(message);
-    }
+    
+    const notification = document.createElement('div');
+    notification.className = `app-notification ${type}`;
+    
+    const iconos = {
+        'success': 'check-circle',
+        'error': 'exclamation-circle',
+        'info': 'info-circle',
+        'warning': 'exclamation-triangle'
+    };
+    
+    const icono = iconos[type] || 'info-circle';
+    
+    notification.innerHTML = `
+        <i class="fa-solid fa-${icono}"></i>
+        <span>${message}</span>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 100);
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }
 
 // ==========================================

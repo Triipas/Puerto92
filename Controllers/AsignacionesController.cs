@@ -14,15 +14,18 @@ namespace Puerto92.Controllers
         private readonly ApplicationDbContext _context;
         private readonly ILogger<AsignacionesController> _logger;
         private readonly IAuditService _auditService;
+        private readonly INotificationService _notificationService;
 
         public AsignacionesController(
             ApplicationDbContext context,
             ILogger<AsignacionesController> logger,
-            IAuditService auditService)
+            IAuditService auditService,
+            INotificationService notificationService)
         {
             _context = context;
             _logger = logger;
             _auditService = auditService;
+            _notificationService = notificationService;
         }
 
         // GET: Asignaciones
@@ -242,7 +245,35 @@ namespace Puerto92.Controllers
                     asignacion.FechaNotificacion = DateTime.Now;
                     asignacion.NotificacionEnviada = true;
 
-                    // TODO: Implementar envío real de notificaciones (correo, push, etc.)
+                    // ⭐ NUEVO: Enviar notificación al empleado
+                    string? empleadosAdicionales = null;
+
+                    // Si es kardex de cocina, buscar otros cocineros asignados ese día
+                    if (asignacion.TipoKardex.Contains("Cocina"))
+                    {
+                        var otrosCocineros = await _context.AsignacionesKardex
+                            .Include(a => a.Empleado)
+                            .Where(a => a.Fecha.Date == asignacion.Fecha.Date &&
+                                       a.LocalId == asignacion.LocalId &&
+                                       a.TipoKardex == asignacion.TipoKardex &&
+                                       a.Id != asignacion.Id)
+                            .Select(a => a.Empleado!.NombreCompleto)
+                            .ToListAsync();
+
+                        if (otrosCocineros.Any())
+                        {
+                            empleadosAdicionales = string.Join(", ", otrosCocineros);
+                        }
+                    }
+
+                    // Crear notificación
+                    await _notificationService.CrearNotificacionAsignacionKardexAsync(
+                        usuarioId: asignacion.EmpleadoId,
+                        tipoKardex: asignacion.TipoKardex,
+                        fecha: asignacion.Fecha,
+                        empleadosAdicionales: empleadosAdicionales
+                    );
+
                     _logger.LogInformation($"Notificación enviada a {asignacion.Empleado?.NombreCompleto} para kardex {asignacion.TipoKardex} del {asignacion.Fecha:dd/MM/yyyy}");
                 }
 
@@ -300,9 +331,59 @@ namespace Puerto92.Controllers
                 }
 
                 // Guardar datos del empleado original
+                var empleadoOriginalId = asignacionOriginal.EmpleadoId;
                 var empleadoOriginalNombre = asignacionOriginal.Empleado?.NombreCompleto ?? "Desconocido";
 
-                // Actualizar asignación
+                // Obtener datos del nuevo empleado
+                var nuevoEmpleado = await _context.Users.FindAsync(model.NuevoEmpleadoId);
+                if (nuevoEmpleado == null)
+                {
+                    return JsonError("Nuevo empleado no encontrado");
+                }
+
+                var nuevoEmpleadoNombre = nuevoEmpleado.NombreCompleto;
+
+                // ⭐ PASO 1: Enviar notificación al empleado ORIGINAL (le quitaron la responsabilidad)
+                await _notificationService.CrearNotificacionKardexReasignadoAsync(
+                    usuarioId: empleadoOriginalId,
+                    tipoKardex: asignacionOriginal.TipoKardex,
+                    fecha: asignacionOriginal.Fecha,
+                    nuevoResponsable: nuevoEmpleadoNombre,
+                    motivo: model.Motivo ?? "No especificado"
+                );
+
+                _logger.LogInformation($"Notificación de reasignación enviada a {empleadoOriginalNombre} (responsabilidad removida)");
+
+                // ⭐ PASO 2: Verificar si hay otros empleados en kardex de cocina
+                string? empleadosAdicionales = null;
+                if (asignacionOriginal.TipoKardex.Contains("Cocina"))
+                {
+                    var otrosCocineros = await _context.AsignacionesKardex
+                        .Include(a => a.Empleado)
+                        .Where(a => a.Fecha.Date == asignacionOriginal.Fecha.Date &&
+                                   a.LocalId == usuario.LocalId &&
+                                   a.TipoKardex == asignacionOriginal.TipoKardex &&
+                                   a.Id != model.AsignacionId)
+                        .Select(a => a.Empleado!.NombreCompleto)
+                        .ToListAsync();
+
+                    if (otrosCocineros.Any())
+                    {
+                        empleadosAdicionales = string.Join(", ", otrosCocineros);
+                    }
+                }
+
+                // ⭐ PASO 3: Enviar notificación al NUEVO empleado (asignación normal)
+                await _notificationService.CrearNotificacionAsignacionKardexAsync(
+                    usuarioId: model.NuevoEmpleadoId,
+                    tipoKardex: asignacionOriginal.TipoKardex,
+                    fecha: asignacionOriginal.Fecha,
+                    empleadosAdicionales: empleadosAdicionales
+                );
+
+                _logger.LogInformation($"Notificación de asignación enviada a {nuevoEmpleadoNombre} (nuevo responsable)");
+
+                // Actualizar asignación en la base de datos
                 asignacionOriginal.EmpleadoOriginal = empleadoOriginalNombre;
                 asignacionOriginal.EmpleadoId = model.NuevoEmpleadoId;
                 asignacionOriginal.EsReasignacion = true;
@@ -315,22 +396,20 @@ namespace Puerto92.Controllers
 
                 await _context.SaveChangesAsync();
 
-                // Obtener nombre del nuevo empleado
-                var nuevoEmpleado = await _context.Users.FindAsync(model.NuevoEmpleadoId);
-
-                _logger.LogInformation($"Reasignación: {asignacionOriginal.TipoKardex} - De {empleadoOriginalNombre} a {nuevoEmpleado?.NombreCompleto} - {asignacionOriginal.Fecha:dd/MM/yyyy}");
+                _logger.LogInformation($"Reasignación: {asignacionOriginal.TipoKardex} - De {empleadoOriginalNombre} a {nuevoEmpleadoNombre} - {asignacionOriginal.Fecha:dd/MM/yyyy}");
 
                 // Registrar en auditoría
                 await _auditService.RegistrarAccionAsync(
                     accion: "Reasignar Kardex",
-                    descripcion: $"Kardex {asignacionOriginal.TipoKardex} reasignado de {empleadoOriginalNombre} a {nuevoEmpleado?.NombreCompleto}. Motivo: {model.Motivo ?? "No especificado"}",
+                    descripcion: $"Kardex {asignacionOriginal.TipoKardex} reasignado de {empleadoOriginalNombre} a {nuevoEmpleadoNombre}. Motivo: {model.Motivo ?? "No especificado"}. Ambos empleados notificados.",
                     modulo: "Asignaciones",
                     resultado: "Exitoso",
                     nivelSeveridad: "Warning");
 
-                return JsonSuccess("Reasignación realizada exitosamente", new
+                return JsonSuccess("Reasignación realizada exitosamente. Ambos empleados han sido notificados.", new
                 {
-                    empleadoNuevo = nuevoEmpleado?.NombreCompleto
+                    empleadoAnterior = empleadoOriginalNombre,
+                    empleadoNuevo = nuevoEmpleadoNombre
                 });
             }
             catch (Exception ex)
@@ -452,9 +531,21 @@ namespace Puerto92.Controllers
                 }
 
                 var empleadoNombre = asignacion.Empleado?.NombreCompleto ?? "Desconocido";
+                var empleadoId = asignacion.EmpleadoId;
                 var tipoKardex = asignacion.TipoKardex;
                 var fecha = asignacion.Fecha;
 
+                // ⭐ NUEVO: Enviar notificación al empleado ANTES de eliminar la asignación
+                await _notificationService.CrearNotificacionCancelacionKardexAsync(
+                    usuarioId: empleadoId,
+                    tipoKardex: tipoKardex,
+                    fecha: fecha,
+                    motivo: motivo ?? "No especificado"
+                );
+
+                _logger.LogInformation($"Notificación de cancelación enviada a {empleadoNombre}");
+
+                // Eliminar la asignación
                 _context.AsignacionesKardex.Remove(asignacion);
                 await _context.SaveChangesAsync();
 
@@ -467,7 +558,7 @@ namespace Puerto92.Controllers
                     resultado: "Exitoso",
                     nivelSeveridad: "Warning");
 
-                return JsonSuccess("Asignación cancelada exitosamente");
+                return JsonSuccess("Asignación cancelada exitosamente. El empleado ha sido notificado.");
             }
             catch (Exception ex)
             {

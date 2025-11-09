@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Puerto92.Migrations
 {
     /// <inheritdoc />
-    public partial class AddProveedoresTable : Migration
+    public partial class AgregarSistemaNotificaciones : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -350,6 +350,39 @@ namespace Puerto92.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Notificaciones",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    UsuarioId = table.Column<string>(type: "TEXT", nullable: false),
+                    Tipo = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    Titulo = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    Mensaje = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: false),
+                    UrlAccion = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    TextoAccion = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    DatosAdicionales = table.Column<string>(type: "TEXT", nullable: true),
+                    Icono = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    Color = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Prioridad = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Leida = table.Column<bool>(type: "INTEGER", nullable: false),
+                    FechaLectura = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    FechaCreacion = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "getdate()"),
+                    FechaExpiracion = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    MostrarPopup = table.Column<bool>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notificaciones", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Notificaciones_AspNetUsers_UsuarioId",
+                        column: x => x.UsuarioId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AsignacionesKardex_EmpleadoId_Fecha",
                 table: "AsignacionesKardex",
@@ -456,6 +489,21 @@ namespace Puerto92.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Notificaciones_FechaExpiracion",
+                table: "Notificaciones",
+                column: "FechaExpiracion");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notificaciones_Tipo",
+                table: "Notificaciones",
+                column: "Tipo");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notificaciones_UsuarioId_Leida_FechaCreacion",
+                table: "Notificaciones",
+                columns: new[] { "UsuarioId", "Leida", "FechaCreacion" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Productos_CategoriaId_Activo",
                 table: "Productos",
                 columns: new[] { "CategoriaId", "Activo" });
@@ -527,6 +575,9 @@ namespace Puerto92.Migrations
 
             migrationBuilder.DropTable(
                 name: "AuditLogs");
+
+            migrationBuilder.DropTable(
+                name: "Notificaciones");
 
             migrationBuilder.DropTable(
                 name: "Productos");

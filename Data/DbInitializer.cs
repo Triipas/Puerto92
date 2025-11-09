@@ -71,7 +71,7 @@ namespace Puerto92.Data
                     FechaCreacion = DateTime.Now
                 };
                 context.Locales.Add(localPrincipal);
-                
+
                 await context.SaveChangesAsync();
             }
 
@@ -116,13 +116,13 @@ namespace Puerto92.Data
                     Console.WriteLine($"❌ Error al crear admin: {errors}");
                 }
             }
-
+/*
             // ===== 4. CREAR USUARIO DE EJEMPLO (Opcional) =====
             var usuarioEjemplo = await userManager.FindByNameAsync("mozo1");
             if (usuarioEjemplo == null)
             {
                 var primerLocal = await context.Locales.FirstAsync();
-                
+
                 // Generar contraseña usando el mismo algoritmo
                 string mozoPassword = GenerateTemporaryPassword();
 
@@ -144,6 +144,139 @@ namespace Puerto92.Data
                     await userManager.AddToRoleAsync(usuarioEjemplo, "Mozo");
                     Console.WriteLine($"✅ Usuario Mozo creado: mozo1 / {mozoPassword}");
                 }
+            }
+*/
+            // ===== 5. USUARIOS DE PRUEBA POR ROL =====
+
+            // Asegurar que existen los locales requeridos
+            var localCorp = await context.Locales.FirstOrDefaultAsync(l => l.Codigo == "CORP-00");
+            var localPuerto92 = await context.Locales.FirstOrDefaultAsync(l => l.Codigo == "LOC-001");
+
+            if (localCorp == null || localPuerto92 == null)
+            {
+                Console.WriteLine("❌ Error: Faltan locales 'CORP-00' o 'LOC-001'. Verifica el seeding de Locales.");
+                return;
+            }
+
+            // Credenciales de prueba sugeridas (puedes cambiarlas si deseas)
+            await EnsureUserWithRole(
+                userManager,
+                roleManager,
+                userName: "adminlocal1",
+                nombreCompleto: "Admin Local Pruebas",
+                roleName: "Administrador Local",
+                localId: localPuerto92.Id,
+                password: "Puerto92_Admin1"
+            );
+
+            await EnsureUserWithRole(
+                userManager,
+                roleManager,
+                userName: "contador1",
+                nombreCompleto: "Contador Pruebas",
+                roleName: "Contador",
+                localId: localCorp.Id,
+                password: "Puerto92_Cont1"
+            );
+
+            await EnsureUserWithRole(
+                userManager,
+                roleManager,
+                userName: "supervisora1",
+                nombreCompleto: "Supervisora Calidad Pruebas",
+                roleName: "Supervisora de Calidad",
+                localId: localCorp.Id,
+                password: "Puerto92_Sup1"
+            );
+
+            await EnsureUserWithRole(
+                userManager,
+                roleManager,
+                userName: "mozo1",
+                nombreCompleto: "Mozo Pruebas1",
+                roleName: "Mozo",
+                localId: localPuerto92.Id,
+                password: "Puerto92_Moz1"
+            );
+
+            await EnsureUserWithRole(
+                userManager,
+                roleManager,
+                userName: "mozo2",
+                nombreCompleto: "Mozo Pruebas2",
+                roleName: "Mozo",
+                localId: localPuerto92.Id,
+                password: "Puerto92_Moz2"
+            );
+
+            await EnsureUserWithRole(
+                userManager,
+                roleManager,
+                userName: "cocinero1",
+                nombreCompleto: "Cocinero Pruebas1",
+                roleName: "Cocinero",
+                localId: localPuerto92.Id,
+                password: "Puerto92_Co1"
+            );
+                        
+            await EnsureUserWithRole(
+                userManager,
+                roleManager,
+                userName: "cocinero2",
+                nombreCompleto: "Cocinero Pruebas2",
+                roleName: "Cocinero",
+                localId: localPuerto92.Id,
+                password: "Puerto92_Co2"
+            );
+        }
+
+        // Función local para evitar duplicar código
+        private static async Task EnsureUserWithRole(UserManager<Usuario> userManager, RoleManager<IdentityRole> roleManager, string userName, string nombreCompleto, string roleName, int localId, string password)
+        {
+            // Si el rol no existiera por algún motivo, lo creamos
+            if (!await roleManager.RoleExistsAsync(roleName))
+            {
+                await roleManager.CreateAsync(new IdentityRole
+                {
+                    Name = roleName,
+                    NormalizedName = roleName.ToUpper()
+                });
+            }
+
+            var existing = await userManager.FindByNameAsync(userName);
+            if (existing != null) return;
+
+            var nuevo = new Usuario
+            {
+                UserName = userName,
+                NombreCompleto = nombreCompleto,
+                LocalId = localId,
+                EsPrimerIngreso = false,
+                PasswordReseteada = false,
+                Activo = true,
+                FechaCreacion = DateTime.Now,
+                EmailConfirmed = true
+            };
+
+            // Usa contraseñas de prueba con complejidad suficiente
+            var create = await userManager.CreateAsync(nuevo, password);
+            if (create.Succeeded)
+            {
+                var addRole = await userManager.AddToRoleAsync(nuevo, roleName);
+                if (addRole.Succeeded)
+                {
+                    Console.WriteLine($"✅ Usuario {roleName} creado: {userName} / {password}");
+                }
+                else
+                {
+                    var errors = string.Join(", ", addRole.Errors.Select(e => e.Description));
+                    Console.WriteLine($"❌ Error al asignar rol a {userName}: {errors}");
+                }
+            }
+            else
+            {
+                var errors = string.Join(", ", create.Errors.Select(e => e.Description));
+                Console.WriteLine($"❌ Error al crear {userName}: {errors}");
             }
         }
 
