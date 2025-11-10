@@ -28,167 +28,195 @@ namespace Puerto92.Controllers
         }
 
         // GET: Utensilios
-        public async Task<IActionResult> Index(string? tipo = null)
+public async Task<IActionResult> Index(int? categoriaId = null)
+{
+    // Obtener categorías de tipo "Utensilios" activas
+    var categorias = await _context.Categorias
+        .Where(c => c.Tipo == TipoCategoria.Utensilios && c.Activo)
+        .OrderBy(c => c.Orden)
+        .ToListAsync();
+
+    ViewBag.Categorias = categorias;
+
+    // Filtrar utensilios
+    var query = _context.Utensilios
+        .Include(u => u.Categoria)
+        .Where(u => u.Activo && u.Categoria!.Activo)
+        .AsQueryable();
+
+    // Filtrar por categoría si se especifica
+    if (categoriaId.HasValue)
+    {
+        query = query.Where(u => u.CategoriaId == categoriaId.Value);
+    }
+
+    var utensilios = await query
+        .OrderBy(u => u.Categoria!.Orden)
+        .ThenBy(u => u.Codigo)
+        .Select(u => new UtensilioViewModel
         {
-            // Obtener TODOS los utensilios activos para las estadísticas
-            var todosUtensilios = await _context.Utensilios
-                .Where(u => u.Activo)
-                .ToListAsync();
+            Id = u.Id,
+            Codigo = u.Codigo,
+            Nombre = u.Nombre,
+            CategoriaId = u.CategoriaId,
+            CategoriaNombre = u.Categoria!.Nombre,
+            Unidad = u.Unidad,
+            Precio = u.Precio,
+            Descripcion = u.Descripcion,
+            Activo = u.Activo,
+            FechaCreacion = u.FechaCreacion,
+            FechaModificacion = u.FechaModificacion,
+            CreadoPor = u.CreadoPor,
+            ModificadoPor = u.ModificadoPor
+        })
+        .ToListAsync();
 
-            // Pasar estadísticas totales en ViewBag
-            ViewBag.TotalActivos = todosUtensilios.Count;
-            ViewBag.TotalCocina = todosUtensilios.Count(u => u.Tipo == "Cocina");
-            ViewBag.TotalMozos = todosUtensilios.Count(u => u.Tipo == "Mozos");
-            ViewBag.TotalVajilla = todosUtensilios.Count(u => u.Tipo == "Vajilla");
+    // Estadísticas por categoría
+    var todosUtensilios = await _context.Utensilios
+        .Include(u => u.Categoria)
+        .Where(u => u.Activo)
+        .ToListAsync();
 
-            var query = _context.Utensilios.Where(u => u.Activo).AsQueryable();
+    ViewBag.TotalActivos = todosUtensilios.Count;
+    ViewBag.EstadisticasPorCategoria = todosUtensilios
+        .GroupBy(u => u.Categoria!.Nombre)
+        .ToDictionary(g => g.Key, g => g.Count());
 
-            // Filtrar por tipo si se especifica
-            if (!string.IsNullOrEmpty(tipo) && TipoUtensilio.Tipos.Contains(tipo))
-            {
-                query = query.Where(u => u.Tipo == tipo);
-            }
+    ViewBag.CategoriaFiltro = categoriaId;
 
-            var utensilios = await query
-                .OrderBy(u => u.Tipo)
-                .ThenBy(u => u.Codigo)
-                .Select(u => new UtensilioViewModel
-                {
-                    Id = u.Id,
-                    Codigo = u.Codigo,
-                    Nombre = u.Nombre,
-                    Tipo = u.Tipo,
-                    Unidad = u.Unidad,
-                    Precio = u.Precio,
-                    Descripcion = u.Descripcion,
-                    Activo = u.Activo,
-                    FechaCreacion = u.FechaCreacion,
-                    FechaModificacion = u.FechaModificacion,
-                    CreadoPor = u.CreadoPor,
-                    ModificadoPor = u.ModificadoPor
-                })
-                .ToListAsync();
+    return View(utensilios);
+}
 
-            ViewBag.TipoFiltro = tipo;
-            return View(utensilios);
+       [HttpGet]
+public async Task<IActionResult> GetUtensilio(int id)
+{
+    try
+    {
+        var utensilio = await _context.Utensilios
+            .Include(u => u.Categoria) // ⭐ INCLUIR la categoría relacionada
+            .FirstOrDefaultAsync(u => u.Id == id);
+
+        if (utensilio == null)
+        {
+            return NotFound(new { error = "Utensilio no encontrado" });
         }
 
-        // GET: Utensilios/GetUtensilio?id=1
-        [HttpGet]
-        public async Task<IActionResult> GetUtensilio(int id)
+        var data = new
         {
-            var utensilio = await _context.Utensilios.FindAsync(id);
+            id = utensilio.Id,
+            codigo = utensilio.Codigo,
+            nombre = utensilio.Nombre,
+            categoriaId = utensilio.CategoriaId,
+            categoriaNombre = utensilio.Categoria?.Nombre ?? "Sin categoría", // ⭐ AGREGADO
+            unidad = utensilio.Unidad,
+            precio = utensilio.Precio,
+            descripcion = utensilio.Descripcion ?? "",
+            activo = utensilio.Activo
+        };
 
-            if (utensilio == null)
-            {
-                return NotFound();
-            }
+        return Json(data);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, $"Error al obtener utensilio con ID {id}");
+        return StatusCode(500, new { error = "Error al obtener el utensilio" });
+    }
+}
 
-            var data = new
-            {
-                id = utensilio.Id,
-                codigo = utensilio.Codigo,
-                nombre = utensilio.Nombre,
-                tipo = utensilio.Tipo,
-                unidad = utensilio.Unidad,
-                precio = utensilio.Precio,
-                descripcion = utensilio.Descripcion ?? "",
-                activo = utensilio.Activo
-            };
+    // POST: Utensilios/Create
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> Create(UtensilioViewModel model)
+{
+    if (!ModelState.IsValid)
+    {
+        if (IsAjaxRequest)
+            return JsonError("Datos inválidos. Por favor verifica los campos.");
 
-            return Json(data);
+        SetErrorMessage("Datos inválidos. Por favor verifica los campos.");
+        return RedirectToAction(nameof(Index));
+    }
+
+    try
+    {
+        // Validar que la categoría existe y es de tipo "Utensilios"
+        var categoria = await _context.Categorias
+            .FirstOrDefaultAsync(c => c.Id == model.CategoriaId && 
+                                     c.Tipo == TipoCategoria.Utensilios && 
+                                     c.Activo);
+
+        if (categoria == null)
+        {
+            if (IsAjaxRequest)
+                return JsonError("Categoría inválida o inactiva.");
+
+            SetErrorMessage("Categoría inválida o inactiva.");
+            return RedirectToAction(nameof(Index));
         }
 
-        // POST: Utensilios/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(UtensilioViewModel model)
+        // Validar unidad
+        if (!UnidadMedida.Unidades.Contains(model.Unidad))
         {
-            if (!ModelState.IsValid)
-            {
-                if (IsAjaxRequest)
-                    return JsonError("Datos inválidos. Por favor verifica los campos.");
+            if (IsAjaxRequest)
+                return JsonError($"Unidad inválida: {model.Unidad}");
 
-                SetErrorMessage("Datos inválidos. Por favor verifica los campos.");
-                return RedirectToAction(nameof(Index), new { tipo = model.Tipo });
-            }
-
-            try
-            {
-                // Validar tipo
-                if (!TipoUtensilio.Tipos.Contains(model.Tipo))
-                {
-                    if (IsAjaxRequest)
-                        return JsonError($"Tipo inválido: {model.Tipo}. Debe ser Cocina, Mozos o Vajilla.");
-
-                    SetErrorMessage($"Tipo inválido: {model.Tipo}");
-                    return RedirectToAction(nameof(Index));
-                }
-
-                // Validar unidad
-                if (!UnidadMedida.Unidades.Contains(model.Unidad))
-                {
-                    if (IsAjaxRequest)
-                        return JsonError($"Unidad inválida: {model.Unidad}");
-
-                    SetErrorMessage($"Unidad inválida: {model.Unidad}");
-                    return RedirectToAction(nameof(Index));
-                }
-
-                // Generar código si no se proporciona
-                string codigo = string.IsNullOrWhiteSpace(model.Codigo)
-                    ? await GenerarCodigoUnico()
-                    : model.Codigo.Trim();
-
-                // Verificar que el código no exista
-                if (await _context.Utensilios.AnyAsync(u => u.Codigo == codigo))
-                {
-                    codigo = await GenerarCodigoUnico();
-                }
-
-                var utensilio = new Utensilio
-                {
-                    Codigo = codigo,
-                    Nombre = model.Nombre.Trim(),
-                    Tipo = model.Tipo,
-                    Unidad = model.Unidad,
-                    Precio = model.Precio,
-                    Descripcion = model.Descripcion?.Trim(),
-                    Activo = true,
-                    FechaCreacion = DateTime.Now,
-                    CreadoPor = User.Identity!.Name
-                };
-
-                _context.Utensilios.Add(utensilio);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation($"Utensilio '{utensilio.Nombre}' ({utensilio.Codigo}) creado por {User.Identity!.Name}");
-
-                await _auditService.RegistrarCreacionUtensilioAsync(
-                    codigoUtensilio: utensilio.Codigo,
-                    nombreUtensilio: utensilio.Nombre,
-                    tipo: utensilio.Tipo);
-
-                SetSuccessMessage($"Utensilio '{utensilio.Nombre}' creado exitosamente con código {codigo}");
-
-                // Redirigir a la vista con el filtro de tipo correcto
-                return RedirectToAction(nameof(Index), new { tipo = model.Tipo });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al crear utensilio");
-
-                await _auditService.RegistrarErrorSistemaAsync(
-                    error: "Error al crear utensilio",
-                    detalles: ex.Message);
-
-                if (IsAjaxRequest)
-                    return JsonError("Error al crear el utensilio. Por favor intenta nuevamente.");
-
-                SetErrorMessage("Error al crear el utensilio. Por favor intenta nuevamente.");
-                return RedirectToAction(nameof(Index));
-            }
+            SetErrorMessage($"Unidad inválida: {model.Unidad}");
+            return RedirectToAction(nameof(Index));
         }
+
+        // Generar código si no se proporciona
+        string codigo = string.IsNullOrWhiteSpace(model.Codigo)
+            ? await GenerarCodigoUnico()
+            : model.Codigo.Trim();
+
+        // Verificar que el código no exista
+        if (await _context.Utensilios.AnyAsync(u => u.Codigo == codigo))
+        {
+            codigo = await GenerarCodigoUnico();
+        }
+
+        var utensilio = new Utensilio
+        {
+            Codigo = codigo,
+            Nombre = model.Nombre.Trim(),
+            CategoriaId = model.CategoriaId,
+            Unidad = model.Unidad,
+            Precio = model.Precio,
+            Descripcion = model.Descripcion?.Trim(),
+            Activo = true,
+            FechaCreacion = DateTime.Now,
+            CreadoPor = User.Identity!.Name
+        };
+
+        _context.Utensilios.Add(utensilio);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation($"Utensilio '{utensilio.Nombre}' ({utensilio.Codigo}) creado en categoría '{categoria.Nombre}' por {User.Identity!.Name}");
+
+        await _auditService.RegistrarCreacionUtensilioAsync(
+            codigoUtensilio: utensilio.Codigo,
+            nombreUtensilio: utensilio.Nombre,
+            tipo: categoria.Nombre);
+
+        SetSuccessMessage($"Utensilio '{utensilio.Nombre}' creado exitosamente con código {codigo}");
+
+        return RedirectToAction(nameof(Index), new { categoriaId = model.CategoriaId });
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error al crear utensilio");
+
+        await _auditService.RegistrarErrorSistemaAsync(
+            error: "Error al crear utensilio",
+            detalles: ex.Message);
+
+        if (IsAjaxRequest)
+            return JsonError("Error al crear el utensilio. Por favor intenta nuevamente.");
+
+        SetErrorMessage("Error al crear el utensilio. Por favor intenta nuevamente.");
+        return RedirectToAction(nameof(Index));
+    }
+}
 
         // POST: Utensilios/Edit/1
         [HttpPost]
@@ -203,7 +231,7 @@ namespace Puerto92.Controllers
             if (!ModelState.IsValid)
             {
                 SetErrorMessage("Datos inválidos. Por favor verifica los campos.");
-                return RedirectToAction(nameof(Index), new { tipo = model.Tipo });
+                return RedirectToAction(nameof(Index), new { tipo = model.CategoriaId });
             }
 
             try
@@ -252,7 +280,7 @@ namespace Puerto92.Controllers
 
                 SetSuccessMessage("Utensilio actualizado exitosamente");
 
-                return RedirectToAction(nameof(Index), new { tipo = utensilio.Tipo });
+                return RedirectToAction(nameof(Index), new { tipo = utensilio.Categoria!.Nombre });
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -304,7 +332,7 @@ namespace Puerto92.Controllers
 
                 SetSuccessMessage($"Utensilio '{utensilio.Nombre}' desactivado exitosamente");
 
-                return RedirectToAction(nameof(Index), new { tipo = utensilio.Tipo });
+                return RedirectToAction(nameof(Index), new { tipo = utensilio.Categoria!.Nombre });
             }
             catch (Exception ex)
             {
@@ -320,43 +348,53 @@ namespace Puerto92.Controllers
         }
 
         // GET: Utensilios/DescargarPlantilla
-        [HttpGet]
-        public IActionResult DescargarPlantilla()
+[HttpGet]
+public async Task<IActionResult> DescargarPlantilla()
+{
+    try
+    {
+        var csv = new StringBuilder();
+
+        // Header
+        csv.AppendLine("Codigo;Nombre;Categoria;Unidad;Precio;Descripcion");
+
+        // Instrucciones
+        csv.AppendLine("# DEJA EL CODIGO VACIO (;) PARA QUE SE GENERE AUTOMATICAMENTE");
+        csv.AppendLine("# Categorias validas (de tipo Utensilios):");
+        
+        // Listar categorías disponibles
+        var categorias = await _context.Categorias
+            .Where(c => c.Tipo == TipoCategoria.Utensilios && c.Activo)
+            .OrderBy(c => c.Orden)
+            .Select(c => c.Nombre)
+            .ToListAsync();
+
+        csv.AppendLine($"#   {string.Join(", ", categorias)}");
+        csv.AppendLine("# Unidades validas: Unidad, Juego, Docena, Par, Set");
+        csv.AppendLine("# Precio: usa punto como decimal (85.00)");
+        csv.AppendLine("");
+
+        // Ejemplos con categorías reales
+        if (categorias.Any())
         {
-            try
-            {
-                var csv = new StringBuilder();
-
-                // Header
-                csv.AppendLine("Codigo;Nombre;Tipo;Unidad;Precio;Descripcion");
-
-                // ⭐ Instrucciones claras en comentarios (Excel ignora líneas que empiezan con #)
-                csv.AppendLine("# DEJA EL CODIGO VACIO (;) PARA QUE SE GENERE AUTOMATICAMENTE");
-                csv.AppendLine("# Tipos validos: Cocina, Mozos, Vajilla");
-                csv.AppendLine("# Unidades validas: Unidad, Juego, Docena, Par, Set");
-                csv.AppendLine("# Precio: usa punto como decimal (85.00)");
-                csv.AppendLine("");
-
-                // Ejemplos con código VACÍO
-                csv.AppendLine(";Sartén Antiadherente 28cm;Cocina;Unidad;85.00;Sartén profesional de 28cm");
-                csv.AppendLine(";Cuchillo Chef 20cm;Cocina;Unidad;120.00;Cuchillo de chef acero inoxidable");
-                csv.AppendLine(";Bandeja Rectangular;Mozos;Unidad;45.00;Bandeja antideslizante");
-                csv.AppendLine(";Plato Hondo Porcelana;Vajilla;Unidad;25.00;Plato hondo blanco");
-
-                // Agregar BOM UTF-8 para Excel
-                var bomBytes = Encoding.UTF8.GetPreamble();
-                var csvBytes = Encoding.UTF8.GetBytes(csv.ToString());
-                var bytes = bomBytes.Concat(csvBytes).ToArray();
-
-                return File(bytes, "text/csv", $"Plantilla_Utensilios_{DateTime.Now:yyyyMMdd}.csv");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al descargar plantilla");
-                SetErrorMessage("Error al descargar la plantilla");
-                return RedirectToAction(nameof(Index));
-            }
+            csv.AppendLine($";Sartén Antiadherente 28cm;{categorias[0]};Unidad;85.00;Sartén profesional de 28cm");
+            csv.AppendLine($";Cuchillo Chef 20cm;{categorias[0]};Unidad;120.00;Cuchillo de chef acero inoxidable");
         }
+
+        // Agregar BOM UTF-8 para Excel
+        var bomBytes = Encoding.UTF8.GetPreamble();
+        var csvBytes = Encoding.UTF8.GetBytes(csv.ToString());
+        var bytes = bomBytes.Concat(csvBytes).ToArray();
+
+        return File(bytes, "text/csv", $"Plantilla_Utensilios_{DateTime.Now:yyyyMMdd}.csv");
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error al descargar plantilla");
+        SetErrorMessage("Error al descargar la plantilla");
+        return RedirectToAction(nameof(Index));
+    }
+}
 
         // POST: Utensilios/CargaMasiva
         [HttpPost]
@@ -512,15 +550,15 @@ namespace Puerto92.Controllers
                         continue;
                     }
 
-                    var dto = ParsearLineaCSV(linea, numeroFila, separador);
+                   var dto = await ParsearLineaCSV(linea, numeroFila, separador);
 
-                    if (!dto.EsValido)
-                    {
-                        resultado.FilasConError++;
-                        resultado.Errores.AddRange(dto.Errores);
-                        _logger.LogWarning($"Fila {numeroFila} con errores: {string.Join(", ", dto.Errores)}");
-                        continue;
-                    }
+if (!dto.EsValido)  // ✅ CORRECTO
+{
+    resultado.FilasConError++;
+    resultado.Errores.AddRange(dto.Errores);
+    _logger.LogWarning($"Fila {numeroFila} con errores: {string.Join(", ", dto.Errores)}");
+    continue;
+}
 
                     // ⭐ NUEVO: Generar código único considerando códigos ya generados
                     string codigo;
@@ -546,23 +584,23 @@ namespace Puerto92.Controllers
                     }
 
                     // Agregar código a la lista de generados
-                    codigosGenerados.Add(codigo);
+                  codigosGenerados.Add(codigo);
 
-                    var utensilio = new Utensilio
-                    {
-                        Codigo = codigo,
-                        Nombre = dto.Nombre.Trim(),
-                        Tipo = dto.Tipo,
-                        Unidad = dto.Unidad,
-                        Precio = dto.Precio,
-                        Descripcion = dto.Descripcion?.Trim(),
-                        Activo = true,
-                        FechaCreacion = DateTime.Now,
-                        CreadoPor = User.Identity!.Name
-                    };
+var utensilio = new Utensilio
+{
+    Codigo = codigo,
+    Nombre = dto.Nombre.Trim(),
+    CategoriaId = dto.CategoriaId!.Value,  // ✅ CORRECTO: asignar el ID
+    Unidad = dto.Unidad,
+    Precio = dto.Precio,
+    Descripcion = dto.Descripcion?.Trim(),
+    Activo = true,
+    FechaCreacion = DateTime.Now,
+    CreadoPor = User.Identity!.Name
+};
 
-                    utensiliosImportados.Add(utensilio);
-                    _logger.LogDebug($"Fila {numeroFila}: Utensilio '{utensilio.Nombre}' ({codigo}) listo para importar");
+utensiliosImportados.Add(utensilio);
+_logger.LogDebug($"Fila {numeroFila}: Utensilio '{utensilio.Nombre}' ({codigo}) listo para importar");
                 }
             }
 
@@ -623,88 +661,98 @@ namespace Puerto92.Controllers
             return nuevoCodigo;
         }
 
-        // Método auxiliar: Parsear línea CSV
-        private UtensilioImportDto ParsearLineaCSV(string linea, int numeroFila, char separador)
+        private async Task<UtensilioImportDto> ParsearLineaCSV(string linea, int numeroFila, char separador)
+{
+    var dto = new UtensilioImportDto { NumeroFila = numeroFila };
+
+    var campos = linea.Split(separador);
+
+    if (campos.Length < 5)
+    {
+        dto.Errores.Add($"Fila {numeroFila}: Formato inválido, se esperan al menos 5 columnas (encontradas: {campos.Length})");
+        return dto;
+    }
+
+    try
+    {
+        // Código (opcional)
+        dto.Codigo = campos[0].Trim();
+
+        // Nombre (requerido)
+        dto.Nombre = campos[1].Trim();
+        if (string.IsNullOrWhiteSpace(dto.Nombre))
         {
-            var dto = new UtensilioImportDto { NumeroFila = numeroFila };
-
-            // Dividir por el separador detectado
-            var campos = linea.Split(separador);
-
-            if (campos.Length < 5)
-            {
-                dto.Errores.Add($"Fila {numeroFila}: Formato inválido, se esperan al menos 5 columnas separadas por '{separador}' (encontradas: {campos.Length})");
-                return dto;
-            }
-
-            try
-            {
-                // Código (opcional)
-                dto.Codigo = campos[0].Trim();
-
-                // Nombre (requerido)
-                dto.Nombre = campos[1].Trim();
-                if (string.IsNullOrWhiteSpace(dto.Nombre))
-                {
-                    dto.Errores.Add($"Fila {numeroFila}: El nombre es obligatorio");
-                }
-
-                // Tipo (requerido y validado)
-                dto.Tipo = campos[2].Trim();
-                if (string.IsNullOrWhiteSpace(dto.Tipo))
-                {
-                    dto.Errores.Add($"Fila {numeroFila}: El tipo es obligatorio");
-                }
-                else if (!TipoUtensilio.Tipos.Contains(dto.Tipo))
-                {
-                    dto.Errores.Add($"Fila {numeroFila}: Tipo inválido '{dto.Tipo}'. Debe ser: Cocina, Mozos o Vajilla");
-                }
-
-                // Unidad (requerido y validado)
-                dto.Unidad = campos[3].Trim();
-                if (string.IsNullOrWhiteSpace(dto.Unidad))
-                {
-                    dto.Errores.Add($"Fila {numeroFila}: La unidad es obligatoria");
-                }
-                else if (!UnidadMedida.Unidades.Contains(dto.Unidad))
-                {
-                    dto.Errores.Add($"Fila {numeroFila}: Unidad inválida '{dto.Unidad}'. Debe ser: Unidad, Juego, Docena, Par o Set");
-                }
-
-                // Precio (requerido y validado)
-                dto.PrecioStr = campos[4].Trim();
-                if (string.IsNullOrWhiteSpace(dto.PrecioStr))
-                {
-                    dto.Errores.Add($"Fila {numeroFila}: El precio es obligatorio");
-                }
-                else
-                {
-                    // Intentar parsear con diferentes formatos (. y ,)
-                    var precioNormalizado = dto.PrecioStr.Replace(',', '.');
-
-                    if (!decimal.TryParse(precioNormalizado, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal precio) || precio <= 0)
-                    {
-                        dto.Errores.Add($"Fila {numeroFila}: Precio inválido '{dto.PrecioStr}'. Debe ser un número mayor a 0");
-                    }
-                    else
-                    {
-                        dto.Precio = precio;
-                    }
-                }
-
-                // Descripción (opcional)
-                if (campos.Length > 5 && !string.IsNullOrWhiteSpace(campos[5]))
-                {
-                    dto.Descripcion = campos[5].Trim();
-                }
-            }
-            catch (Exception ex)
-            {
-                dto.Errores.Add($"Fila {numeroFila}: Error al procesar datos - {ex.Message}");
-            }
-
-            return dto;
+            dto.Errores.Add($"Fila {numeroFila}: El nombre es obligatorio");
         }
+
+        // Categoría (requerido y validado contra BD)
+        dto.CategoriaNombre = campos[2].Trim();
+        if (string.IsNullOrWhiteSpace(dto.CategoriaNombre))
+        {
+            dto.Errores.Add($"Fila {numeroFila}: La categoría es obligatoria");
+        }
+        else
+        {
+            // Buscar categoría en BD
+            var categoria = await _context.Categorias
+                .FirstOrDefaultAsync(c => c.Nombre == dto.CategoriaNombre && 
+                                         c.Tipo == TipoCategoria.Utensilios && 
+                                         c.Activo);
+
+            if (categoria == null)
+            {
+                dto.Errores.Add($"Fila {numeroFila}: Categoría '{dto.CategoriaNombre}' no encontrada o inactiva. Debe ser una categoría de tipo Utensilios.");
+            }
+            else
+            {
+                dto.CategoriaId = categoria.Id;
+            }
+        }
+
+        // Unidad (requerido y validado)
+        dto.Unidad = campos[3].Trim();
+        if (string.IsNullOrWhiteSpace(dto.Unidad))
+        {
+            dto.Errores.Add($"Fila {numeroFila}: La unidad es obligatoria");
+        }
+        else if (!UnidadMedida.Unidades.Contains(dto.Unidad))
+        {
+            dto.Errores.Add($"Fila {numeroFila}: Unidad inválida '{dto.Unidad}'. Debe ser: Unidad, Juego, Docena, Par o Set");
+        }
+
+        // Precio (requerido y validado)
+        dto.PrecioStr = campos[4].Trim();
+        if (string.IsNullOrWhiteSpace(dto.PrecioStr))
+        {
+            dto.Errores.Add($"Fila {numeroFila}: El precio es obligatorio");
+        }
+        else
+        {
+            var precioNormalizado = dto.PrecioStr.Replace(',', '.');
+
+            if (!decimal.TryParse(precioNormalizado, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal precio) || precio <= 0)
+            {
+                dto.Errores.Add($"Fila {numeroFila}: Precio inválido '{dto.PrecioStr}'. Debe ser un número mayor a 0");
+            }
+            else
+            {
+                dto.Precio = precio;
+            }
+        }
+
+        // Descripción (opcional)
+        if (campos.Length > 5 && !string.IsNullOrWhiteSpace(campos[5]))
+        {
+            dto.Descripcion = campos[5].Trim();
+        }
+    }
+    catch (Exception ex)
+    {
+        dto.Errores.Add($"Fila {numeroFila}: Error al procesar datos - {ex.Message}");
+    }
+
+    return dto;
+}
 
         // Método auxiliar
         private bool UtensilioExists(int id)

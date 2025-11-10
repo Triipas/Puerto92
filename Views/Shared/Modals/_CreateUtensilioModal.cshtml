@@ -34,14 +34,14 @@
                 <!-- Tipo y Unidad -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
-                        <label class="form-label">Tipo <span style="color: red;">*</span></label>
-                        <select name="Tipo" class="form-select" required>
-                            <option value="">Seleccione...</option>
-                            <option value="Cocina">🔥 Cocina</option>
-                            <option value="Mozos">👔 Mozos</option>
-                            <option value="Vajilla">🍽️ Vajilla</option>
-                        </select>
-                    </div>
+    <label class="form-label">Categoría <span style="color: red;">*</span></label>
+    <select name="CategoriaId" id="createCategoriaId" class="form-select" required>
+        <option value="">Seleccione una categoría...</option>
+    </select>
+    <small style="color: #64748B; font-size: 12px; display: block; margin-top: 0.25rem;">
+        Solo se muestran categorías de tipo "Utensilios" activas
+    </small>
+</div>
 
                     <div class="form-group">
                         <label class="form-label">Unidad <span style="color: red;">*</span></label>

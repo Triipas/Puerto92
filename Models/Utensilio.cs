@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Puerto92.Models
 {
@@ -26,11 +27,16 @@ namespace Puerto92.Models
         public string Nombre { get; set; } = string.Empty;
 
         /// <summary>
-        /// Tipo de utensilio: Cocina, Mozos, Vajilla
+        /// Relación con Categoría (de tipo "Utensilios")
         /// </summary>
         [Required]
-        [StringLength(20)]
-        public string Tipo { get; set; } = string.Empty;
+        public int CategoriaId { get; set; }
+
+        /// <summary>
+        /// Navegación a la categoría asociada
+        /// </summary>
+        [ForeignKey(nameof(CategoriaId))]
+        public virtual Categoria? Categoria { get; set; }
 
         /// <summary>
         /// Unidad de medida: Unidad, Juego, Docena, etc.
@@ -78,18 +84,6 @@ namespace Puerto92.Models
         /// </summary>
         [StringLength(100)]
         public string? ModificadoPor { get; set; }
-    }
-
-    /// <summary>
-    /// Enumeración para tipos de utensilios
-    /// </summary>
-    public static class TipoUtensilio
-    {
-        public const string Cocina = "Cocina";
-        public const string Mozos = "Mozos";
-        public const string Vajilla = "Vajilla";
-
-        public static readonly string[] Tipos = { Cocina, Mozos, Vajilla };
     }
 
     /// <summary>

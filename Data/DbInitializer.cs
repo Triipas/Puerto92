@@ -269,8 +269,30 @@ namespace Puerto92.Data
                         {
                             var utensilios = new List<Utensilio>
                             {
-                                new Utensilio { Codigo = "CUB-001", Nombre = "Cuchara de Mesa", Tipo = catCubiertos.Nombre, Unidad = "Unidad", Precio = 2.50m, Descripcion = "Cuchara de acero inoxidable", Activo = true, FechaCreacion = DateTime.Now, CreadoPor = "Sistema" },
-                                new Utensilio { Codigo = "VAJ-001", Nombre = "Plato Hondo", Tipo = catVajilla.Nombre, Unidad = "Unidad", Precio = 5.00m, Descripcion = "Plato hondo de cerámica blanca", Activo = true, FechaCreacion = DateTime.Now, CreadoPor = "Sistema" }
+                                new Utensilio 
+{ 
+    Codigo = "CUB-001", 
+    Nombre = "Cuchara de Mesa", 
+    CategoriaId = catCubiertos.Id,  // ✅ Usar el Id de la categoría
+    Unidad = "Unidad", 
+    Precio = 2.50m, 
+    Descripcion = "Cuchara de acero inoxidable", 
+    Activo = true, 
+    FechaCreacion = DateTime.Now, 
+    CreadoPor = "Sistema" 
+},
+new Utensilio 
+{ 
+    Codigo = "VAJ-001", 
+    Nombre = "Plato Hondo", 
+    CategoriaId = catVajilla.Id,  // ✅ Usar el Id de la categoría
+    Unidad = "Unidad", 
+    Precio = 5.00m, 
+    Descripcion = "Plato hondo de cerámica blanca", 
+    Activo = true, 
+    FechaCreacion = DateTime.Now, 
+    CreadoPor = "Sistema" 
+}
                             };
 
                             context.Utensilios.AddRange(utensilios);

@@ -2,7 +2,6 @@
 @{
     ViewData["Title"] = "Catálogo de Utensilios";
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
-    var tipoFiltro = ViewBag.TipoFiltro as string;
 }
 
 @section Styles {
@@ -27,76 +26,53 @@
         </div>
     </div>
 
-    <div class="stat-card">
-        <div class="stat-icon success">
-            <i class="fa-solid fa-fire-burner"></i>
+    @foreach (var stat in ViewBag.EstadisticasPorCategoria as Dictionary<string, int>)
+    {
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <i class="fa-solid fa-utensils"></i>
+            </div>
+            <div class="stat-content">
+                <h3>@stat.Value</h3>
+                <p>@stat.Key</p>
+                <small style="color: #64748B;">Activos</small>
+            </div>
         </div>
-        <div class="stat-content">
-            <h3>@ViewBag.TotalCocina</h3>
-            <p>Utensilios de Cocina</p>
-            <small style="color: #64748B;">Activos</small>
-        </div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-icon warning">
-            <i class="fa-solid fa-user-tie"></i>
-        </div>
-        <div class="stat-content">
-            <h3>@ViewBag.TotalMozos</h3>
-            <p>Utensilios de Mozos</p>
-            <small style="color: #64748B;">Activos</small>
-        </div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-icon danger">
-            <i class="fa-solid fa-plate-wheat"></i>
-        </div>
-        <div class="stat-content">
-            <h3>@ViewBag.TotalVajilla</h3>
-            <p>Vajilla</p>
-            <small style="color: #64748B;">Activos</small>
-        </div>
-    </div>
+    }
 </div>
 
 <!-- Content Card -->
 <div class="content-card">
-    <!-- Tabs de Tipos -->
+    <!-- Tabs de Categorías -->
     <div class="categoria-tabs">
         <a href="@Url.Action("Index")" 
-           class="categoria-tab @(string.IsNullOrEmpty(tipoFiltro) ? "active" : "")">
+           class="categoria-tab @(ViewBag.CategoriaFiltro == null ? "active" : "")">
             <i class="fa-solid fa-list"></i>
             <span>Todos</span>
         </a>
-        <a href="@Url.Action("Index", new { tipo = "Cocina" })" 
-           class="categoria-tab @(tipoFiltro == "Cocina" ? "active" : "")">
-            <i class="fa-solid fa-fire-burner"></i>
-            <span>Utensilios de Cocina</span>
-        </a>
-        <a href="@Url.Action("Index", new { tipo = "Mozos" })" 
-           class="categoria-tab @(tipoFiltro == "Mozos" ? "active" : "")">
-            <i class="fa-solid fa-user-tie"></i>
-            <span>Utensilios de Mozos</span>
-        </a>
-        <a href="@Url.Action("Index", new { tipo = "Vajilla" })" 
-           class="categoria-tab @(tipoFiltro == "Vajilla" ? "active" : "")">
-            <i class="fa-solid fa-plate-wheat"></i>
-            <span>Vajilla</span>
-        </a>
+        
+        @foreach (var cat in ViewBag.Categorias)
+        {
+            <a href="@Url.Action("Index", new { categoriaId = cat.Id })" 
+               class="categoria-tab @(ViewBag.CategoriaFiltro == cat.Id ? "active" : "")">
+                <i class="fa-solid fa-utensils"></i>
+                <span>@cat.Nombre</span>
+                <span class="tab-badge">@(ViewBag.EstadisticasPorCategoria.ContainsKey(cat.Nombre) ? ViewBag.EstadisticasPorCategoria[cat.Nombre] : 0)</span>
+            </a>
+        }
     </div>
 
     <div class="card-header">
         <div>
             <h2 class="card-title">
-                @if (string.IsNullOrEmpty(tipoFiltro))
+                @if (ViewBag.CategoriaFiltro == null)
                 {
                     <span>Todos los Utensilios</span>
                 }
                 else
                 {
-                    <span>@tipoFiltro</span>
+                    var categoriaActual = (ViewBag.Categorias as List<Puerto92.Models.Categoria>)?.FirstOrDefault(c => c.Id == ViewBag.CategoriaFiltro);
+                    <span>@(categoriaActual?.Nombre ?? "Utensilios")</span>
                 }
             </h2>
             <p style="font-size: 13px; color: #64748B; margin-top: 4px;">
@@ -119,7 +95,7 @@
         <!-- Buscador -->
         <div style="margin-bottom: 1.5rem;">
             <input type="text" id="searchInput" class="form-control" 
-                   placeholder="🔍 Buscar por código, nombre o tipo..." 
+                   placeholder="🔍 Buscar por código, nombre o categoría..." 
                    style="max-width: 400px;" />
         </div>
 
@@ -129,13 +105,14 @@
                 <i class="fa-solid fa-box-open"></i>
                 <h3>No hay utensilios registrados</h3>
                 <p>
-                    @if (string.IsNullOrEmpty(tipoFiltro))
+                    @if (ViewBag.CategoriaFiltro == null)
                     {
                         <span>Comienza agregando utensilios usando los botones superiores</span>
                     }
                     else
                     {
-                        <span>No hay utensilios de tipo @tipoFiltro registrados</span>
+                        var categoriaActual = (ViewBag.Categorias as List<Puerto92.Models.Categoria>)?.FirstOrDefault(c => c.Id == ViewBag.CategoriaFiltro);
+                        <span>No hay utensilios de categoría @(categoriaActual?.Nombre) registrados</span>
                     }
                 </p>
             </div>
@@ -149,7 +126,7 @@
                         <tr>
                             <th>Código</th>
                             <th>Nombre</th>
-                            <th>Tipo</th>
+                            <th>Categoría</th>
                             <th>Unidad</th>
                             <th>Precio (S/)</th>
                             <th>Estado</th>
@@ -163,23 +140,43 @@
                                 <td style="font-weight: 600; color: #3B82F6;">@utensilio.Codigo</td>
                                 <td style="font-weight: 500;">@utensilio.Nombre</td>
                                 <td>
-                                    @if (utensilio.Tipo == "Cocina")
+                                    @* ⭐ MOSTRAR NOMBRE DE CATEGORÍA *@
+                                    @if (!string.IsNullOrEmpty(utensilio.CategoriaNombre))
                                     {
-                                        <span class="badge badge-success">
-                                            <i class="fa-solid fa-fire-burner"></i> Cocina
-                                        </span>
+                                        @if (utensilio.CategoriaNombre == "Cocina" || utensilio.CategoriaNombre.Contains("Cocina"))
+                                        {
+                                            <span class="badge badge-success">
+                                                <i class="fa-solid fa-fire-burner"></i> @utensilio.CategoriaNombre
+                                            </span>
+                                        }
+                                        else if (utensilio.CategoriaNombre == "Mozos" || utensilio.CategoriaNombre.Contains("Mozos"))
+                                        {
+                                            <span class="badge badge-warning">
+                                                <i class="fa-solid fa-user-tie"></i> @utensilio.CategoriaNombre
+                                            </span>
+                                        }
+                                        else if (utensilio.CategoriaNombre == "Vajilla" || utensilio.CategoriaNombre.Contains("Vajilla"))
+                                        {
+                                            <span class="badge badge-danger">
+                                                <i class="fa-solid fa-plate-wheat"></i> @utensilio.CategoriaNombre
+                                            </span>
+                                        }
+                                        else if (utensilio.CategoriaNombre == "Cubiertos" || utensilio.CategoriaNombre.Contains("Cubiertos"))
+                                        {
+                                            <span class="badge badge-info">
+                                                <i class="fa-solid fa-utensils"></i> @utensilio.CategoriaNombre
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-primary">
+                                                <i class="fa-solid fa-utensils"></i> @utensilio.CategoriaNombre
+                                            </span>
+                                        }
                                     }
-                                    else if (utensilio.Tipo == "Mozos")
+                                    else
                                     {
-                                        <span class="badge badge-warning">
-                                            <i class="fa-solid fa-user-tie"></i> Mozos
-                                        </span>
-                                    }
-                                    else if (utensilio.Tipo == "Vajilla")
-                                    {
-                                        <span class="badge badge-danger">
-                                            <i class="fa-solid fa-plate-wheat"></i> Vajilla
-                                        </span>
+                                        <span class="badge badge-secondary">Sin categoría</span>
                                     }
                                 </td>
                                 <td>@utensilio.Unidad</td>
@@ -205,8 +202,8 @@
                                                 <i class="fa-regular fa-pen-to-square"></i>
                                             </button>
                                             
-                                            <!-- Botón Desactivar -->
-                                            <button onclick="openDesactivarUtensilioModal(@utensilio.Id, '@utensilio.Codigo', '@utensilio.Nombre', '@utensilio.Tipo')" 
+                                            <!-- Botón Desactivar - ⭐ PASAR CategoriaNombre -->
+                                            <button onclick="openDesactivarUtensilioModal(@utensilio.Id, '@utensilio.Codigo', '@utensilio.Nombre', '@utensilio.CategoriaNombre')" 
                                                     class="btn-icon btn-icon-delete" 
                                                     title="Desactivar">
                                                 <i class="fa-regular fa-circle-xmark"></i>
