@@ -23,6 +23,8 @@ namespace Puerto92.Data
         public DbSet<KardexBebidasDetalle> KardexBebidasDetalles { get; set; }
         public DbSet<KardexSalon> KardexSalon { get; set; }
         public DbSet<KardexSalonDetalle> KardexSalonDetalle { get; set; }
+        public DbSet<KardexCocina> KardexCocina { get; set; }
+        public DbSet<KardexCocinaDetalle> KardexCocinaDetalle { get; set; }
         public DbSet<PersonalPresente> PersonalPresente { get; set; }
 
 
@@ -66,6 +68,10 @@ namespace Puerto92.Data
                 entity.Property(c => c.Activo).HasDefaultValue(true);
                 entity.Property(c => c.FechaCreacion).HasDefaultValueSql("getdate()");
                 entity.Property<byte[]>("RowVersion").IsRowVersion();
+                entity.Property(c => c.TipoCocinaEspecial)
+                    .HasMaxLength(50);
+
+                entity.HasIndex(c => new { c.Tipo, c.TipoCocinaEspecial });
             });
 
             builder.Entity<AsignacionKardex>(entity =>
@@ -355,6 +361,49 @@ namespace Puerto92.Data
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasIndex(d => new { d.KardexSalonId, d.Orden });
+            });
+
+            builder.Entity<KardexCocina>(entity =>
+            {
+                entity.HasOne(k => k.Asignacion)
+                    .WithMany()
+                    .HasForeignKey(k => k.AsignacionId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(k => k.Local)
+                    .WithMany()
+                    .HasForeignKey(k => k.LocalId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(k => k.Empleado)
+                    .WithMany()
+                    .HasForeignKey(k => k.EmpleadoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(k => new { k.LocalId, k.Fecha, k.TipoCocina, k.Estado });
+                entity.HasIndex(k => k.AsignacionId).IsUnique();
+                
+                entity.Property(k => k.Estado)
+                    .HasDefaultValue("Borrador");
+            });
+
+            builder.Entity<KardexCocinaDetalle>(entity =>
+            {
+                entity.HasOne(d => d.KardexCocina)
+                    .WithMany(k => k.Detalles)
+                    .HasForeignKey(d => d.KardexCocinaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(d => d.Producto)
+                    .WithMany()
+                    .HasForeignKey(d => d.ProductoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(d => new { d.KardexCocinaId, d.Orden });
+                
+                entity.Property(d => d.UnidadMedida)
+                    .HasMaxLength(20)
+                    .IsRequired();
             });
 
         }

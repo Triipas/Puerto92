@@ -7,6 +7,7 @@
     var horaActual = DateTime.Now.TimeOfDay;
     var dentroDeHorario = horaActual < Model.HoraLimiteEnvio;
     var puedeEnviar = dentroDeHorario || Model.EnvioHabilitadoManualmente;
+
 }
 
 <div class="page-header">
@@ -227,6 +228,12 @@ else
         const DENTRO_DE_HORARIO = @(dentroDeHorario ? "true" : "false");
         const ENVIO_HABILITADO_MANUALMENTE = @(Model.EnvioHabilitadoManualmente ? "true" : "false");
         const HORA_LIMITE = "17:30:00";
+        
+        console.log('🔧 Variables JavaScript inicializadas:');
+        console.log('   KARDEX_ID:', KARDEX_ID);
+        console.log('   TIPO_KARDEX:', TIPO_KARDEX);
+        console.log('   DENTRO_DE_HORARIO:', DENTRO_DE_HORARIO);
+        console.log('   ENVIO_HABILITADO_MANUALMENTE:', ENVIO_HABILITADO_MANUALMENTE);
     </script>
     <script src="~/js/personal-presente.js" asp-append-version="true"></script>
 }

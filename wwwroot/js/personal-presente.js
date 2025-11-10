@@ -14,6 +14,37 @@ let empleadoResponsableId = '';
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🔄 Inicializando Personal Presente...');
     
+    // ⭐ VALIDAR QUE LAS VARIABLES GLOBALES EXISTAN
+    if (typeof KARDEX_ID === 'undefined') {
+        console.error('❌ ERROR: KARDEX_ID no está definido');
+        showNotification('Error de configuración. Recargue la página.', 'error');
+        return;
+    }
+    
+    if (typeof TIPO_KARDEX === 'undefined') {
+        console.error('❌ ERROR: TIPO_KARDEX no está definido');
+        showNotification('Error de configuración. Recargue la página.', 'error');
+        return;
+    }
+    
+    if (typeof DENTRO_DE_HORARIO === 'undefined') {
+        console.error('❌ ERROR: DENTRO_DE_HORARIO no está definido');
+        console.warn('⚠️ Asumiendo DENTRO_DE_HORARIO = true');
+        window.DENTRO_DE_HORARIO = true; // Default seguro
+    }
+    
+    if (typeof ENVIO_HABILITADO_MANUALMENTE === 'undefined') {
+        console.error('❌ ERROR: ENVIO_HABILITADO_MANUALMENTE no está definido');
+        console.warn('⚠️ Asumiendo ENVIO_HABILITADO_MANUALMENTE = false');
+        window.ENVIO_HABILITADO_MANUALMENTE = false;
+    }
+    
+    console.log('✅ Variables validadas:');
+    console.log('   KARDEX_ID:', KARDEX_ID);
+    console.log('   TIPO_KARDEX:', TIPO_KARDEX);
+    console.log('   DENTRO_DE_HORARIO:', DENTRO_DE_HORARIO);
+    console.log('   ENVIO_HABILITADO_MANUALMENTE:', ENVIO_HABILITADO_MANUALMENTE);
+    
     inicializarVariables();
     inicializarEventos();
     actualizarContador();

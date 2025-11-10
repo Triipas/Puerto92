@@ -335,6 +335,10 @@ namespace Puerto92.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("TipoCocinaEspecial")
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Tipo", "Nombre")
@@ -342,6 +346,8 @@ namespace Puerto92.Migrations
 
                     b.HasIndex("Tipo", "Orden")
                         .IsUnique();
+
+                    b.HasIndex("Tipo", "TipoCocinaEspecial");
 
                     b.HasIndex("Tipo", "Activo", "Orden");
 
@@ -454,6 +460,102 @@ namespace Puerto92.Migrations
                     b.HasIndex("KardexBebidasId", "Orden");
 
                     b.ToTable("KardexBebidasDetalles");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.KardexCocina", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AsignacionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("EmpleadoId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("Borrador");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FechaEnvio")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FechaFinalizacion")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FechaInicio")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("LocalId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Observaciones")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TipoCocina")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AsignacionId")
+                        .IsUnique();
+
+                    b.HasIndex("EmpleadoId");
+
+                    b.HasIndex("LocalId", "Fecha", "TipoCocina", "Estado");
+
+                    b.ToTable("KardexCocina");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.KardexCocinaDetalle", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("CantidadAPedir")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Ingresos")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("KardexCocinaId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Observaciones")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ProductoId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal?>("StockFinal")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UnidadMedida")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductoId");
+
+                    b.HasIndex("KardexCocinaId", "Orden");
+
+                    b.ToTable("KardexCocinaDetalle");
                 });
 
             modelBuilder.Entity("Puerto92.Models.KardexSalon", b =>
@@ -1121,6 +1223,52 @@ namespace Puerto92.Migrations
                     b.Navigation("Producto");
                 });
 
+            modelBuilder.Entity("Puerto92.Models.KardexCocina", b =>
+                {
+                    b.HasOne("Puerto92.Models.AsignacionKardex", "Asignacion")
+                        .WithMany()
+                        .HasForeignKey("AsignacionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Puerto92.Models.Usuario", "Empleado")
+                        .WithMany()
+                        .HasForeignKey("EmpleadoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Puerto92.Models.Local", "Local")
+                        .WithMany()
+                        .HasForeignKey("LocalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Asignacion");
+
+                    b.Navigation("Empleado");
+
+                    b.Navigation("Local");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.KardexCocinaDetalle", b =>
+                {
+                    b.HasOne("Puerto92.Models.KardexCocina", "KardexCocina")
+                        .WithMany("Detalles")
+                        .HasForeignKey("KardexCocinaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Puerto92.Models.Producto", "Producto")
+                        .WithMany()
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("KardexCocina");
+
+                    b.Navigation("Producto");
+                });
+
             modelBuilder.Entity("Puerto92.Models.KardexSalon", b =>
                 {
                     b.HasOne("Puerto92.Models.AsignacionKardex", "Asignacion")
@@ -1223,6 +1371,11 @@ namespace Puerto92.Migrations
                 });
 
             modelBuilder.Entity("Puerto92.Models.KardexBebidas", b =>
+                {
+                    b.Navigation("Detalles");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.KardexCocina", b =>
                 {
                     b.Navigation("Detalles");
                 });

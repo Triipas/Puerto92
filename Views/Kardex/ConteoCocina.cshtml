@@ -1,0 +1,193 @@
+@model Puerto92.ViewModels.KardexCocinaViewModel
+@{
+    ViewData["Title"] = $"Kardex de {Model.TipoCocina}";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    
+    var iconoKardex = Puerto92.Models.TipoKardex.ObtenerIcono(Model.TipoCocina);
+    var colorKardex = Puerto92.Models.TipoKardex.ObtenerColor(Model.TipoCocina);
+}
+
+<div class="page-header">
+    <div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+            <i class="fa-solid fa-@iconoKardex" style="color: @colorKardex; font-size: 24px;"></i>
+            <h1 class="page-title">Kardex de @Model.TipoCocina</h1>
+        </div>
+        <p class="page-subtitle">
+            @Model.Fecha.ToString("dddd, dd 'de' MMMM 'de' yyyy") - @Model.EmpleadoNombre
+        </p>
+    </div>
+</div>
+
+<!-- Barra de progreso -->
+<div class="kardex-progress-bar">
+    <div class="progress-info">
+        <span class="progress-label">Progreso del registro</span>
+        <span class="progress-value">@Model.ProductosCompletos de @Model.TotalProductos productos</span>
+    </div>
+    <div class="progress-track">
+        <div class="progress-fill" style="width: @Model.PorcentajeAvance%"></div>
+    </div>
+    <div class="progress-stats">
+        <div class="stat-item">
+            <i class="fa-solid fa-check-circle" style="color: #10B981;"></i>
+            <span>@Model.ProductosCompletos completados</span>
+        </div>
+        <div class="stat-item">
+            <span id="autoguardadoIndicador" class="autoguardado-indicator">
+                <i class="fa-solid fa-circle-check"></i>
+                Guardado
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Instrucciones -->
+<div class="content-card" style="margin-bottom: 1.5rem;">
+    <div class="card-body" style="background: #EFF6FF; border-left: 3px solid #3B82F6;">
+        <div style="display: flex; align-items: start; gap: 0.75rem;">
+            <i class="fa-solid fa-info-circle" style="color: #3B82F6; font-size: 20px; margin-top: 2px;"></i>
+            <div style="flex: 1;">
+                <h3 style="font-size: 15px; font-weight: 600; color: #1E40AF; margin-bottom: 0.5rem;">
+                    Instrucciones de conteo
+                </h3>
+                <ul style="font-size: 13px; color: #1E40AF; line-height: 1.8; margin: 0; padding-left: 1.5rem;">
+                    <li>Registre el <strong>Stock Final</strong> contado para cada producto</li>
+                    <li>Puede cambiar la <strong>Unidad de Medida</strong> si es necesario (KG, L, UNID, UD, PAQUETE)</li>
+                    <li>Los cambios se guardan automáticamente después de 2 segundos</li>
+                    <li>Las secciones son <strong>colapsables</strong> - haga clic para expandir/contraer</li>
+                    <li>Use el buscador para encontrar productos rápidamente</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros y búsqueda -->
+<div class="content-card" style="margin-bottom: 1rem;">
+    <div class="card-body" style="padding: 1rem;">
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <div style="flex: 1; max-width: 400px;">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" 
+                           id="searchProducto" 
+                           class="form-control" 
+                           placeholder="Buscar por código o nombre..."
+                           style="padding-left: 2.5rem;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Categorías colapsables -->
+<div id="categoriasContainer">
+    @foreach (var categoria in Model.Categorias)
+    {
+        var categoriaNormalizada = categoria.NombreCategoria.Replace(" ", "-").ToLower();
+        var iconoCategoria = categoria.EsEspecial ? "star" : "box";
+        var colorCategoria = categoria.EsEspecial ? "#F59E0B" : "#64748B";
+        
+        <div class="content-card categoria-card" data-categoria="@categoria.NombreCategoria" style="margin-bottom: 1rem;">
+            <div class="categoria-header" onclick="toggleCategoria('@categoriaNormalizada')">
+                <div class="categoria-info">
+                    <div class="categoria-icono" style="background: @(categoria.EsEspecial ? "rgba(245, 158, 11, 0.1)" : "rgba(100, 116, 123, 0.1)")">
+                        <i class="fa-solid fa-@iconoCategoria" style="color: @colorCategoria;"></i>
+                    </div>
+                    <div>
+                        <h3 class="categoria-titulo">
+                            @categoria.NombreCategoria
+                            @if (categoria.EsEspecial)
+                            {
+                                <span class="badge-especial">
+                                    <i class="fa-solid fa-shield-check"></i>
+                                    Especial
+                                </span>
+                            }
+                        </h3>
+                        <p class="categoria-subtitulo">
+                            @categoria.ProductosCompletos de @categoria.TotalProductos productos completados
+                        </p>
+                    </div>
+                </div>
+                <div class="categoria-toggle">
+                    <i class="fa-solid fa-chevron-up" id="toggle-icon-@categoriaNormalizada"></i>
+                </div>
+            </div>
+            
+            <div class="categoria-body @(categoria.Expandida ? "expanded" : "")" id="categoria-@categoriaNormalizada">
+                <table class="kardex-cocina-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">Código</th>
+                            <th style="width: 300px;">Nombre del Producto</th>
+                            <th style="width: 150px;">Unidad de Medida</th>
+                            <th style="width: 120px;">Cantidad a Pedir</th>
+                            <th style="width: 100px;">Ingresos</th>
+                            <th style="width: 150px;">Stock Final</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var detalle in categoria.Productos)
+                        {
+                            var rowClass = detalle.EstaCompleto ? "row-complete" : "";
+                            
+                            <tr class="@rowClass" data-detalle-id="@detalle.Id" data-producto="@detalle.NombreProducto">
+                                <td class="td-codigo">@detalle.Codigo</td>
+                                <td class="td-nombre">@detalle.NombreProducto</td>
+                                <td class="td-unidad">
+                                    <select class="select-unidad" 
+                                            data-detalle-id="@detalle.Id"
+                                            data-permite-decimales="@(detalle.PermiteDecimales ? "true" : "false")">
+                                        @foreach (var unidad in Puerto92.Models.UnidadMedidaCocina.Todas)
+                                        {
+                                            <option value="@unidad" selected='@(unidad == detalle.UnidadMedida ? "selected" : null)'>
+                                                @unidad
+                                            </option>
+                                        }
+                                    </select>
+                                </td>
+                                <td class="td-readonly">@detalle.CantidadAPedir.ToString("0.##")</td>
+                                <td class="td-readonly">@detalle.Ingresos.ToString("0.##")</td>
+                                <td class="td-editable">
+                                    <input type="number" 
+                                           class="input-stock" 
+                                           data-detalle-id="@detalle.Id"
+                                           value="@(detalle.StockFinal?.ToString("0.##") ?? "")"
+                                           step="@(detalle.PermiteDecimales ? "0.01" : "1")"
+                                           min="0"
+                                           placeholder="0" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Botones de acción -->
+<div class="content-card" style="margin-top: 1rem;">
+    <div class="card-body">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <a asp-action="MiKardex" class="btn btn-secondary">
+                <i class="fa-solid fa-arrow-left"></i>
+                Volver
+            </a>
+            <button type="button" class="btn btn-primary" onclick="continuarAPersonalPresente()" id="btnSiguiente">
+                <i class="fa-solid fa-arrow-right"></i>
+                Siguiente
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const KARDEX_ID = @Model.Id;
+        const TIPO_KARDEX = '@Html.Raw(Model.TipoCocina)';
+    </script>
+    <script src="~/js/kardex-cocina.js" asp-append-version="true"></script>
+}

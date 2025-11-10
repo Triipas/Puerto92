@@ -365,9 +365,106 @@ namespace Puerto92.Controllers
         // GET: Kardex/IniciarCocina?asignacionId=1
         public async Task<IActionResult> IniciarCocina(int asignacionId)
         {
-            // TODO: Implementar cuando se cree el kardex de cocina
-            SetErrorMessage("El kardex de Cocina estará disponible próximamente");
-            return RedirectToAction(nameof(MiKardex));
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            try
+            {
+                var asignacion = await _kardexService.ObtenerAsignacionActivaAsync(usuarioId);
+                
+                if (asignacion == null || asignacion.Id != asignacionId)
+                {
+                    SetErrorMessage("No tienes autorización para acceder a esta asignación");
+                    return RedirectToAction(nameof(MiKardex));
+                }
+
+                // Validar que sea un tipo de cocina válido
+                var tiposCocinaValidos = new[] { TipoKardex.CocinaFria, TipoKardex.CocinaCaliente, TipoKardex.Parrilla };
+                if (!tiposCocinaValidos.Contains(asignacion.TipoKardex))
+                {
+                    SetErrorMessage($"Esta asignación no es de cocina");
+                    return RedirectToAction(nameof(MiKardex));
+                }
+
+                var kardex = await _kardexService.IniciarKardexCocinaAsync(asignacionId, usuarioId);
+                
+                return RedirectToAction(nameof(ConteoCocina), new { id = kardex.Id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al iniciar kardex de cocina");
+                SetErrorMessage("Error al iniciar el kardex. Por favor intente nuevamente.");
+                return RedirectToAction(nameof(MiKardex));
+            }
+        }
+
+        // GET: Kardex/ConteoCocina/1
+        public async Task<IActionResult> ConteoCocina(int id)
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            try
+            {
+                var kardex = await _kardexService.ObtenerKardexCocinaAsync(id);
+                
+                if (kardex.EmpleadoId != usuarioId)
+                {
+                    SetErrorMessage("No tienes autorización para acceder a este kardex");
+                    return RedirectToAction(nameof(MiKardex));
+                }
+                
+                return View(kardex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al cargar kardex {id}");
+                SetErrorMessage("Error al cargar el kardex");
+                return RedirectToAction(nameof(MiKardex));
+            }
+        }
+
+        // POST: Kardex/AutoguardarCocina
+        [HttpPost]
+        public async Task<IActionResult> AutoguardarCocina([FromBody] AutoguardadoKardexCocinaRequest request)
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return JsonError("Usuario no autenticado");
+            }
+
+            try
+            {
+                var kardex = await _kardexService.ObtenerKardexCocinaAsync(request.KardexId);
+                
+                if (kardex.EmpleadoId != usuarioId)
+                {
+                    return JsonError("No autorizado");
+                }
+
+                var resultado = await _kardexService.AutoguardarDetalleCocinaAsync(request);
+                
+                if (resultado)
+                {
+                    return JsonSuccess("Guardado automático exitoso");
+                }
+                else
+                {
+                    return JsonError("Error en el guardado automático");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en autoguardado de cocina");
+                return JsonError("Error en el guardado automático");
+            }
         }
 
         // ==========================================
@@ -400,6 +497,11 @@ namespace Puerto92.Controllers
 
             try
             {
+                _logger.LogInformation($"🔍 PersonalPresente solicitado:");
+                _logger.LogInformation($"   KardexId: {id}");
+                _logger.LogInformation($"   Tipo: {tipo}");
+                _logger.LogInformation($"   UsuarioId: {usuarioId}");
+
                 // Validar que el kardex pertenece al usuario
                 if (tipo == TipoKardex.MozoBebidas)
                 {
@@ -407,32 +509,53 @@ namespace Puerto92.Controllers
                     
                     if (kardex.EmpleadoId != usuarioId)
                     {
-                        _logger.LogWarning($"Usuario {usuarioId} intenta acceder a personal presente de kardex {id} de otro usuario");
+                        _logger.LogWarning($"Usuario {usuarioId} intenta acceder a kardex {id} de otro usuario");
                         SetErrorMessage("No tienes autorización para acceder a este kardex");
                         return RedirectToAction(nameof(MiKardex));
                     }
                 }
-                // ⭐ AGREGAR: Validación para Kardex de Salón
                 else if (tipo == TipoKardex.MozoSalon)
                 {
                     var kardex = await _kardexService.ObtenerKardexSalonAsync(id);
                     
                     if (kardex.EmpleadoId != usuarioId)
                     {
-                        _logger.LogWarning($"Usuario {usuarioId} intenta acceder a personal presente de kardex {id} de otro usuario");
+                        _logger.LogWarning($"Usuario {usuarioId} intenta acceder a kardex {id} de otro usuario");
                         SetErrorMessage("No tienes autorización para acceder a este kardex");
                         return RedirectToAction(nameof(MiKardex));
                     }
                 }
+                // ⭐ NUEVO: Validación para Cocina Fría, Caliente y Parrilla
+                else if (tipo == TipoKardex.CocinaFria || 
+                        tipo == TipoKardex.CocinaCaliente || 
+                        tipo == TipoKardex.Parrilla)
+                {
+                    var kardex = await _kardexService.ObtenerKardexCocinaAsync(id);
+                    
+                    if (kardex.EmpleadoId != usuarioId)
+                    {
+                        _logger.LogWarning($"Usuario {usuarioId} intenta acceder a kardex {id} de otro usuario");
+                        SetErrorMessage("No tienes autorización para acceder a este kardex");
+                        return RedirectToAction(nameof(MiKardex));
+                    }
+
+                    _logger.LogInformation($"✅ Validación de usuario exitosa para Kardex de Cocina");
+                }
 
                 var viewModel = await _kardexService.ObtenerPersonalPresenteAsync(id, tipo);
                 
+                _logger.LogInformation($"✅ ViewModel obtenido:");
+                _logger.LogInformation($"   LocalId: {viewModel.LocalId}");
+                _logger.LogInformation($"   Total Empleados: {viewModel.TotalEmpleados}");
+
                 return View(viewModel);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al cargar personal presente para kardex {id}");
-                SetErrorMessage("Error al cargar la pantalla de personal presente");
+                _logger.LogError($"   Tipo: {tipo}");
+                _logger.LogError($"   Error: {ex.Message}");
+                SetErrorMessage($"Error al cargar la pantalla de personal presente: {ex.Message}");
                 return RedirectToAction(nameof(MiKardex));
             }
         }

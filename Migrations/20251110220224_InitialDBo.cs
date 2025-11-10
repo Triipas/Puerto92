@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Puerto92.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialDBi : Migration
+    public partial class InitialDBo : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -58,6 +58,7 @@ namespace Puerto92.Migrations
                     Nombre = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
                     Orden = table.Column<int>(type: "INTEGER", nullable: false),
                     Activo = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: true),
+                    TipoCocinaEspecial = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true),
                     FechaCreacion = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "getdate()"),
                     CreadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
                     RowVersion = table.Column<byte[]>(type: "BLOB", rowVersion: true, nullable: true)
@@ -453,6 +454,46 @@ namespace Puerto92.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "KardexCocina",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    AsignacionId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Fecha = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    LocalId = table.Column<int>(type: "INTEGER", nullable: false),
+                    EmpleadoId = table.Column<string>(type: "TEXT", nullable: false),
+                    TipoCocina = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    Estado = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false, defaultValue: "Borrador"),
+                    FechaInicio = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    FechaFinalizacion = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    FechaEnvio = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    Observaciones = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_KardexCocina", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_KardexCocina_AsignacionesKardex_AsignacionId",
+                        column: x => x.AsignacionId,
+                        principalTable: "AsignacionesKardex",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_KardexCocina_AspNetUsers_EmpleadoId",
+                        column: x => x.EmpleadoId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_KardexCocina_Locales_LocalId",
+                        column: x => x.LocalId,
+                        principalTable: "Locales",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "KardexSalon",
                 columns: table => new
                 {
@@ -524,6 +565,38 @@ namespace Puerto92.Migrations
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_KardexBebidasDetalles_Productos_ProductoId",
+                        column: x => x.ProductoId,
+                        principalTable: "Productos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "KardexCocinaDetalle",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    KardexCocinaId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ProductoId = table.Column<int>(type: "INTEGER", nullable: false),
+                    UnidadMedida = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    CantidadAPedir = table.Column<decimal>(type: "TEXT", nullable: false),
+                    Ingresos = table.Column<decimal>(type: "TEXT", nullable: false),
+                    StockFinal = table.Column<decimal>(type: "TEXT", nullable: true),
+                    Observaciones = table.Column<string>(type: "TEXT", nullable: true),
+                    Orden = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_KardexCocinaDetalle", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_KardexCocinaDetalle_KardexCocina_KardexCocinaId",
+                        column: x => x.KardexCocinaId,
+                        principalTable: "KardexCocina",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_KardexCocinaDetalle_Productos_ProductoId",
                         column: x => x.ProductoId,
                         principalTable: "Productos",
                         principalColumn: "Id",
@@ -662,6 +735,11 @@ namespace Puerto92.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Categorias_Tipo_TipoCocinaEspecial",
+                table: "Categorias",
+                columns: new[] { "Tipo", "TipoCocinaEspecial" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_KardexBebidas_AsignacionId",
                 table: "KardexBebidas",
                 column: "AsignacionId",
@@ -685,6 +763,32 @@ namespace Puerto92.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_KardexBebidasDetalles_ProductoId",
                 table: "KardexBebidasDetalles",
+                column: "ProductoId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KardexCocina_AsignacionId",
+                table: "KardexCocina",
+                column: "AsignacionId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KardexCocina_EmpleadoId",
+                table: "KardexCocina",
+                column: "EmpleadoId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KardexCocina_LocalId_Fecha_TipoCocina_Estado",
+                table: "KardexCocina",
+                columns: new[] { "LocalId", "Fecha", "TipoCocina", "Estado" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KardexCocinaDetalle_KardexCocinaId_Orden",
+                table: "KardexCocinaDetalle",
+                columns: new[] { "KardexCocinaId", "Orden" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KardexCocinaDetalle_ProductoId",
+                table: "KardexCocinaDetalle",
                 column: "ProductoId");
 
             migrationBuilder.CreateIndex(
@@ -824,6 +928,9 @@ namespace Puerto92.Migrations
                 name: "KardexBebidasDetalles");
 
             migrationBuilder.DropTable(
+                name: "KardexCocinaDetalle");
+
+            migrationBuilder.DropTable(
                 name: "KardexSalonDetalle");
 
             migrationBuilder.DropTable(
@@ -840,6 +947,9 @@ namespace Puerto92.Migrations
 
             migrationBuilder.DropTable(
                 name: "KardexBebidas");
+
+            migrationBuilder.DropTable(
+                name: "KardexCocina");
 
             migrationBuilder.DropTable(
                 name: "Productos");
