@@ -77,9 +77,8 @@ namespace Puerto92.Services
                     break;
 
                 case TipoKardex.MozoSalon:
-                    // TODO: Implementar cuando se cree el kardex de salón
-                    viewModel.MensajeInformativo = "El kardex de Mozo Salón estará disponible próximamente.";
-                    viewModel.PuedeIniciarRegistro = false;
+                    // ✅ ACTUALIZADO: Ya está implementado
+                    await VerificarBorradorSalon(viewModel, asignacion.Id);
                     break;
 
                 case TipoKardex.CocinaFria:
@@ -112,7 +111,7 @@ namespace Puerto92.Services
         {
             var kardexBorrador = await _context.KardexBebidas
                 .FirstOrDefaultAsync(k => k.AsignacionId == asignacionId &&
-                                         k.Estado == EstadoKardex.Borrador);
+                                        k.Estado == EstadoKardex.Borrador);
 
             if (kardexBorrador != null)
             {
@@ -129,6 +128,36 @@ namespace Puerto92.Services
                                     d.ConteoRefri1.HasValue &&
                                     d.ConteoRefri2.HasValue &&
                                     d.ConteoRefri3.HasValue);
+
+                viewModel.PorcentajeAvanceBorrador = totalDetalles > 0
+                    ? (decimal)detallesCompletos / totalDetalles * 100
+                    : 0;
+            }
+
+            viewModel.PuedeIniciarRegistro = true;
+        }
+
+        /// <summary>
+        /// ⭐ NUEVO: Verificar si existe borrador de kardex de salón
+        /// </summary>
+        private async Task VerificarBorradorSalon(MiKardexViewModel viewModel, int asignacionId)
+        {
+            var kardexBorrador = await _context.KardexSalon
+                .FirstOrDefaultAsync(k => k.AsignacionId == asignacionId &&
+                                        k.Estado == EstadoKardex.Borrador);
+
+            if (kardexBorrador != null)
+            {
+                viewModel.ExisteKardexBorrador = true;
+                viewModel.KardexBorradorId = kardexBorrador.Id;
+
+                // Calcular porcentaje de avance
+                var totalDetalles = await _context.KardexSalonDetalle
+                    .CountAsync(d => d.KardexSalonId == kardexBorrador.Id);
+
+                var detallesCompletos = await _context.KardexSalonDetalle
+                    .CountAsync(d => d.KardexSalonId == kardexBorrador.Id &&
+                                    d.UnidadesContadas.HasValue);
 
                 viewModel.PorcentajeAvanceBorrador = totalDetalles > 0
                     ? (decimal)detallesCompletos / totalDetalles * 100
@@ -537,7 +566,25 @@ namespace Puerto92.Services
                 viewModel.EmpleadoResponsableId = kardex.EmpleadoId;
                 viewModel.EmpleadoResponsableNombre = kardex.Empleado?.NombreCompleto ?? "";
             }
-            // TODO: Agregar casos para otros tipos de kardex
+            // ⭐ NUEVO: Agregar caso para Mozo Salón
+            else if (tipoKardex == TipoKardex.MozoSalon)
+            {
+                var kardex = await _context.KardexSalon
+                    .Include(k => k.Empleado)
+                    .Include(k => k.Local)
+                    .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+                if (kardex == null)
+                {
+                    throw new Exception("Kardex no encontrado");
+                }
+
+                viewModel.Fecha = kardex.Fecha;
+                viewModel.LocalId = kardex.LocalId;
+                viewModel.EmpleadoResponsableId = kardex.EmpleadoId;
+                viewModel.EmpleadoResponsableNombre = kardex.Empleado?.NombreCompleto ?? "";
+            }
+            // TODO: Agregar casos para otros tipos de kardex (Cocina, Vajilla)
 
             // ⭐ NUEVO: Verificar horario
             viewModel.HoraActual = DateTime.Now;
@@ -567,11 +614,16 @@ namespace Puerto92.Services
         {
             // Determinar roles permitidos según el tipo de kardex
             var rolesPermitidos = TipoKardex.ObtenerRolesPermitidos(tipoKardex);
+            
+            _logger.LogInformation($"🔍 Buscando empleados para {tipoKardex} en Local {localId}");
+            _logger.LogInformation($"   Roles permitidos: {string.Join(", ", rolesPermitidos)}");
 
             // Obtener empleados activos del local con los roles permitidos
             var empleados = await _context.Users
                 .Where(u => u.Activo && u.LocalId == localId)
                 .ToListAsync();
+
+            _logger.LogInformation($"   Total empleados activos en el local: {empleados.Count}");
 
             var empleadosDto = new List<EmpleadoDisponibleDto>();
 
@@ -579,6 +631,8 @@ namespace Puerto92.Services
             {
                 var roles = await _userManager.GetRolesAsync(empleado);
                 var tieneRolPermitido = roles.Any(r => rolesPermitidos.Contains(r));
+
+                _logger.LogDebug($"   - {empleado.NombreCompleto}: Roles={string.Join(",", roles)}, Permitido={tieneRolPermitido}");
 
                 if (tieneRolPermitido)
                 {
@@ -596,6 +650,8 @@ namespace Puerto92.Services
                 }
             }
 
+            _logger.LogInformation($"✅ {empleadosDto.Count} empleados encontrados con roles permitidos");
+
             // Ordenar: responsable primero, luego por nombre
             return empleadosDto
                 .OrderByDescending(e => e.EsResponsablePrincipal)
@@ -605,27 +661,32 @@ namespace Puerto92.Services
 
         public async Task<PersonalPresenteResponse> GuardarPersonalPresenteYCompletarAsync(PersonalPresenteRequest request)
         {
+            _logger.LogInformation($"📤 Iniciando GuardarPersonalPresenteYCompletar:");
+            _logger.LogInformation($"   KardexId: {request.KardexId}");
+            _logger.LogInformation($"   TipoKardex: {request.TipoKardex}");
+            _logger.LogInformation($"   EmpleadosPresentes: {request.EmpleadosPresentes.Count}");
+
             using var transaction = await _context.Database.BeginTransactionAsync();
 
-            try {
+            try
+            {
                 // ⭐ VALIDAR HORARIO
                 var horaActual = DateTime.Now.TimeOfDay;
                 var horaLimite = new TimeSpan(17, 30, 0); // 5:30 PM
                 var dentroDeHorario = horaActual < horaLimite;
-
-                // TODO: Verificar si hay habilitación manual para este kardex
-                var envioHabilitadoManualmente = false;
+                var envioHabilitadoManualmente = false; // TODO: Implementar lógica de habilitación
 
                 if (!dentroDeHorario && !envioHabilitadoManualmente)
                 {
+                    _logger.LogWarning($"⏰ Intento de envío fuera de horario: {DateTime.Now:HH:mm:ss}");
                     return new PersonalPresenteResponse
                     {
                         Success = false,
-                        Message = "Fuera de horario. El envío ha sido bloqueado. El horario límite de envío es 5:30 PM. Si necesita enviar este kardex, contacte al administrador para solicitar habilitación manual."
+                        Message = "Fuera de horario. El envío ha sido bloqueado. El horario límite de envío es 5:30 PM."
                     };
                 }
 
-                // Validar que hay al menos un empleado presente
+                // Validar empleados presentes
                 if (request.EmpleadosPresentes == null || request.EmpleadosPresentes.Count == 0)
                 {
                     return new PersonalPresenteResponse
@@ -635,21 +696,26 @@ namespace Puerto92.Services
                     };
                 }
 
-                // Obtener información del kardex
+                // ⭐ INICIALIZAR VARIABLES CON VALORES POR DEFECTO
                 string empleadoResponsableId = "";
                 string empleadoResponsableNombre = "";
                 int localId = 0;
                 DateTime fechaKardex = DateTime.Today;
 
+                // ⭐ MANEJO MEJORADO SEGÚN TIPO DE KARDEX
                 if (request.TipoKardex == TipoKardex.MozoBebidas)
                 {
+                    _logger.LogInformation($"🍹 Procesando Kardex de Bebidas ID: {request.KardexId}");
+
                     var kardex = await _context.KardexBebidas
                         .Include(k => k.Empleado)
                         .Include(k => k.Asignacion)
+                        .Include(k => k.Local) // ⭐ INCLUIR Local para debug
                         .FirstOrDefaultAsync(k => k.Id == request.KardexId);
 
                     if (kardex == null)
                     {
+                        _logger.LogError($"❌ Kardex de Bebidas no encontrado: {request.KardexId}");
                         throw new Exception("Kardex no encontrado");
                     }
 
@@ -658,21 +724,90 @@ namespace Puerto92.Services
                     localId = kardex.LocalId;
                     fechaKardex = kardex.Fecha;
 
-                    // ⭐ CAMBIAR ESTADO A "ENVIADO"
+                    _logger.LogInformation($"📋 Datos del Kardex de Bebidas:");
+                    _logger.LogInformation($"   LocalId: {localId}");
+                    _logger.LogInformation($"   Local: {kardex.Local?.Nombre ?? "NULL"}");
+                    _logger.LogInformation($"   EmpleadoId: {empleadoResponsableId}");
+                    _logger.LogInformation($"   Empleado: {empleadoResponsableNombre}");
+
+                    // ⭐ VALIDACIÓN CRÍTICA
+                    if (localId == 0)
+                    {
+                        _logger.LogError($"❌ ERROR: Kardex de Bebidas {request.KardexId} tiene LocalId = 0");
+                        throw new Exception("Error: El kardex no tiene un Local válido. Contacte al administrador.");
+                    }
+
+                    // Cambiar estado a "Enviado"
                     kardex.Estado = EstadoKardex.Enviado;
                     kardex.FechaFinalizacion = DateTime.Now;
                     kardex.FechaEnvio = DateTime.Now;
                     kardex.Observaciones = request.ObservacionesKardex;
 
-                    // Actualizar asignación
                     if (kardex.Asignacion != null)
                     {
                         kardex.Asignacion.Estado = EstadoAsignacion.Completada;
                     }
                 }
-                // TODO: Agregar casos para otros tipos de kardex
+                // ⭐ KARDEX DE SALÓN
+                else if (request.TipoKardex == TipoKardex.MozoSalon)
+                {
+                    _logger.LogInformation($"🍽️ Procesando Kardex de Salón ID: {request.KardexId}");
 
-                // Eliminar registros anteriores de personal presente para este kardex
+                    var kardex = await _context.KardexSalon
+                        .Include(k => k.Empleado)
+                        .Include(k => k.Asignacion)
+                        .Include(k => k.Local) // ⭐ INCLUIR Local para debug
+                        .FirstOrDefaultAsync(k => k.Id == request.KardexId);
+
+                    if (kardex == null)
+                    {
+                        _logger.LogError($"❌ Kardex de Salón no encontrado: {request.KardexId}");
+                        throw new Exception("Kardex no encontrado");
+                    }
+
+                    empleadoResponsableId = kardex.EmpleadoId;
+                    empleadoResponsableNombre = kardex.Empleado?.NombreCompleto ?? "";
+                    localId = kardex.LocalId;
+                    fechaKardex = kardex.Fecha;
+
+                    _logger.LogInformation($"📋 Datos del Kardex de Salón:");
+                    _logger.LogInformation($"   LocalId: {localId}");
+                    _logger.LogInformation($"   Local: {kardex.Local?.Nombre ?? "NULL"}");
+                    _logger.LogInformation($"   EmpleadoId: {empleadoResponsableId}");
+                    _logger.LogInformation($"   Empleado: {empleadoResponsableNombre}");
+                    _logger.LogInformation($"   Fecha: {fechaKardex}");
+
+                    // ⭐ VALIDACIÓN CRÍTICA
+                    if (localId == 0)
+                    {
+                        _logger.LogError($"❌ ERROR CRÍTICO: Kardex de Salón {request.KardexId} tiene LocalId = 0");
+                        _logger.LogError($"   Esto indica que el kardex se creó sin un Local válido");
+                        _logger.LogError($"   Asignación ID: {kardex.AsignacionId}");
+                        throw new Exception("Error: El kardex no tiene un Local válido asignado. Contacte al administrador del sistema.");
+                    }
+
+                    // Cambiar estado a "Enviado"
+                    kardex.Estado = EstadoKardex.Enviado;
+                    kardex.FechaFinalizacion = DateTime.Now;
+                    kardex.FechaEnvio = DateTime.Now;
+                    kardex.DescripcionFaltantes = request.DescripcionFaltantes;
+                    kardex.Observaciones = request.ObservacionesKardex;
+
+                    if (kardex.Asignacion != null)
+                    {
+                        kardex.Asignacion.Estado = EstadoAsignacion.Completada;
+                    }
+
+                    _logger.LogInformation($"📋 Kardex de Salón actualizado a estado Enviado");
+                    _logger.LogInformation($"   Descripción de Faltantes: {(!string.IsNullOrEmpty(kardex.DescripcionFaltantes) ? "Sí" : "No")}");
+                }
+                else
+                {
+                    _logger.LogError($"❌ Tipo de kardex no soportado: {request.TipoKardex}");
+                    throw new Exception($"Tipo de kardex no soportado: {request.TipoKardex}");
+                }
+
+                // Eliminar registros anteriores de personal presente
                 var registrosAnteriores = await _context.Set<PersonalPresente>()
                     .Where(p => p.KardexId == request.KardexId && p.TipoKardex == request.TipoKardex)
                     .ToListAsync();
@@ -697,9 +832,11 @@ namespace Puerto92.Services
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                _logger.LogInformation(
-                    $"✅ Kardex ENVIADO al administrador: Kardex {request.KardexId} ({request.TipoKardex}) - {request.EmpleadosPresentes.Count} empleados - Enviado a las {DateTime.Now:HH:mm:ss}"
-                );
+                _logger.LogInformation($"✅ Kardex enviado exitosamente");
+                _logger.LogInformation($"   Kardex ID: {request.KardexId}");
+                _logger.LogInformation($"   Tipo: {request.TipoKardex}");
+                _logger.LogInformation($"   Personal: {request.EmpleadosPresentes.Count} empleado(s)");
+                _logger.LogInformation($"   Hora de envío: {DateTime.Now:HH:mm:ss}");
 
                 await _auditService.RegistrarEnvioKardexAsync(
                     tipoKardex: request.TipoKardex,
@@ -709,35 +846,36 @@ namespace Puerto92.Services
                     totalPersonalPresente: request.EmpleadosPresentes.Count
                 );
 
-                // ⭐ NUEVO: Buscar y notificar al administrador local
-                _logger.LogInformation($"🔍 Buscando administrador local para Local ID: {localId}");
-                
-                // Query simplificada y más robusta
+                // ⭐ BUSCAR Y NOTIFICAR AL ADMINISTRADOR LOCAL
+                _logger.LogInformation($"🔍 Buscando Administrador Local para Local ID: {localId}");
+
                 var usuariosLocal = await _context.Users
                     .Where(u => u.LocalId == localId && u.Activo)
                     .ToListAsync();
-                
-                _logger.LogInformation($"📋 Total usuarios activos en el local: {usuariosLocal.Count}");
+
+                _logger.LogInformation($"📋 Usuarios activos en el local {localId}: {usuariosLocal.Count}");
 
                 Usuario? administradorLocal = null;
-                
+
                 foreach (var usuario in usuariosLocal)
                 {
                     var roles = await _userManager.GetRolesAsync(usuario);
-                    _logger.LogInformation($"   - Usuario: {usuario.NombreCompleto} | Roles: {string.Join(", ", roles)}");
-                    
+                    _logger.LogInformation($"   👤 Usuario: {usuario.NombreCompleto} ({usuario.UserName})");
+                    _logger.LogInformation($"      Roles: {string.Join(", ", roles)}");
+                    _logger.LogInformation($"      LocalId: {usuario.LocalId}");
+
                     if (roles.Contains("Administrador Local"))
                     {
                         administradorLocal = usuario;
-                        _logger.LogInformation($"✅ Administrador Local encontrado: {administradorLocal.NombreCompleto} (ID: {administradorLocal.Id})");
+                        _logger.LogInformation($"   ✅ Administrador Local encontrado: {administradorLocal.NombreCompleto}");
                         break;
                     }
                 }
 
                 if (administradorLocal != null)
                 {
-                    _logger.LogInformation($"📤 Creando notificación para administrador: {administradorLocal.NombreCompleto}");
-                    
+                    _logger.LogInformation($"📤 Enviando notificación al administrador: {administradorLocal.NombreCompleto}");
+
                     await _notificationService.CrearNotificacionKardexRecibidoAsync(
                         administradorId: administradorLocal.Id,
                         tipoKardex: request.TipoKardex,
@@ -745,14 +883,13 @@ namespace Puerto92.Services
                         fecha: fechaKardex
                     );
 
-                    _logger.LogInformation(
-                        $"🔔 Notificación enviada exitosamente al administrador: {administradorLocal.NombreCompleto} - Kardex {request.TipoKardex} de {empleadoResponsableNombre}"
-                    );
+                    _logger.LogInformation($"✅ Notificación enviada exitosamente");
                 }
                 else
                 {
-                    _logger.LogWarning($"⚠️ No se encontró administrador local para el local ID {localId}");
-                    _logger.LogWarning($"⚠️ Usuarios revisados: {usuariosLocal.Count}");
+                    _logger.LogWarning($"⚠️ No se encontró Administrador Local para el local ID {localId}");
+                    _logger.LogWarning($"⚠️ Total de usuarios revisados: {usuariosLocal.Count}");
+                    _logger.LogWarning($"⚠️ El kardex se guardó correctamente, pero no se envió notificación");
                 }
 
                 return new PersonalPresenteResponse
@@ -766,6 +903,8 @@ namespace Puerto92.Services
             {
                 await transaction.RollbackAsync();
                 _logger.LogError(ex, "❌ Error al enviar kardex al administrador");
+                _logger.LogError($"   KardexId: {request.KardexId}");
+                _logger.LogError($"   TipoKardex: {request.TipoKardex}");
 
                 return new PersonalPresenteResponse
                 {
@@ -773,6 +912,294 @@ namespace Puerto92.Services
                     Message = $"Error al enviar el kardex: {ex.Message}"
                 };
             }
+        }
+
+        // ==========================================
+        // KARDEX DE SALÓN (Mozo Salón)
+        // ==========================================
+
+        public async Task<KardexSalonViewModel> IniciarKardexSalonAsync(int asignacionId, string usuarioId)
+        {
+            _logger.LogInformation($"🍽️ Iniciando Kardex de Salón - AsignacionId: {asignacionId}, UsuarioId: {usuarioId}");
+
+            var asignacion = await _context.AsignacionesKardex
+                .Include(a => a.Local)
+                .Include(a => a.Empleado)
+                .FirstOrDefaultAsync(a => a.Id == asignacionId && a.EmpleadoId == usuarioId);
+
+            if (asignacion == null)
+            {
+                _logger.LogError($"❌ Asignación no encontrada: {asignacionId}");
+                throw new Exception("Asignación no encontrada o no autorizada");
+            }
+
+            // ⭐ VALIDACIÓN CRÍTICA: Verificar LocalId
+            if (asignacion.LocalId == 0)
+            {
+                _logger.LogError($"❌ ERROR CRÍTICO: La asignación {asignacionId} tiene LocalId = 0");
+                _logger.LogError($"   Empleado: {asignacion.EmpleadoId}");
+                _logger.LogError($"   Fecha: {asignacion.Fecha}");
+                throw new Exception("Error: La asignación no tiene un Local válido asignado. Contacte al administrador.");
+            }
+
+            _logger.LogInformation($"✅ Asignación encontrada - LocalId: {asignacion.LocalId}, Local: {asignacion.Local?.Nombre ?? "N/A"}");
+
+            // Verificar si ya existe un kardex para esta asignación
+            var kardexExistente = await _context.KardexSalon
+                .Include(k => k.Detalles)
+                    .ThenInclude(d => d.Utensilio)
+                .FirstOrDefaultAsync(k => k.AsignacionId == asignacionId);
+
+            if (kardexExistente != null)
+            {
+                _logger.LogInformation($"📋 Kardex existente encontrado: ID {kardexExistente.Id}, LocalId: {kardexExistente.LocalId}");
+                return await MapearKardexSalonAViewModel(kardexExistente);
+            }
+
+            // Crear nuevo kardex
+            var kardex = new KardexSalon
+            {
+                AsignacionId = asignacionId,
+                Fecha = asignacion.Fecha,
+                LocalId = asignacion.LocalId, // ✅ Usar el LocalId de la asignación
+                EmpleadoId = usuarioId,
+                Estado = EstadoKardex.Borrador,
+                FechaInicio = DateTime.Now
+            };
+
+            _logger.LogInformation($"💾 Creando nuevo Kardex de Salón:");
+            _logger.LogInformation($"   LocalId: {kardex.LocalId}");
+            _logger.LogInformation($"   EmpleadoId: {kardex.EmpleadoId}");
+            _logger.LogInformation($"   Fecha: {kardex.Fecha}");
+
+            _context.KardexSalon.Add(kardex);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"✅ Kardex de Salón creado: ID {kardex.Id}, LocalId: {kardex.LocalId}");
+
+            // ⭐ VERIFICACIÓN POST-GUARDADO
+            if (kardex.LocalId == 0)
+            {
+                _logger.LogError($"❌ ERROR POST-GUARDADO: El kardex se guardó con LocalId = 0");
+                throw new Exception("Error al guardar el kardex: LocalId inválido");
+            }
+
+            // Obtener utensilios de categoría "Mozo" activos
+            var utensiliosMozo = await _context.Utensilios
+                .Include(u => u.Categoria)
+                .Where(u => u.Activo && 
+                        u.Categoria!.Tipo == TipoCategoria.Utensilios &&
+                        u.Categoria.Nombre == "Mozo" &&
+                        u.Categoria.Activo)
+                .OrderBy(u => u.Codigo)
+                .ToListAsync();
+
+            _logger.LogInformation($"📦 {utensiliosMozo.Count} utensilios encontrados para el kardex");
+
+            var orden = 1;
+            foreach (var utensilio in utensiliosMozo)
+            {
+                var detalle = new KardexSalonDetalle
+                {
+                    KardexSalonId = kardex.Id,
+                    UtensilioId = utensilio.Id,
+                    InventarioInicial = 120, // TODO: Obtener del sistema o configuración
+                    Orden = orden++
+                };
+
+                _context.KardexSalonDetalle.Add(detalle);
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Marcar asignación como en proceso
+            asignacion.Estado = EstadoAsignacion.EnProceso;
+            asignacion.RegistroIniciado = true;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"✅ Kardex de salón iniciado completamente: ID {kardex.Id}");
+
+            await _auditService.RegistrarInicioKardexAsync(
+                tipoKardex: TipoKardex.MozoSalon,
+                fecha: asignacion.Fecha,
+                empleadoNombre: asignacion.Empleado?.NombreCompleto ?? "Desconocido",
+                kardexId: kardex.Id
+            );
+
+            return await ObtenerKardexSalonAsync(kardex.Id);
+        }
+
+        public async Task<KardexSalonViewModel> ObtenerKardexSalonAsync(int kardexId)
+        {
+            var kardex = await _context.KardexSalon
+                .Include(k => k.Asignacion)
+                .Include(k => k.Empleado)
+                .Include(k => k.Detalles)
+                    .ThenInclude(d => d.Utensilio)
+                .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+            if (kardex == null)
+            {
+                throw new Exception("Kardex no encontrado");
+            }
+
+            return await MapearKardexSalonAViewModel(kardex);
+        }
+
+        public async Task<bool> AutoguardarDetalleSalonAsync(AutoguardadoKardexSalonRequest request)
+        {
+            try
+            {
+                var detalle = await _context.KardexSalonDetalle
+                    .FirstOrDefaultAsync(d => d.Id == request.DetalleId &&
+                                            d.KardexSalonId == request.KardexId);
+
+                if (detalle == null)
+                {
+                    _logger.LogWarning($"Detalle no encontrado: {request.DetalleId}");
+                    return false;
+                }
+
+                // Actualizar unidades contadas
+                detalle.UnidadesContadas = request.Valor;
+
+                // Recalcular diferencia
+                RecalcularDetalleSalon(detalle);
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation($"Autoguardado exitoso: Detalle {request.DetalleId}");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error en autoguardado: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<KardexSalonViewModel> CalcularYActualizarSalonAsync(int kardexId)
+        {
+            var kardex = await _context.KardexSalon
+                .Include(k => k.Detalles)
+                .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+            if (kardex == null)
+            {
+                throw new Exception("Kardex no encontrado");
+            }
+
+            foreach (var detalle in kardex.Detalles)
+            {
+                RecalcularDetalleSalon(detalle);
+            }
+
+            await _context.SaveChangesAsync();
+
+            return await ObtenerKardexSalonAsync(kardexId);
+        }
+
+        public async Task<bool> CompletarKardexSalonAsync(int kardexId, string descripcionFaltantes, string observaciones)
+        {
+            var kardex = await _context.KardexSalon
+                .Include(k => k.Detalles)
+                .Include(k => k.Asignacion)
+                .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+            if (kardex == null)
+            {
+                throw new Exception("Kardex no encontrado");
+            }
+
+            // Validar que todos los campos estén completos
+            var detallesIncompletos = kardex.Detalles.Where(d => !d.UnidadesContadas.HasValue).ToList();
+
+            if (detallesIncompletos.Any())
+            {
+                throw new Exception($"Hay {detallesIncompletos.Count} utensilio(s) sin registrar");
+            }
+
+            kardex.Estado = EstadoKardex.Completado;
+            kardex.FechaFinalizacion = DateTime.Now;
+            kardex.DescripcionFaltantes = descripcionFaltantes;
+            kardex.Observaciones = observaciones;
+
+            if (kardex.Asignacion != null)
+            {
+                kardex.Asignacion.Estado = EstadoAsignacion.Completada;
+            }
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"Kardex de salón completado: ID {kardexId}");
+
+            return true;
+        }
+
+        // Método auxiliar privado
+        private void RecalcularDetalleSalon(KardexSalonDetalle detalle)
+        {
+            if (detalle.UnidadesContadas.HasValue)
+            {
+                detalle.Diferencia = detalle.UnidadesContadas.Value - detalle.InventarioInicial;
+                detalle.TieneFaltantes = detalle.Diferencia < 0;
+            }
+            else
+            {
+                detalle.Diferencia = 0;
+                detalle.TieneFaltantes = false;
+            }
+        }
+
+        private async Task<KardexSalonViewModel> MapearKardexSalonAViewModel(KardexSalon kardex)
+        {
+            var detalles = kardex.Detalles
+                .OrderBy(d => d.Orden)
+                .Select(d => new KardexSalonDetalleViewModel
+                {
+                    Id = d.Id,
+                    UtensilioId = d.UtensilioId,
+                    Codigo = d.Utensilio?.Codigo ?? "",
+                    Descripcion = d.Utensilio?.Nombre ?? "",
+                    Unidad = d.Utensilio?.Unidad ?? "",
+                    InventarioInicial = d.InventarioInicial,
+                    UnidadesContadas = d.UnidadesContadas,
+                    Diferencia = d.Diferencia,
+                    TieneFaltantes = d.TieneFaltantes,
+                    Observaciones = d.Observaciones,
+                    Orden = d.Orden,
+                    EstaCompleto = d.UnidadesContadas.HasValue
+                })
+                .ToList();
+
+            var totalUtensilios = detalles.Count;
+            var utensiliosCompletos = detalles.Count(d => d.EstaCompleto);
+            var utensiliosConFaltantes = detalles.Count(d => d.TieneFaltantes);
+
+            return new KardexSalonViewModel
+            {
+                Id = kardex.Id,
+                AsignacionId = kardex.AsignacionId,
+                Fecha = kardex.Fecha,
+                LocalId = kardex.LocalId,
+                EmpleadoId = kardex.EmpleadoId,
+                EmpleadoNombre = kardex.Empleado?.NombreCompleto ?? "",
+                Estado = kardex.Estado,
+                FechaInicio = kardex.FechaInicio,
+                FechaFinalizacion = kardex.FechaFinalizacion,
+                FechaEnvio = kardex.FechaEnvio,
+                DescripcionFaltantes = kardex.DescripcionFaltantes,
+                Observaciones = kardex.Observaciones,
+                Detalles = detalles,
+                TotalUtensilios = totalUtensilios,
+                UtensiliosCompletos = utensiliosCompletos,
+                UtensiliosConFaltantes = utensiliosConFaltantes,
+                PorcentajeAvance = totalUtensilios > 0
+                    ? (decimal)utensiliosCompletos / totalUtensilios * 100
+                    : 0,
+                RequiereDescripcionFaltantes = utensiliosConFaltantes > 0
+            };
         }
     }
 }

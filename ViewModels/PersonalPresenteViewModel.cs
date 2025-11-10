@@ -42,19 +42,22 @@ namespace Puerto92.ViewModels
     /// <summary>
     /// Request para guardar personal presente
     /// </summary>
-    public class PersonalPresenteRequest
-    {
-        [Required]
-        public int KardexId { get; set; }
-        
-        [Required]
-        public string TipoKardex { get; set; } = string.Empty;
-        
-        [Required]
-        public List<string> EmpleadosPresentes { get; set; } = new();
-        
-        public string? ObservacionesKardex { get; set; }
-    }
+        public class PersonalPresenteRequest
+        {
+            [Required]
+            public int KardexId { get; set; }
+            
+            [Required]
+            public string TipoKardex { get; set; } = string.Empty;
+            
+            [Required]
+            public List<string> EmpleadosPresentes { get; set; } = new();
+            
+            public string? ObservacionesKardex { get; set; }
+            
+            // ⭐ NUEVO: Para Kardex de Salón
+            public string? DescripcionFaltantes { get; set; }
+        }
 
     /// <summary>
     /// Response para el personal presente

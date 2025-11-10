@@ -11,8 +11,8 @@ using Puerto92.Data;
 namespace Puerto92.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251109200642_InitialDBr")]
-    partial class InitialDBr
+    [Migration("20251109215944_InitialDBi")]
+    partial class InitialDBi
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -457,6 +457,97 @@ namespace Puerto92.Migrations
                     b.HasIndex("KardexBebidasId", "Orden");
 
                     b.ToTable("KardexBebidasDetalles");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.KardexSalon", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AsignacionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("DescripcionFaltantes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EmpleadoId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FechaEnvio")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FechaFinalizacion")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FechaInicio")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("LocalId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Observaciones")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AsignacionId")
+                        .IsUnique();
+
+                    b.HasIndex("EmpleadoId");
+
+                    b.HasIndex("LocalId", "Fecha", "Estado");
+
+                    b.ToTable("KardexSalon");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.KardexSalonDetalle", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Diferencia")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("InventarioInicial")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("KardexSalonId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Observaciones")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("TieneFaltantes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("UnidadesContadas")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("UtensilioId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UtensilioId");
+
+                    b.HasIndex("KardexSalonId", "Orden");
+
+                    b.ToTable("KardexSalonDetalle");
                 });
 
             modelBuilder.Entity("Puerto92.Models.Local", b =>
@@ -1033,6 +1124,52 @@ namespace Puerto92.Migrations
                     b.Navigation("Producto");
                 });
 
+            modelBuilder.Entity("Puerto92.Models.KardexSalon", b =>
+                {
+                    b.HasOne("Puerto92.Models.AsignacionKardex", "Asignacion")
+                        .WithMany()
+                        .HasForeignKey("AsignacionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Puerto92.Models.Usuario", "Empleado")
+                        .WithMany()
+                        .HasForeignKey("EmpleadoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Puerto92.Models.Local", "Local")
+                        .WithMany()
+                        .HasForeignKey("LocalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Asignacion");
+
+                    b.Navigation("Empleado");
+
+                    b.Navigation("Local");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.KardexSalonDetalle", b =>
+                {
+                    b.HasOne("Puerto92.Models.KardexSalon", "KardexSalon")
+                        .WithMany("Detalles")
+                        .HasForeignKey("KardexSalonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Puerto92.Models.Utensilio", "Utensilio")
+                        .WithMany()
+                        .HasForeignKey("UtensilioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("KardexSalon");
+
+                    b.Navigation("Utensilio");
+                });
+
             modelBuilder.Entity("Puerto92.Models.Notificacion", b =>
                 {
                     b.HasOne("Puerto92.Models.Usuario", "Usuario")
@@ -1089,6 +1226,11 @@ namespace Puerto92.Migrations
                 });
 
             modelBuilder.Entity("Puerto92.Models.KardexBebidas", b =>
+                {
+                    b.Navigation("Detalles");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.KardexSalon", b =>
                 {
                     b.Navigation("Detalles");
                 });

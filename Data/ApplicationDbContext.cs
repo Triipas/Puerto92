@@ -21,6 +21,8 @@ namespace Puerto92.Data
         public DbSet<Notificacion> Notificaciones { get; set; }
         public DbSet<KardexBebidas> KardexBebidas { get; set; }
         public DbSet<KardexBebidasDetalle> KardexBebidasDetalles { get; set; }
+        public DbSet<KardexSalon> KardexSalon { get; set; }
+        public DbSet<KardexSalonDetalle> KardexSalonDetalle { get; set; }
         public DbSet<PersonalPresente> PersonalPresente { get; set; }
 
 
@@ -91,53 +93,53 @@ namespace Puerto92.Data
             });
 
             builder.Entity<Utensilio>(entity =>
-{
-    entity.ToTable("Utensilios");
+            {
+                entity.ToTable("Utensilios");
 
-    entity.Property(u => u.Codigo)
-        .HasMaxLength(20)
-        .IsRequired();
+                entity.Property(u => u.Codigo)
+                    .HasMaxLength(20)
+                    .IsRequired();
 
-    entity.Property(u => u.Nombre)
-        .HasMaxLength(100)
-        .IsRequired();
+                entity.Property(u => u.Nombre)
+                    .HasMaxLength(100)
+                    .IsRequired();
 
-    entity.Property(u => u.Unidad)
-        .HasMaxLength(20)
-        .IsRequired();
+                entity.Property(u => u.Unidad)
+                    .HasMaxLength(20)
+                    .IsRequired();
 
-    entity.Property(u => u.Precio)
-        .HasColumnType("decimal(18,2)")
-        .IsRequired();
+                entity.Property(u => u.Precio)
+                    .HasColumnType("decimal(18,2)")
+                    .IsRequired();
 
-    entity.Property(u => u.Descripcion)
-        .HasMaxLength(500);
+                entity.Property(u => u.Descripcion)
+                    .HasMaxLength(500);
 
-    entity.Property(u => u.Activo)
-        .HasDefaultValue(true);
+                entity.Property(u => u.Activo)
+                    .HasDefaultValue(true);
 
-    entity.Property(u => u.FechaCreacion)
-        .HasDefaultValueSql("getdate()");
+                entity.Property(u => u.FechaCreacion)
+                    .HasDefaultValueSql("getdate()");
 
-    entity.Property(u => u.CreadoPor)
-        .HasMaxLength(100);
+                entity.Property(u => u.CreadoPor)
+                    .HasMaxLength(100);
 
-    entity.Property(u => u.ModificadoPor)
-        .HasMaxLength(100);
+                entity.Property(u => u.ModificadoPor)
+                    .HasMaxLength(100);
 
-    // ⭐ NUEVA: Relación con Categoría
-    entity.HasOne(u => u.Categoria)
-        .WithMany()
-        .HasForeignKey(u => u.CategoriaId)
-        .OnDelete(DeleteBehavior.Restrict);
+                // ⭐ NUEVA: Relación con Categoría
+                entity.HasOne(u => u.Categoria)
+                    .WithMany()
+                    .HasForeignKey(u => u.CategoriaId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
-    entity.HasIndex(u => u.Codigo)
-        .IsUnique();
+                entity.HasIndex(u => u.Codigo)
+                    .IsUnique();
 
-    entity.HasIndex(u => new { u.CategoriaId, u.Activo });
+                entity.HasIndex(u => new { u.CategoriaId, u.Activo });
 
-    entity.HasIndex(u => u.Nombre);
-});
+                entity.HasIndex(u => u.Nombre);
+            });
 
             // ⭐ NUEVO: Configuración de Productos
             builder.Entity<Producto>(entity =>
@@ -316,6 +318,43 @@ namespace Puerto92.Data
 
                 entity.Property(p => p.FechaRegistro)
                     .HasDefaultValueSql("getdate()");
+            });
+
+            // Configuración de Kardex de Salón
+            builder.Entity<KardexSalon>(entity =>
+            {
+                entity.HasOne(k => k.Asignacion)
+                    .WithMany()
+                    .HasForeignKey(k => k.AsignacionId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(k => k.Local)
+                    .WithMany()
+                    .HasForeignKey(k => k.LocalId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(k => k.Empleado)
+                    .WithMany()
+                    .HasForeignKey(k => k.EmpleadoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(k => new { k.LocalId, k.Fecha, k.Estado });
+                entity.HasIndex(k => k.AsignacionId).IsUnique();
+            });
+
+            builder.Entity<KardexSalonDetalle>(entity =>
+            {
+                entity.HasOne(d => d.KardexSalon)
+                    .WithMany(k => k.Detalles)
+                    .HasForeignKey(d => d.KardexSalonId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(d => d.Utensilio)
+                    .WithMany()
+                    .HasForeignKey(d => d.UtensilioId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(d => new { d.KardexSalonId, d.Orden });
             });
 
         }

@@ -1,0 +1,513 @@
+/* ========================================
+   KARDEX DE SALÓN - UTENSILIOS
+   Sistema Puerto 92
+   ======================================== */
+
+/* ==========================================
+   CONTENEDOR DE LA TABLA
+   ========================================== */
+
+.kardex-salon-table-container {
+    overflow-x: auto;
+    background: white;
+    border-radius: 8px;
+}
+
+.kardex-salon-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+/* ==========================================
+   ENCABEZADO DE LA TABLA
+   ========================================== */
+
+.kardex-salon-table thead th {
+    background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+    padding: 1rem;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #E2E8F0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    white-space: nowrap;
+}
+
+.kardex-salon-table thead th:first-child {
+    text-align: center;
+}
+
+/* ==========================================
+   CELDAS DE LA TABLA
+   ========================================== */
+
+.kardex-salon-table tbody td {
+    padding: 1rem;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: middle;
+    transition: all 0.2s ease;
+}
+
+.kardex-salon-table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.kardex-salon-table tbody tr:hover {
+    background: #F8FAFC;
+    transform: translateX(2px);
+    box-shadow: -3px 0 0 #10B981;
+}
+
+/* Número correlativo */
+.td-numero {
+    text-align: center;
+    font-weight: 600;
+    color: #64748B;
+    font-size: 13px;
+}
+
+/* Código */
+.td-codigo {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: #1E293B;
+    font-size: 13px;
+}
+
+/* Descripción */
+.td-descripcion {
+    color: #1E293B;
+    font-weight: 500;
+}
+
+/* Unidad */
+.td-unidad {
+    color: #64748B;
+    font-size: 13px;
+    text-align: center;
+}
+
+/* Inventario inicial */
+.td-readonly {
+    text-align: center;
+    color: #64748B;
+    font-weight: 500;
+    background: #F8FAFC;
+}
+
+/* Celda editable */
+.td-editable {
+    padding: 0.5rem;
+}
+
+/* Diferencia */
+.td-diferencia {
+    text-align: center;
+}
+
+/* ==========================================
+   INPUT DE CONTEO
+   ========================================== */
+
+.input-conteo {
+    width: 100%;
+    padding: 0.625rem;
+    border: 2px solid #E2E8F0;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.input-conteo:focus {
+    outline: none;
+    border-color: #10B981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    background: #F0FDF4;
+}
+
+.input-conteo.has-value {
+    background: #F0FDF4;
+    border-color: #10B981;
+    color: #047857;
+}
+
+.input-conteo::placeholder {
+    color: #CBD5E1;
+    font-weight: 400;
+}
+
+/* Chrome, Safari, Edge - Ocultar flechas de número */
+.input-conteo::-webkit-outer-spin-button,
+.input-conteo::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Firefox - Ocultar flechas de número */
+.input-conteo[type=number] {
+    -moz-appearance: textfield;
+}
+
+/* ==========================================
+   BADGES DE DIFERENCIA
+   ========================================== */
+
+.diferencia-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 60px;
+}
+
+.diferencia-badge.exacto {
+    background: #ECFDF5;
+    color: #047857;
+    border: 1px solid #D1FAE5;
+}
+
+.diferencia-badge.faltante {
+    background: #FEF2F2;
+    color: #DC2626;
+    border: 1px solid #FECACA;
+}
+
+.diferencia-badge.sobrante {
+    background: #EFF6FF;
+    color: #2563EB;
+    border: 1px solid #BFDBFE;
+}
+
+/* ==========================================
+   ESTADOS DE FILA
+   ========================================== */
+
+/* Fila con faltantes */
+.row-faltante {
+    background: rgba(254, 226, 226, 0.3);
+}
+
+.row-faltante:hover {
+    background: rgba(254, 226, 226, 0.5);
+    box-shadow: -3px 0 0 #EF4444;
+}
+
+/* Fila completa */
+.row-complete {
+    position: relative;
+}
+
+.row-complete::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background: #10B981;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.row-complete:hover::before {
+    opacity: 1;
+}
+
+/* Fila incompleta */
+.row-incomplete {
+    animation: shake 0.5s ease;
+    background: rgba(254, 243, 199, 0.3);
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* ==========================================
+   BARRA DE PROGRESO
+   ========================================== */
+
+.kardex-progress-bar {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.progress-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.progress-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1E293B;
+}
+
+.progress-track {
+    height: 8px;
+    background: #F1F5F9;
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10B981 0%, #059669 100%);
+    border-radius: 999px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, 
+        rgba(255,255,255,0) 0%, 
+        rgba(255,255,255,0.3) 50%, 
+        rgba(255,255,255,0) 100%);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.progress-stats {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 13px;
+    color: #64748B;
+}
+
+.stat-item i {
+    font-size: 16px;
+}
+
+/* ==========================================
+   INDICADOR DE AUTOGUARDADO
+   ========================================== */
+
+.autoguardado-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    background: #F0FDF4;
+    color: #047857;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.autoguardado-indicator.show {
+    opacity: 1;
+}
+
+.autoguardado-indicator.saving {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.autoguardado-indicator i {
+    font-size: 14px;
+}
+
+/* ==========================================
+   MODAL DE FALTANTES
+   ========================================== */
+
+#listaFaltantes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.faltante-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 6px;
+}
+
+.faltante-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.faltante-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #FEE2E2;
+    color: #DC2626;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.faltante-detalles {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.faltante-nombre {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1F2937;
+}
+
+.faltante-codigo {
+    font-size: 12px;
+    color: #6B7280;
+    font-family: 'Courier New', monospace;
+}
+
+.faltante-cantidad {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    background: #FEE2E2;
+    color: #DC2626;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* ==========================================
+   BUSCADOR
+   ========================================== */
+
+.search-box {
+    position: relative;
+    width: 100%;
+}
+
+.search-box i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    pointer-events: none;
+}
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+
+@media (max-width: 768px) {
+    .kardex-salon-table-container {
+        border-radius: 0;
+    }
+    
+    .kardex-salon-table {
+        font-size: 13px;
+    }
+    
+    .kardex-salon-table thead th,
+    .kardex-salon-table tbody td {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .input-conteo {
+        padding: 0.5rem;
+        font-size: 13px;
+    }
+    
+    .progress-stats {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+/* ==========================================
+   ANIMACIONES
+   ========================================== */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.kardex-salon-table tbody tr {
+    animation: fadeInUp 0.3s ease;
+}
+
+.kardex-salon-table tbody tr:nth-child(even) {
+    animation-delay: 0.05s;
+}
+
+/* ==========================================
+   UTILIDADES
+   ========================================== */
+
+.text-faltante {
+    color: #DC2626;
+    font-weight: 600;
+}
+
+.text-sobrante {
+    color: #2563EB;
+    font-weight: 600;
+}
+
+.text-exacto {
+    color: #047857;
+    font-weight: 600;
+}

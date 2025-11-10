@@ -170,8 +170,9 @@ async function enviarAlAdministrador() {
         return;
     }
     
-    // ⭐ RECUPERAR OBSERVACIONES DEL KARDEX (guardadas en sessionStorage)
+    // ⭐ RECUPERAR DATOS DEL KARDEX (guardados en sessionStorage)
     const observacionesKardex = sessionStorage.getItem('kardexObservaciones') || '';
+    const descripcionFaltantes = sessionStorage.getItem('kardexDescripcionFaltantes') || '';
     
     const btnEnviar = document.getElementById('btnEnviarAlAdministrador');
     btnEnviar.disabled = true;
@@ -181,18 +182,26 @@ async function enviarAlAdministrador() {
     document.querySelectorAll('.personal-checkbox').forEach(cb => cb.disabled = true);
     
     try {
+        const requestData = {
+            kardexId: KARDEX_ID,
+            tipoKardex: TIPO_KARDEX,
+            empleadosPresentes: empleadosSeleccionados,
+            observacionesKardex: observacionesKardex
+        };
+        
+        // ⭐ AGREGAR DESCRIPCIÓN DE FALTANTES SI ES KARDEX DE SALÓN
+        if (TIPO_KARDEX === 'Mozo Salón') {
+            requestData.descripcionFaltantes = descripcionFaltantes;
+            console.log(`📋 Descripción de faltantes incluida: ${descripcionFaltantes ? 'Sí' : 'No'}`);
+        }
+        
         const response = await fetch('/Kardex/GuardarPersonalPresente', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
             },
-            body: JSON.stringify({
-                kardexId: KARDEX_ID,
-                tipoKardex: TIPO_KARDEX,
-                empleadosPresentes: empleadosSeleccionados,
-                observacionesKardex: observacionesKardex
-            })
+            body: JSON.stringify(requestData)
         });
         
         if (!response.ok) {
@@ -206,8 +215,9 @@ async function enviarAlAdministrador() {
             
             // Limpiar sessionStorage
             sessionStorage.removeItem('kardexObservaciones');
+            sessionStorage.removeItem('kardexDescripcionFaltantes');
             
-            showNotification('Kardex enviado exitosamente', 'success');
+            showNotification('Kardex enviado exitosamente al administrador', 'success');
             
             setTimeout(() => {
                 window.location.href = result.redirectUrl || '/Kardex/MiKardex';

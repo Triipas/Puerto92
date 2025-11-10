@@ -155,11 +155,30 @@ namespace Puerto92.Controllers
         {
             try
             {
-                var usuario = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity!.Name);
+                _logger.LogInformation($"📝 Creando asignación: {request.TipoKardex} - {request.Fecha} - EmpleadoId: {request.EmpleadoId}");
+
+                var usuario = await _context.Users
+                    .Include(u => u.Local) // ⭐ INCLUIR Local para validación
+                    .FirstOrDefaultAsync(u => u.UserName == User.Identity!.Name);
+
                 if (usuario == null)
                 {
+                    _logger.LogError($"❌ Usuario no encontrado: {User.Identity?.Name}");
                     return JsonError("Usuario no encontrado");
                 }
+
+                // ⭐ VALIDACIÓN CRÍTICA: Verificar LocalId del usuario
+                if (usuario.LocalId == 0)
+                {
+                    _logger.LogError($"❌ ERROR CRÍTICO: Usuario {usuario.UserName} tiene LocalId = 0");
+                    _logger.LogError($"   ID del Usuario: {usuario.Id}");
+                    _logger.LogError($"   Nombre: {usuario.NombreCompleto}");
+                    return JsonError("Error: Su cuenta no tiene un Local asignado. Contacte al administrador del sistema.");
+                }
+
+                _logger.LogInformation($"✅ Usuario encontrado: {usuario.NombreCompleto}");
+                _logger.LogInformation($"   LocalId: {usuario.LocalId}");
+                _logger.LogInformation($"   Local: {usuario.Local?.Nombre ?? "N/A"}");
 
                 // Validar datos
                 if (string.IsNullOrEmpty(request.TipoKardex) ||
@@ -186,27 +205,62 @@ namespace Puerto92.Controllers
                     return JsonError("El empleado ya está asignado a otro kardex este día");
                 }
 
+                // ⭐ VALIDAR QUE EL EMPLEADO ASIGNADO PERTENECE AL MISMO LOCAL
+                var empleadoAsignado = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Id == request.EmpleadoId);
+
+                if (empleadoAsignado == null)
+                {
+                    _logger.LogError($"❌ Empleado no encontrado: {request.EmpleadoId}");
+                    return JsonError("Empleado no encontrado");
+                }
+
+                if (empleadoAsignado.LocalId != usuario.LocalId)
+                {
+                    _logger.LogWarning($"⚠️ Intento de asignar empleado de otro local");
+                    _logger.LogWarning($"   Local del admin: {usuario.LocalId}");
+                    _logger.LogWarning($"   Local del empleado: {empleadoAsignado.LocalId}");
+                    return JsonError("El empleado no pertenece a su local");
+                }
+
                 // Crear asignación
                 var asignacion = new AsignacionKardex
                 {
                     TipoKardex = request.TipoKardex,
                     Fecha = fechaAsignacion.Date,
                     EmpleadoId = request.EmpleadoId,
-                    LocalId = usuario.LocalId,
+                    LocalId = usuario.LocalId, // ✅ Usar LocalId del usuario administrador
                     Estado = EstadoAsignacion.Pendiente,
                     FechaCreacion = DateTime.Now,
                     CreadoPor = User.Identity!.Name
                 };
 
+                _logger.LogInformation($"💾 Guardando asignación:");
+                _logger.LogInformation($"   TipoKardex: {asignacion.TipoKardex}");
+                _logger.LogInformation($"   EmpleadoId: {asignacion.EmpleadoId}");
+                _logger.LogInformation($"   LocalId: {asignacion.LocalId}");
+                _logger.LogInformation($"   Fecha: {asignacion.Fecha}");
+
                 _context.AsignacionesKardex.Add(asignacion);
                 await _context.SaveChangesAsync();
+
+                _logger.LogInformation($"✅ Asignación creada exitosamente con ID: {asignacion.Id}");
+
+                // ⭐ VERIFICACIÓN POST-GUARDADO
+                if (asignacion.LocalId == 0)
+                {
+                    _logger.LogError($"❌ ERROR POST-GUARDADO: La asignación se guardó con LocalId = 0");
+                    _context.AsignacionesKardex.Remove(asignacion);
+                    await _context.SaveChangesAsync();
+                    return JsonError("Error al guardar la asignación: LocalId inválido");
+                }
 
                 // Obtener nombre del empleado para el log
                 var empleado = await _context.Users.FindAsync(request.EmpleadoId);
 
-                _logger.LogInformation($"Asignación creada: {request.TipoKardex} - {empleado?.NombreCompleto} - {fechaAsignacion:dd/MM/yyyy}");
+                _logger.LogInformation($"📋 Asignación final: {request.TipoKardex} - {empleado?.NombreCompleto} - {fechaAsignacion:dd/MM/yyyy}");
 
-                // ⭐ NUEVO: Registrar en auditoría
+                // Registrar en auditoría
                 await _auditService.RegistrarCreacionAsignacionAsync(
                     tipoKardex: request.TipoKardex,
                     fecha: fechaAsignacion,
@@ -218,10 +272,13 @@ namespace Puerto92.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al crear asignación");
+                _logger.LogError(ex, "❌ Error al crear asignación");
+                _logger.LogError($"   TipoKardex: {request.TipoKardex}");
+                _logger.LogError($"   EmpleadoId: {request.EmpleadoId}");
                 return JsonError($"Error al crear la asignación: {ex.Message}");
             }
         }
+
 
         // POST: Asignaciones/GuardarAsignaciones
         [HttpPost]

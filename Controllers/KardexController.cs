@@ -4,6 +4,7 @@ using Puerto92.Services;
 using Puerto92.ViewModels;
 using Puerto92.Models;
 using System.Security.Claims;
+using System.Net;
 
 namespace Puerto92.Controllers
 {
@@ -217,15 +218,144 @@ namespace Puerto92.Controllers
         }
 
         // ==========================================
-        // TODO: KARDEX DE SALÓN (Mozo Salón)
+        // KARDEX DE SALÓN (Mozo Salón)
         // ==========================================
 
         // GET: Kardex/IniciarSalon?asignacionId=1
         public async Task<IActionResult> IniciarSalon(int asignacionId)
         {
-            // TODO: Implementar cuando se cree el kardex de salón
-            SetErrorMessage("El kardex de Mozo Salón estará disponible próximamente");
-            return RedirectToAction(nameof(MiKardex));
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            try
+            {
+                var asignacion = await _kardexService.ObtenerAsignacionActivaAsync(usuarioId);
+                
+                if (asignacion == null || asignacion.Id != asignacionId)
+                {
+                    _logger.LogWarning($"Usuario {usuarioId} intenta acceder a asignación {asignacionId} sin autorización");
+                    SetErrorMessage("No tienes autorización para acceder a esta asignación");
+                    return RedirectToAction(nameof(MiKardex));
+                }
+
+                if (asignacion.TipoKardex != TipoKardex.MozoSalon)
+                {
+                    _logger.LogWarning($"Usuario {usuarioId} intenta iniciar kardex de salón con asignación de tipo {asignacion.TipoKardex}");
+                    SetErrorMessage($"Esta asignación es de tipo '{asignacion.TipoKardex}', no de 'Mozo Salón'");
+                    return RedirectToAction(nameof(MiKardex));
+                }
+
+                var kardex = await _kardexService.IniciarKardexSalonAsync(asignacionId, usuarioId);
+                
+                return RedirectToAction(nameof(ConteoSalon), new { id = kardex.Id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al iniciar kardex de salón");
+                SetErrorMessage("Error al iniciar el kardex. Por favor intente nuevamente.");
+                return RedirectToAction(nameof(MiKardex));
+            }
+        }
+
+        // GET: Kardex/ConteoSalon/1
+        public async Task<IActionResult> ConteoSalon(int id)
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            try
+            {
+                var kardex = await _kardexService.ObtenerKardexSalonAsync(id);
+                
+                if (kardex.EmpleadoId != usuarioId)
+                {
+                    _logger.LogWarning($"Usuario {usuarioId} intenta acceder a kardex {id} de otro usuario");
+                    SetErrorMessage("No tienes autorización para acceder a este kardex");
+                    return RedirectToAction(nameof(MiKardex));
+                }
+                
+                return View(kardex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al cargar kardex {id}");
+                SetErrorMessage("Error al cargar el kardex");
+                return RedirectToAction(nameof(MiKardex));
+            }
+        }
+
+        // POST: Kardex/AutoguardarSalon
+        [HttpPost]
+        public async Task<IActionResult> AutoguardarSalon([FromBody] AutoguardadoKardexSalonRequest request)
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return JsonError("Usuario no autenticado");
+            }
+
+            try
+            {
+                var kardex = await _kardexService.ObtenerKardexSalonAsync(request.KardexId);
+                
+                if (kardex.EmpleadoId != usuarioId)
+                {
+                    _logger.LogWarning($"Usuario {usuarioId} intenta autoguardar kardex {request.KardexId} de otro usuario");
+                    return JsonError("No autorizado");
+                }
+
+                var resultado = await _kardexService.AutoguardarDetalleSalonAsync(request);
+                
+                if (resultado)
+                {
+                    return JsonSuccess("Guardado automático exitoso");
+                }
+                else
+                {
+                    return JsonError("Error en el guardado automático");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en autoguardado de salón");
+                return JsonError("Error en el guardado automático");
+            }
+        }
+
+        // GET: Kardex/RecalcularSalon/1
+        [HttpGet]
+        public async Task<IActionResult> RecalcularSalon(int id)
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return JsonError("Usuario no autenticado");
+            }
+
+            try
+            {
+                var kardex = await _kardexService.ObtenerKardexSalonAsync(id);
+                
+                if (kardex.EmpleadoId != usuarioId)
+                {
+                    return JsonError("No autorizado");
+                }
+
+                kardex = await _kardexService.CalcularYActualizarSalonAsync(id);
+                
+                return Json(new { success = true, data = kardex });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al recalcular salón");
+                return JsonError("Error al recalcular");
+            }
         }
 
         // ==========================================
@@ -282,7 +412,18 @@ namespace Puerto92.Controllers
                         return RedirectToAction(nameof(MiKardex));
                     }
                 }
-                // TODO: Agregar validaciones para otros tipos de kardex
+                // ⭐ AGREGAR: Validación para Kardex de Salón
+                else if (tipo == TipoKardex.MozoSalon)
+                {
+                    var kardex = await _kardexService.ObtenerKardexSalonAsync(id);
+                    
+                    if (kardex.EmpleadoId != usuarioId)
+                    {
+                        _logger.LogWarning($"Usuario {usuarioId} intenta acceder a personal presente de kardex {id} de otro usuario");
+                        SetErrorMessage("No tienes autorización para acceder a este kardex");
+                        return RedirectToAction(nameof(MiKardex));
+                    }
+                }
 
                 var viewModel = await _kardexService.ObtenerPersonalPresenteAsync(id, tipo);
                 
@@ -315,7 +456,7 @@ namespace Puerto92.Controllers
                 if (request.TipoKardex == TipoKardex.MozoBebidas)
                 {
                     var kardex = await _kardexService.ObtenerKardexBebidasAsync(request.KardexId);
-                    
+
                     if (kardex.EmpleadoId != usuarioId)
                     {
                         return Json(new { success = false, message = "No autorizado" });
@@ -350,5 +491,28 @@ namespace Puerto92.Controllers
                 return Json(new { success = false, message = "Error al procesar la solicitud" });
             }
         }
+        
+        // ==========================================
+        // MÉTODO AUXILIAR PRIVADO
+        // ==========================================
+
+        /// <summary>
+        /// Normaliza el tipo de kardex (decodifica HTML y trim)
+        /// </summary>
+        private string NormalizarTipoKardex(string? tipoKardex)
+        {
+            if (string.IsNullOrEmpty(tipoKardex))
+                return string.Empty;
+            
+            // Decodificar HTML (convierte &#xF3; a ó)
+            var normalizado = WebUtility.HtmlDecode(tipoKardex);
+            
+            // Trim
+            normalizado = normalizado.Trim();
+            
+            _logger.LogDebug($"🔄 TipoKardex normalizado: '{tipoKardex}' → '{normalizado}'");
+            
+            return normalizado;
+}
     }
 }

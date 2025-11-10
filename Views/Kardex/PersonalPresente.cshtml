@@ -221,7 +221,7 @@ else
 @section Scripts {
     <script>
         const KARDEX_ID = @Model.KardexId;
-        const TIPO_KARDEX = '@Model.TipoKardex';
+        const TIPO_KARDEX = '@Html.Raw(Model.TipoKardex)';
         const EMPLEADO_RESPONSABLE_ID = '@Model.EmpleadoResponsableId';
         const TOTAL_EMPLEADOS = @Model.TotalEmpleados;
         const DENTRO_DE_HORARIO = @(dentroDeHorario ? "true" : "false");
