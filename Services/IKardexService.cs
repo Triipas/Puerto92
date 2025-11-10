@@ -35,7 +35,10 @@ namespace Puerto92.Services
         Task<KardexCocinaViewModel> CalcularYActualizarCocinaAsync(int kardexId);
         
         // TODO: Vajilla
-        // Task<KardexVajillaViewModel> IniciarKardexVajillaAsync(int asignacionId, string usuarioId);
+        Task<KardexVajillaViewModel> IniciarKardexVajillaAsync(int asignacionId, string usuarioId);
+        Task<KardexVajillaViewModel> ObtenerKardexVajillaAsync(int kardexId);
+        Task<bool> AutoguardarDetalleVajillaAsync(AutoguardadoKardexVajillaRequest request);
+        Task<KardexVajillaViewModel> CalcularYActualizarVajillaAsync(int kardexId);
 
         // Personal Presente
         Task<PersonalPresenteViewModel> ObtenerPersonalPresenteAsync(int kardexId, string tipoKardex);

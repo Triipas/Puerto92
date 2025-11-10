@@ -468,15 +468,145 @@ namespace Puerto92.Controllers
         }
 
         // ==========================================
-        // TODO: KARDEX DE VAJILLA
+        // KARDEX DE VAJILLA (Vajillero)
         // ==========================================
+        // ⭐ AGREGAR ESTOS MÉTODOS AL CONTROLADOR KardexController
 
         // GET: Kardex/IniciarVajilla?asignacionId=1
         public async Task<IActionResult> IniciarVajilla(int asignacionId)
         {
-            // TODO: Implementar cuando se cree el kardex de vajilla
-            SetErrorMessage("El kardex de Vajilla estará disponible próximamente");
-            return RedirectToAction(nameof(MiKardex));
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            try
+            {
+                var asignacion = await _kardexService.ObtenerAsignacionActivaAsync(usuarioId);
+
+                if (asignacion == null || asignacion.Id != asignacionId)
+                {
+                    _logger.LogWarning($"Usuario {usuarioId} intenta acceder a asignación {asignacionId} sin autorización");
+                    SetErrorMessage("No tienes autorización para acceder a esta asignación");
+                    return RedirectToAction(nameof(MiKardex));
+                }
+
+                if (asignacion.TipoKardex != TipoKardex.Vajilla)
+                {
+                    _logger.LogWarning($"Usuario {usuarioId} intenta iniciar kardex de vajilla con asignación de tipo {asignacion.TipoKardex}");
+                    SetErrorMessage($"Esta asignación es de tipo '{asignacion.TipoKardex}', no de 'Vajilla'");
+                    return RedirectToAction(nameof(MiKardex));
+                }
+
+                var kardex = await _kardexService.IniciarKardexVajillaAsync(asignacionId, usuarioId);
+
+                return RedirectToAction(nameof(ConteoVajilla), new { id = kardex.Id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al iniciar kardex de vajilla");
+                SetErrorMessage("Error al iniciar el kardex. Por favor intente nuevamente.");
+                return RedirectToAction(nameof(MiKardex));
+            }
+        }
+
+        // GET: Kardex/ConteoVajilla/1
+        public async Task<IActionResult> ConteoVajilla(int id)
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            try
+            {
+                var kardex = await _kardexService.ObtenerKardexVajillaAsync(id);
+
+                if (kardex.EmpleadoId != usuarioId)
+                {
+                    _logger.LogWarning($"Usuario {usuarioId} intenta acceder a kardex {id} de otro usuario");
+                    SetErrorMessage("No tienes autorización para acceder a este kardex");
+                    return RedirectToAction(nameof(MiKardex));
+                }
+
+                return View(kardex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al cargar kardex {id}");
+                SetErrorMessage("Error al cargar el kardex");
+                return RedirectToAction(nameof(MiKardex));
+            }
+        }
+
+        // POST: Kardex/AutoguardarVajilla
+        [HttpPost]
+        public async Task<IActionResult> AutoguardarVajilla([FromBody] AutoguardadoKardexVajillaRequest request)
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return JsonError("Usuario no autenticado");
+            }
+
+            try
+            {
+                var kardex = await _kardexService.ObtenerKardexVajillaAsync(request.KardexId);
+
+                if (kardex.EmpleadoId != usuarioId)
+                {
+                    _logger.LogWarning($"Usuario {usuarioId} intenta autoguardar kardex {request.KardexId} de otro usuario");
+                    return JsonError("No autorizado");
+                }
+
+                var resultado = await _kardexService.AutoguardarDetalleVajillaAsync(request);
+
+                if (resultado)
+                {
+                    return JsonSuccess("Guardado automático exitoso");
+                }
+                else
+                {
+                    return JsonError("Error en el guardado automático");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en autoguardado de vajilla");
+                return JsonError("Error en el guardado automático");
+            }
+        }
+
+        // GET: Kardex/RecalcularVajilla/1
+        [HttpGet]
+        public async Task<IActionResult> RecalcularVajilla(int id)
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return JsonError("Usuario no autenticado");
+            }
+
+            try
+            {
+                var kardex = await _kardexService.ObtenerKardexVajillaAsync(id);
+
+                if (kardex.EmpleadoId != usuarioId)
+                {
+                    return JsonError("No autorizado");
+                }
+
+                kardex = await _kardexService.CalcularYActualizarVajillaAsync(id);
+
+                return Json(new { success = true, data = kardex });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al recalcular vajilla");
+                return JsonError("Error al recalcular");
+            }
         }
 
         // ==========================================
@@ -510,7 +640,7 @@ namespace Puerto92.Controllers
                 if (tipoDecodificado == TipoKardex.MozoBebidas)
                 {
                     var kardex = await _kardexService.ObtenerKardexBebidasAsync(id);
-                    
+
                     if (kardex.EmpleadoId != usuarioId)
                     {
                         _logger.LogWarning($"Usuario {usuarioId} intenta acceder a kardex {id} de otro usuario");
@@ -521,7 +651,7 @@ namespace Puerto92.Controllers
                 else if (tipoDecodificado == TipoKardex.MozoSalon)
                 {
                     var kardex = await _kardexService.ObtenerKardexSalonAsync(id);
-                    
+
                     if (kardex.EmpleadoId != usuarioId)
                     {
                         _logger.LogWarning($"Usuario {usuarioId} intenta acceder a kardex {id} de otro usuario");
@@ -530,12 +660,12 @@ namespace Puerto92.Controllers
                     }
                 }
                 // ⭐ VALIDACIÓN para Cocina Fría, Caliente y Parrilla
-                else if (tipoDecodificado == TipoKardex.CocinaFria || 
-                        tipoDecodificado == TipoKardex.CocinaCaliente || 
+                else if (tipoDecodificado == TipoKardex.CocinaFria ||
+                        tipoDecodificado == TipoKardex.CocinaCaliente ||
                         tipoDecodificado == TipoKardex.Parrilla)
                 {
                     var kardex = await _kardexService.ObtenerKardexCocinaAsync(id);
-                    
+
                     if (kardex.EmpleadoId != usuarioId)
                     {
                         _logger.LogWarning($"Usuario {usuarioId} intenta acceder a kardex {id} de otro usuario");
@@ -544,6 +674,19 @@ namespace Puerto92.Controllers
                     }
 
                     _logger.LogInformation($"✅ Validación de usuario exitosa para Kardex de Cocina");
+                }
+
+                // ⭐ VALIDACIÓN PARA KARDEX DE VAJILLA
+                else if (tipo == TipoKardex.Vajilla)
+                {
+                    var kardex = await _kardexService.ObtenerKardexVajillaAsync(id);
+                    
+                    if (kardex.EmpleadoId != usuarioId)
+                    {
+                        _logger.LogWarning($"Usuario {usuarioId} intenta acceder a personal presente de kardex {id} de otro usuario");
+                        SetErrorMessage("No tienes autorización para acceder a este kardex");
+                        return RedirectToAction(nameof(MiKardex));
+                    }
                 }
 
                 // ⭐ USAR TIPO DECODIFICADO

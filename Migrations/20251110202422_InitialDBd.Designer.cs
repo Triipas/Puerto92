@@ -11,8 +11,8 @@ using Puerto92.Data;
 namespace Puerto92.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251110181133_InitialDBm")]
-    partial class InitialDBm
+    [Migration("20251110202422_InitialDBd")]
+    partial class InitialDBd
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -650,6 +650,102 @@ namespace Puerto92.Migrations
                     b.HasIndex("KardexSalonId", "Orden");
 
                     b.ToTable("KardexSalonDetalle");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.KardexVajilla", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AsignacionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("CantidadExtraviados")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("CantidadRotos")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("DescripcionFaltantes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EmpleadoId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FechaEnvio")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FechaFinalizacion")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FechaInicio")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("LocalId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Observaciones")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AsignacionId");
+
+                    b.HasIndex("EmpleadoId");
+
+                    b.HasIndex("LocalId");
+
+                    b.ToTable("KardexVajilla");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.KardexVajillaDetalle", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Diferencia")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("InventarioInicial")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("KardexVajillaId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Observaciones")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("TieneFaltantes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("UnidadesContadas")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("UtensilioId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("KardexVajillaId");
+
+                    b.HasIndex("UtensilioId");
+
+                    b.ToTable("KardexVajillaDetalle");
                 });
 
             modelBuilder.Entity("Puerto92.Models.Local", b =>
@@ -1318,6 +1414,52 @@ namespace Puerto92.Migrations
                     b.Navigation("Utensilio");
                 });
 
+            modelBuilder.Entity("Puerto92.Models.KardexVajilla", b =>
+                {
+                    b.HasOne("Puerto92.Models.AsignacionKardex", "Asignacion")
+                        .WithMany()
+                        .HasForeignKey("AsignacionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Puerto92.Models.Usuario", "Empleado")
+                        .WithMany()
+                        .HasForeignKey("EmpleadoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Puerto92.Models.Local", "Local")
+                        .WithMany()
+                        .HasForeignKey("LocalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Asignacion");
+
+                    b.Navigation("Empleado");
+
+                    b.Navigation("Local");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.KardexVajillaDetalle", b =>
+                {
+                    b.HasOne("Puerto92.Models.KardexVajilla", "KardexVajilla")
+                        .WithMany("Detalles")
+                        .HasForeignKey("KardexVajillaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Puerto92.Models.Utensilio", "Utensilio")
+                        .WithMany()
+                        .HasForeignKey("UtensilioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("KardexVajilla");
+
+                    b.Navigation("Utensilio");
+                });
+
             modelBuilder.Entity("Puerto92.Models.Notificacion", b =>
                 {
                     b.HasOne("Puerto92.Models.Usuario", "Usuario")
@@ -1384,6 +1526,11 @@ namespace Puerto92.Migrations
                 });
 
             modelBuilder.Entity("Puerto92.Models.KardexSalon", b =>
+                {
+                    b.Navigation("Detalles");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.KardexVajilla", b =>
                 {
                     b.Navigation("Detalles");
                 });
