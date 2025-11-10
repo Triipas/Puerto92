@@ -502,8 +502,12 @@ namespace Puerto92.Controllers
                 _logger.LogInformation($"   Tipo: {tipo}");
                 _logger.LogInformation($"   UsuarioId: {usuarioId}");
 
+                // ⭐ DECODIFICAR EL TIPO (por si viene URL-encoded)
+                var tipoDecodificado = System.Net.WebUtility.UrlDecode(tipo);
+                _logger.LogInformation($"   Tipo Decodificado: {tipoDecodificado}");
+
                 // Validar que el kardex pertenece al usuario
-                if (tipo == TipoKardex.MozoBebidas)
+                if (tipoDecodificado == TipoKardex.MozoBebidas)
                 {
                     var kardex = await _kardexService.ObtenerKardexBebidasAsync(id);
                     
@@ -514,7 +518,7 @@ namespace Puerto92.Controllers
                         return RedirectToAction(nameof(MiKardex));
                     }
                 }
-                else if (tipo == TipoKardex.MozoSalon)
+                else if (tipoDecodificado == TipoKardex.MozoSalon)
                 {
                     var kardex = await _kardexService.ObtenerKardexSalonAsync(id);
                     
@@ -525,10 +529,10 @@ namespace Puerto92.Controllers
                         return RedirectToAction(nameof(MiKardex));
                     }
                 }
-                // ⭐ NUEVO: Validación para Cocina Fría, Caliente y Parrilla
-                else if (tipo == TipoKardex.CocinaFria || 
-                        tipo == TipoKardex.CocinaCaliente || 
-                        tipo == TipoKardex.Parrilla)
+                // ⭐ VALIDACIÓN para Cocina Fría, Caliente y Parrilla
+                else if (tipoDecodificado == TipoKardex.CocinaFria || 
+                        tipoDecodificado == TipoKardex.CocinaCaliente || 
+                        tipoDecodificado == TipoKardex.Parrilla)
                 {
                     var kardex = await _kardexService.ObtenerKardexCocinaAsync(id);
                     
@@ -542,7 +546,8 @@ namespace Puerto92.Controllers
                     _logger.LogInformation($"✅ Validación de usuario exitosa para Kardex de Cocina");
                 }
 
-                var viewModel = await _kardexService.ObtenerPersonalPresenteAsync(id, tipo);
+                // ⭐ USAR TIPO DECODIFICADO
+                var viewModel = await _kardexService.ObtenerPersonalPresenteAsync(id, tipoDecodificado);
                 
                 _logger.LogInformation($"✅ ViewModel obtenido:");
                 _logger.LogInformation($"   LocalId: {viewModel.LocalId}");

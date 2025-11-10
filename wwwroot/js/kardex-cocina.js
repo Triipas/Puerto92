@@ -422,8 +422,17 @@ function continuarAPersonalPresente() {
         return;
     }
     
-    // Redirigir a Personal Presente
+    // ⭐ ASEGURAR QUE LAS VARIABLES ESTÉN DEFINIDAS
+    if (typeof KARDEX_ID === 'undefined' || typeof TIPO_KARDEX === 'undefined') {
+        showNotification('Error: Variables no definidas. Recargue la página.', 'error');
+        return;
+    }
+    
+    // Redirigir a Personal Presente (URL encode el tipo para manejar caracteres especiales)
     console.log('✅ Redirigiendo a Personal Presente...');
+    console.log(`   KARDEX_ID: ${KARDEX_ID}`);
+    console.log(`   TIPO_KARDEX: ${TIPO_KARDEX}`);
+    
     window.location.href = `/Kardex/PersonalPresente?id=${KARDEX_ID}&tipo=${encodeURIComponent(TIPO_KARDEX)}`;
 }
 
