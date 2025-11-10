@@ -1,0 +1,1059 @@
+/* ========================================
+   KARDEX REVISIÓN - ESTILOS
+   ======================================== */
+
+/* === COCINEROS GRID === */
+.cocineros-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.cocinero-card {
+    background: white;
+    border: 2px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.cocinero-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.cocinero-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #F3F4F6;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    font-size: 14px;
+    color: #1E293B;
+}
+
+.cocinero-header i {
+    font-size: 20px;
+}
+
+.card-cocina-fria .cocinero-header {
+    color: #3B82F6;
+}
+
+.card-cocina-fria .cocinero-header i {
+    color: #3B82F6;
+}
+
+.card-cocina-caliente .cocinero-header {
+    color: #EF4444;
+}
+
+.card-cocina-caliente .cocinero-header i {
+    color: #EF4444;
+}
+
+.card-parrilla .cocinero-header {
+    color: #F59E0B;
+}
+
+.card-parrilla .cocinero-header i {
+    color: #F59E0B;
+}
+
+.cocinero-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.cocinero-nombre {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1E293B;
+}
+
+.cocinero-fecha {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 13px;
+    color: #64748B;
+}
+
+.cocinero-fecha i {
+    font-size: 14px;
+}
+
+/* === ESTADÍSTICAS === */
+.estadisticas-revision {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stat-icon i {
+    font-size: 24px;
+    color: white;
+}
+
+.stat-icon.stat-primary {
+    background: linear-gradient(135deg, #0092B8 0%, #0369A1 100%);
+}
+
+.stat-icon.stat-warning {
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+}
+
+.stat-icon.stat-info {
+    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1E293B;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #64748B;
+    font-weight: 500;
+}
+
+/* === BADGES === */
+.badge-especial {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background: #FFF7ED;
+    border: 1px solid #FED7AA;
+    color: #C2410C;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    margin-left: 0.5rem;
+}
+
+.badge-compartido {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    color: #1E40AF;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    margin-left: 0.5rem;
+}
+
+.badge-diferencia {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    background: #FEF3C7;
+    border: 1px solid #FDE68A;
+    color: #92400E;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 6px;
+}
+
+.badge-diferencia i {
+    font-size: 14px;
+}
+
+.badge-responsable {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    background: #FEF3C7;
+    color: #92400E;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+}
+
+/* === TABLAS === */
+.kardex-revision-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.kardex-revision-table thead th {
+    background: #F8FAFC;
+    padding: 0.875rem 1rem;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #E5E7EB;
+    white-space: nowrap;
+}
+
+.kardex-revision-table tbody td {
+    padding: 1rem;
+    border-bottom: 1px solid #F1F5F9;
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+.kardex-revision-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.kardex-revision-table tbody tr:hover {
+    background: #F8FAFC;
+}
+
+/* Filas con diferencia */
+.kardex-revision-table tbody tr.row-diferencia {
+    background: rgba(252, 211, 77, 0.1);
+}
+
+.kardex-revision-table tbody tr.row-diferencia:hover {
+    background: rgba(252, 211, 77, 0.2);
+}
+
+/* Headers especiales para cocineros */
+.header-cocinero {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 0.5rem;
+    border-radius: 6px;
+}
+
+.header-fria {
+    background: rgba(59, 130, 246, 0.1);
+    color: #1E40AF;
+}
+
+.header-fria i {
+    color: #3B82F6;
+}
+
+.header-caliente {
+    background: rgba(239, 68, 68, 0.1);
+    color: #991B1B;
+}
+
+.header-caliente i {
+    color: #EF4444;
+}
+
+.header-parrilla {
+    background: rgba(245, 158, 11, 0.1);
+    color: #92400E;
+}
+
+.header-parrilla i {
+    color: #F59E0B;
+}
+
+/* Celdas de stock por cocinero */
+.td-stock-fria {
+    background: rgba(59, 130, 246, 0.05);
+    color: #1E40AF;
+    font-weight: 600;
+}
+
+.td-stock-caliente {
+    background: rgba(239, 68, 68, 0.05);
+    color: #991B1B;
+    font-weight: 600;
+}
+
+.td-stock-parrilla {
+    background: rgba(245, 158, 11, 0.05);
+    color: #92400E;
+    font-weight: 600;
+}
+
+.td-promedio {
+    background: #F0F9FF;
+    color: #0369A1;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.td-diferencia {
+    font-weight: 600;
+}
+
+/* Celdas específicas */
+.td-codigo {
+    color: #64748B;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
+
+.td-nombre {
+    color: #1E293B;
+    font-weight: 500;
+}
+
+.td-unidad {
+    color: #64748B;
+    font-size: 13px;
+    text-align: center;
+}
+
+.td-readonly {
+    color: #64748B;
+    text-align: right;
+}
+
+.td-stock {
+    text-align: center;
+    font-weight: 600;
+}
+
+/* === CATEGORÍA HEADER REVISIÓN === */
+.categoria-header-revision {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.categoria-header-revision:hover {
+    background: #F9FAFB;
+}
+
+.categoria-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.categoria-icono {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.categoria-icono i {
+    font-size: 22px;
+}
+
+.categoria-titulo {
+    font-size: 17px;
+    font-weight: 600;
+    color: #1E293B;
+    margin: 0 0 0.25rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.categoria-subtitulo {
+    font-size: 13px;
+    color: #64748B;
+    margin: 0;
+}
+
+.categoria-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #F3F4F6;
+    transition: all 0.3s ease;
+}
+
+.categoria-toggle i {
+    color: #64748B;
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+.categoria-header-revision:hover .categoria-toggle {
+    background: #E5E7EB;
+}
+
+/* === PERSONAL PRESENTE === */
+.personal-presente-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 0.75rem;
+}
+
+.personal-presente-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.personal-presente-item:hover {
+    background: #F3F4F6;
+    border-color: #D1D5DB;
+}
+
+.personal-presente-item.responsable {
+    background: #FEF3C7;
+    border-color: #FDE68A;
+}
+
+.personal-presente-item.responsable:hover {
+    background: #FDE68A;
+}
+
+.personal-presente-item i {
+    font-size: 18px;
+    color: #64748B;
+}
+
+.personal-presente-item.responsable i {
+    color: #F59E0B;
+}
+
+.personal-nombre {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1E293B;
+}
+
+.personal-rol {
+    font-size: 12px;
+    color: #64748B;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 1200px) {
+    .kardex-consolidado-table {
+        min-width: 1200px;
+    }
+    
+    .content-card {
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .cocineros-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .estadisticas-revision {
+        grid-template-columns: 1fr;
+    }
+    
+    .personal-presente-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* === ANIMACIONES === */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.cocinero-card {
+    animation: slideIn 0.3s ease;
+}
+
+.cocinero-card:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.cocinero-card:nth-child(3) {
+    animation-delay: 0.2s;
+}/* ========================================
+   KARDEX REVISIÓN - ESTILOS
+   ======================================== */
+
+/* === COCINEROS GRID === */
+.cocineros-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.cocinero-card {
+    background: white;
+    border: 2px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.cocinero-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.cocinero-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #F3F4F6;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    font-size: 14px;
+    color: #1E293B;
+}
+
+.cocinero-header i {
+    font-size: 20px;
+}
+
+.card-cocina-fria .cocinero-header {
+    color: #3B82F6;
+}
+
+.card-cocina-fria .cocinero-header i {
+    color: #3B82F6;
+}
+
+.card-cocina-caliente .cocinero-header {
+    color: #EF4444;
+}
+
+.card-cocina-caliente .cocinero-header i {
+    color: #EF4444;
+}
+
+.card-parrilla .cocinero-header {
+    color: #F59E0B;
+}
+
+.card-parrilla .cocinero-header i {
+    color: #F59E0B;
+}
+
+.cocinero-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.cocinero-nombre {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1E293B;
+}
+
+.cocinero-fecha {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 13px;
+    color: #64748B;
+}
+
+.cocinero-fecha i {
+    font-size: 14px;
+}
+
+/* === ESTADÍSTICAS === */
+.estadisticas-revision {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stat-icon i {
+    font-size: 24px;
+    color: white;
+}
+
+.stat-icon.stat-primary {
+    background: linear-gradient(135deg, #0092B8 0%, #0369A1 100%);
+}
+
+.stat-icon.stat-warning {
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+}
+
+.stat-icon.stat-info {
+    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1E293B;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #64748B;
+    font-weight: 500;
+}
+
+/* === BADGES === */
+.badge-especial {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background: #FFF7ED;
+    border: 1px solid #FED7AA;
+    color: #C2410C;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    margin-left: 0.5rem;
+}
+
+.badge-compartido {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    color: #1E40AF;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    margin-left: 0.5rem;
+}
+
+.badge-diferencia {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    background: #FEF3C7;
+    border: 1px solid #FDE68A;
+    color: #92400E;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 6px;
+}
+
+.badge-diferencia i {
+    font-size: 14px;
+}
+
+.badge-responsable {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    background: #FEF3C7;
+    color: #92400E;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+}
+
+/* === TABLAS === */
+.kardex-revision-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.kardex-revision-table thead th {
+    background: #F8FAFC;
+    padding: 0.875rem 1rem;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #E5E7EB;
+    white-space: nowrap;
+}
+
+.kardex-revision-table tbody td {
+    padding: 1rem;
+    border-bottom: 1px solid #F1F5F9;
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+.kardex-revision-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.kardex-revision-table tbody tr:hover {
+    background: #F8FAFC;
+}
+
+/* Filas con diferencia */
+.kardex-revision-table tbody tr.row-diferencia {
+    background: rgba(252, 211, 77, 0.1);
+}
+
+.kardex-revision-table tbody tr.row-diferencia:hover {
+    background: rgba(252, 211, 77, 0.2);
+}
+
+/* Headers especiales para cocineros */
+.header-cocinero {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 0.5rem;
+    border-radius: 6px;
+}
+
+.header-fria {
+    background: rgba(59, 130, 246, 0.1);
+    color: #1E40AF;
+}
+
+.header-fria i {
+    color: #3B82F6;
+}
+
+.header-caliente {
+    background: rgba(239, 68, 68, 0.1);
+    color: #991B1B;
+}
+
+.header-caliente i {
+    color: #EF4444;
+}
+
+.header-parrilla {
+    background: rgba(245, 158, 11, 0.1);
+    color: #92400E;
+}
+
+.header-parrilla i {
+    color: #F59E0B;
+}
+
+/* Celdas de stock por cocinero */
+.td-stock-fria {
+    background: rgba(59, 130, 246, 0.05);
+    color: #1E40AF;
+    font-weight: 600;
+}
+
+.td-stock-caliente {
+    background: rgba(239, 68, 68, 0.05);
+    color: #991B1B;
+    font-weight: 600;
+}
+
+.td-stock-parrilla {
+    background: rgba(245, 158, 11, 0.05);
+    color: #92400E;
+    font-weight: 600;
+}
+
+.td-promedio {
+    background: #F0F9FF;
+    color: #0369A1;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.td-diferencia {
+    font-weight: 600;
+}
+
+/* Celdas específicas */
+.td-codigo {
+    color: #64748B;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
+
+.td-nombre {
+    color: #1E293B;
+    font-weight: 500;
+}
+
+.td-unidad {
+    color: #64748B;
+    font-size: 13px;
+    text-align: center;
+}
+
+.td-readonly {
+    color: #64748B;
+    text-align: right;
+}
+
+.td-stock {
+    text-align: center;
+    font-weight: 600;
+}
+
+/* === CATEGORÍA HEADER REVISIÓN === */
+.categoria-header-revision {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.categoria-header-revision:hover {
+    background: #F9FAFB;
+}
+
+.categoria-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.categoria-icono {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.categoria-icono i {
+    font-size: 22px;
+}
+
+.categoria-titulo {
+    font-size: 17px;
+    font-weight: 600;
+    color: #1E293B;
+    margin: 0 0 0.25rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.categoria-subtitulo {
+    font-size: 13px;
+    color: #64748B;
+    margin: 0;
+}
+
+.categoria-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #F3F4F6;
+    transition: all 0.3s ease;
+}
+
+.categoria-toggle i {
+    color: #64748B;
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+.categoria-header-revision:hover .categoria-toggle {
+    background: #E5E7EB;
+}
+
+/* === PERSONAL PRESENTE === */
+.personal-presente-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 0.75rem;
+}
+
+.personal-presente-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.personal-presente-item:hover {
+    background: #F3F4F6;
+    border-color: #D1D5DB;
+}
+
+.personal-presente-item.responsable {
+    background: #FEF3C7;
+    border-color: #FDE68A;
+}
+
+.personal-presente-item.responsable:hover {
+    background: #FDE68A;
+}
+
+.personal-presente-item i {
+    font-size: 18px;
+    color: #64748B;
+}
+
+.personal-presente-item.responsable i {
+    color: #F59E0B;
+}
+
+.personal-nombre {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1E293B;
+}
+
+.personal-rol {
+    font-size: 12px;
+    color: #64748B;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 1200px) {
+    .kardex-consolidado-table {
+        min-width: 1200px;
+    }
+    
+    .content-card {
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .cocineros-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .estadisticas-revision {
+        grid-template-columns: 1fr;
+    }
+    
+    .personal-presente-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* === ANIMACIONES === */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.cocinero-card {
+    animation: slideIn 0.3s ease;
+}
+
+.cocinero-card:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.cocinero-card:nth-child(3) {
+    animation-delay: 0.2s;
+}

@@ -44,5 +44,12 @@ namespace Puerto92.Services
         Task<PersonalPresenteViewModel> ObtenerPersonalPresenteAsync(int kardexId, string tipoKardex);
         Task<PersonalPresenteResponse> GuardarPersonalPresenteYCompletarAsync(PersonalPresenteRequest request);
         Task<List<EmpleadoDisponibleDto>> ObtenerEmpleadosDelAreaAsync(string tipoKardex, int localId, string empleadoResponsableId);
+
+        // Métodos de revisión
+        Task<KardexCocinaConsolidadoViewModel> ObtenerKardexCocinaConsolidadoAsync(List<int> kardexIds);
+        Task<KardexSalonRevisionViewModel> ObtenerKardexSalonParaRevisionAsync(int kardexId);
+        Task<KardexBebidasRevisionViewModel> ObtenerKardexBebidasParaRevisionAsync(int kardexId);
+        Task<KardexVajillaRevisionViewModel> ObtenerKardexVajillaParaRevisionAsync(int kardexId);
+    
     }
 }

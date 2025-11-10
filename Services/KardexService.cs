@@ -86,7 +86,7 @@ namespace Puerto92.Services
                     await VerificarBorradorCocina(viewModel, asignacion.Id);
                     break;
 
-               case TipoKardex.Vajilla:
+                case TipoKardex.Vajilla:
                     await VerificarBorradorVajilla(viewModel, asignacion.Id);
                     break;
 
@@ -683,8 +683,8 @@ namespace Puerto92.Services
 
             // Obtener empleados del área
             viewModel.EmpleadosDisponibles = await ObtenerEmpleadosDelAreaAsync(
-                tipoKardex, 
-                viewModel.LocalId, 
+                tipoKardex,
+                viewModel.LocalId,
                 viewModel.EmpleadoResponsableId
             );
 
@@ -697,13 +697,13 @@ namespace Puerto92.Services
         }
 
         public async Task<List<EmpleadoDisponibleDto>> ObtenerEmpleadosDelAreaAsync(
-            string tipoKardex, 
-            int localId, 
+            string tipoKardex,
+            int localId,
             string empleadoResponsableId)
         {
             // Determinar roles permitidos según el tipo de kardex
             var rolesPermitidos = TipoKardex.ObtenerRolesPermitidos(tipoKardex);
-            
+
             _logger.LogInformation($"🔍 Buscando empleados para {tipoKardex} en Local {localId}");
             _logger.LogInformation($"   Roles permitidos: {string.Join(", ", rolesPermitidos)}");
 
@@ -1208,7 +1208,7 @@ namespace Puerto92.Services
             // Obtener utensilios de categoría "Mozo" activos
             var utensiliosMozo = await _context.Utensilios
                 .Include(u => u.Categoria)
-                .Where(u => u.Activo && 
+                .Where(u => u.Activo &&
                         u.Categoria!.Tipo == TipoCategoria.Utensilios &&
                         u.Categoria.Nombre == "Mozo" &&
                         u.Categoria.Activo)
@@ -1497,7 +1497,7 @@ namespace Puerto92.Services
             // Obtener productos de cocina activos
             var productosCocina = await _context.Productos
                 .Include(p => p.Categoria)
-                .Where(p => p.Activo && 
+                .Where(p => p.Activo &&
                         p.Categoria!.Tipo == TipoCategoria.Cocina &&
                         p.Categoria.Activo &&
                         (
@@ -1586,7 +1586,7 @@ namespace Puerto92.Services
                         detalle.StockFinal = request.ValorNumerico;
                         break;
                     case "UnidadMedida":
-                        if (!string.IsNullOrEmpty(request.ValorTexto) && 
+                        if (!string.IsNullOrEmpty(request.ValorTexto) &&
                             UnidadMedidaCocina.Todas.Contains(request.ValorTexto))
                         {
                             detalle.UnidadMedida = request.ValorTexto;
@@ -1763,15 +1763,15 @@ namespace Puerto92.Services
             }
 
             // Obtener utensilios de categorías: Utensilios Cocina, Menajería Cocina, Equipos
-        // Obtener utensilios de categoría "Mozo" activos
-                    var utensiliosVajilla = await _context.Utensilios
-                        .Include(u => u.Categoria)
-                        .Where(u => u.Activo &&
-                                u.Categoria!.Tipo == TipoCategoria.Utensilios &&
-                                u.Categoria.Nombre == "Cocina" &&
-                                u.Categoria.Activo)
-                        .OrderBy(u => u.Codigo)
-                        .ToListAsync();
+            // Obtener utensilios de categoría "Mozo" activos
+            var utensiliosVajilla = await _context.Utensilios
+                .Include(u => u.Categoria)
+                .Where(u => u.Activo &&
+                        u.Categoria!.Tipo == TipoCategoria.Utensilios &&
+                        u.Categoria.Nombre == "Cocina" &&
+                        u.Categoria.Activo)
+                .OrderBy(u => u.Codigo)
+                .ToListAsync();
 
             _logger.LogInformation($"📦 {utensiliosVajilla.Count} utensilios encontrados para el kardex de vajilla");
 
@@ -1975,5 +1975,501 @@ namespace Puerto92.Services
 
             viewModel.PuedeIniciarRegistro = true;
         }
+
+        // ==========================================
+        // MÉTODOS DE REVISIÓN DE KARDEX
+        // ==========================================
+
+        /// <summary>
+        /// Obtener kardex de cocina consolidado (3 cocineros)
+        /// </summary>
+        public async Task<KardexCocinaConsolidadoViewModel> ObtenerKardexCocinaConsolidadoAsync(List<int> kardexIds)
+        {
+            _logger.LogInformation($"🔍 Obteniendo kardex consolidado de cocina: {string.Join(", ", kardexIds)}");
+
+            // Obtener los 3 kardex de cocina
+            var kardexList = await _context.KardexCocina
+                .Include(k => k.Empleado)
+                .Include(k => k.Local)
+                .Include(k => k.Detalles)
+                    .ThenInclude(d => d.Producto)
+                        .ThenInclude(p => p.Categoria)
+                .Where(k => kardexIds.Contains(k.Id))
+                .OrderBy(k => k.TipoCocina)
+                .ToListAsync();
+
+            if (!kardexList.Any())
+            {
+                throw new Exception("No se encontraron kardex de cocina");
+            }
+
+            var primerKardex = kardexList.First();
+
+            var viewModel = new KardexCocinaConsolidadoViewModel
+            {
+                Fecha = primerKardex.Fecha,
+                LocalId = primerKardex.LocalId,
+                LocalNombre = primerKardex.Local?.Nombre ?? "",
+                KardexCocinaFria = kardexList.FirstOrDefault(k => k.TipoCocina == TipoKardex.CocinaFria)?.ToIndividualDto(),
+                KardexCocinaCaliente = kardexList.FirstOrDefault(k => k.TipoCocina == TipoKardex.CocinaCaliente)?.ToIndividualDto(),
+                KardexParrilla = kardexList.FirstOrDefault(k => k.TipoCocina == TipoKardex.Parrilla)?.ToIndividualDto()
+            };
+
+            // Consolidar productos por categoría
+            var categoriasDict = new Dictionary<string, CategoriaCocinaConsolidadaViewModel>();
+
+            // Obtener todas las categorías únicas
+            var todasLasCategorias = kardexList
+                .SelectMany(k => k.Detalles)
+                .Select(d => d.Producto?.Categoria?.Nombre ?? "Sin Categoría")
+                .Distinct()
+                .OrderBy(c => c)
+                .ToList();
+
+            foreach (var nombreCategoria in todasLasCategorias)
+            {
+                var categoria = new CategoriaCocinaConsolidadaViewModel
+                {
+                    NombreCategoria = nombreCategoria,
+                    EsEspecial = EsCategoriaEspecial(nombreCategoria),
+                    TipoCocinaResponsable = ObtenerTipoCocinaResponsable(nombreCategoria),
+                    Expandida = true
+                };
+
+                // Obtener productos de esta categoría
+                var productosDeCategoria = kardexList
+                    .SelectMany(k => k.Detalles)
+                    .Where(d => (d.Producto?.Categoria?.Nombre ?? "Sin Categoría") == nombreCategoria)
+                    .GroupBy(d => d.ProductoId)
+                    .Select(g => new
+                    {
+                        ProductoId = g.Key,
+                        Producto = g.First().Producto,
+                        Detalles = g.ToList()
+                    })
+                    .OrderBy(p => p.Producto?.Codigo)
+                    .ToList();
+
+                foreach (var productoGrupo in productosDeCategoria)
+                {
+                    var producto = productoGrupo.Producto;
+                    if (producto == null) continue;
+
+                    var productoVm = new ProductoCocinaConsolidadoViewModel
+                    {
+                        ProductoId = productoGrupo.ProductoId,
+                        Codigo = producto.Codigo,
+                        NombreProducto = producto.Nombre,
+                        UnidadMedida = productoGrupo.Detalles.First().UnidadMedida,
+                        CantidadAPedir = productoGrupo.Detalles.First().CantidadAPedir,
+                        Ingresos = productoGrupo.Detalles.First().Ingresos,
+                        Orden = productoGrupo.Detalles.First().Orden
+                    };
+
+                    if (categoria.EsEspecial)
+                    {
+                        // Producto específico: solo 1 cocinero responsable
+                        var detalleResponsable = productoGrupo.Detalles.FirstOrDefault();
+                        productoVm.StockFinalEspecifico = detalleResponsable?.StockFinal;
+
+                        // Calcular diferencia
+                        var stockEsperado = productoVm.CantidadAPedir + productoVm.Ingresos;
+                        productoVm.Diferencia = (productoVm.StockFinalEspecifico ?? 0) - stockEsperado;
+
+                        if (stockEsperado > 0)
+                        {
+                            productoVm.DiferenciaPorcentual = Math.Abs((productoVm.Diferencia / stockEsperado) * 100);
+                            productoVm.TieneDiferenciaSignificativa = productoVm.DiferenciaPorcentual > 10;
+                        }
+                    }
+                    else
+                    {
+                        // Producto compartido: conteo de los 3 cocineros
+                        foreach (var detalle in productoGrupo.Detalles)
+                        {
+                            var kardexOrigen = kardexList.First(k => k.Detalles.Contains(detalle));
+
+                            if (kardexOrigen.TipoCocina == TipoKardex.CocinaFria)
+                                productoVm.StockFinalCocinaFria = detalle.StockFinal;
+                            else if (kardexOrigen.TipoCocina == TipoKardex.CocinaCaliente)
+                                productoVm.StockFinalCocinaCaliente = detalle.StockFinal;
+                            else if (kardexOrigen.TipoCocina == TipoKardex.Parrilla)
+                                productoVm.StockFinalParrilla = detalle.StockFinal;
+                        }
+
+                        // Calcular promedio
+                        var conteos = new List<decimal>();
+                        if (productoVm.StockFinalCocinaFria.HasValue) conteos.Add(productoVm.StockFinalCocinaFria.Value);
+                        if (productoVm.StockFinalCocinaCaliente.HasValue) conteos.Add(productoVm.StockFinalCocinaCaliente.Value);
+                        if (productoVm.StockFinalParrilla.HasValue) conteos.Add(productoVm.StockFinalParrilla.Value);
+
+                        if (conteos.Any())
+                        {
+                            productoVm.StockFinalPromedio = conteos.Average();
+
+                            // Calcular diferencia basada en el promedio
+                            var stockEsperado = productoVm.CantidadAPedir + productoVm.Ingresos;
+                            productoVm.Diferencia = productoVm.StockFinalPromedio.Value - stockEsperado;
+
+                            if (stockEsperado > 0)
+                            {
+                                productoVm.DiferenciaPorcentual = Math.Abs((productoVm.Diferencia / stockEsperado) * 100);
+                                productoVm.TieneDiferenciaSignificativa = productoVm.DiferenciaPorcentual > 10;
+                            }
+                        }
+                    }
+
+                    categoria.Productos.Add(productoVm);
+                }
+
+                categoriasDict[nombreCategoria] = categoria;
+            }
+
+            viewModel.CategoriasConsolidadas = categoriasDict.Values.ToList();
+            viewModel.TotalProductos = viewModel.CategoriasConsolidadas.Sum(c => c.TotalProductos);
+            viewModel.ProductosConDiferencia = viewModel.CategoriasConsolidadas.Sum(c => c.ProductosConDiferencia);
+
+            if (viewModel.TotalProductos > 0)
+            {
+                viewModel.PorcentajeProductosConDiferencia =
+                    (decimal)viewModel.ProductosConDiferencia / viewModel.TotalProductos * 100;
+            }
+
+            // Obtener personal presente consolidado
+            var personalPresente = await _context.PersonalPresente
+                .Include(p => p.Empleado)
+                .Where(p => kardexIds.Contains(p.KardexId) &&
+                            (p.TipoKardex == TipoKardex.CocinaFria ||
+                            p.TipoKardex == TipoKardex.CocinaCaliente ||
+                            p.TipoKardex == TipoKardex.Parrilla))
+                .ToListAsync();
+
+            viewModel.PersonalPresenteTotal = personalPresente
+                .GroupBy(p => p.EmpleadoId)
+                .Select(g => g.First())
+                .Select(p => new EmpleadoPresenteDto
+                {
+                    EmpleadoId = p.EmpleadoId,
+                    NombreCompleto = p.Empleado?.NombreCompleto ?? "",
+                    Rol = _userManager.GetRolesAsync(p.Empleado).Result.FirstOrDefault() ?? "",
+                    EsResponsablePrincipal = p.EsResponsablePrincipal,
+                    FechaRegistro = p.FechaRegistro
+                })
+                .OrderByDescending(e => e.EsResponsablePrincipal)
+                .ThenBy(e => e.NombreCompleto)
+                .ToList();
+
+            _logger.LogInformation($"✅ Kardex consolidado obtenido: {viewModel.TotalProductos} productos");
+
+            return viewModel;
+        }
+
+        /// <summary>
+        /// Obtener kardex de salón para revisión
+        /// </summary>
+        public async Task<KardexSalonRevisionViewModel> ObtenerKardexSalonParaRevisionAsync(int kardexId)
+        {
+            _logger.LogInformation($"🔍 Obteniendo kardex de salón para revisión: {kardexId}");
+
+            var kardex = await _context.KardexSalon
+                .Include(k => k.Empleado)
+                .Include(k => k.Detalles)
+                    .ThenInclude(d => d.Utensilio)
+                        .ThenInclude(u => u.Categoria)
+                .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+            if (kardex == null)
+            {
+                throw new Exception("Kardex no encontrado");
+            }
+
+            var viewModel = new KardexSalonRevisionViewModel
+            {
+                Id = kardex.Id,
+                Fecha = kardex.Fecha,
+                LocalId = kardex.LocalId,
+                EmpleadoId = kardex.EmpleadoId,
+                EmpleadoNombre = kardex.Empleado?.NombreCompleto ?? "",
+                Estado = kardex.Estado,
+                FechaEnvio = kardex.FechaEnvio,
+                DescripcionFaltantes = kardex.DescripcionFaltantes,
+                Observaciones = kardex.Observaciones
+            };
+
+            // Mapear detalles
+            viewModel.Detalles = kardex.Detalles
+                .OrderBy(d => d.Orden)
+                .Select(d => new KardexSalonDetalleViewModel
+                {
+                    Id = d.Id,
+                    UtensilioId = d.UtensilioId,
+                    Codigo = d.Utensilio?.Codigo ?? "",
+                    Descripcion = d.Utensilio?.Nombre ?? "",
+                    Unidad = d.Utensilio?.Unidad ?? "",
+                    InventarioInicial = d.InventarioInicial,
+                    UnidadesContadas = d.UnidadesContadas,
+                    Diferencia = d.Diferencia,
+                    TieneFaltantes = d.TieneFaltantes,
+                    Observaciones = d.Observaciones,
+                    Orden = d.Orden,
+                    EstaCompleto = d.UnidadesContadas.HasValue
+                })
+                .ToList();
+
+            // Obtener personal presente
+            var personalPresente = await _context.PersonalPresente
+                .Include(p => p.Empleado)
+                .Where(p => p.KardexId == kardexId && p.TipoKardex == TipoKardex.MozoSalon)
+                .ToListAsync();
+
+            viewModel.PersonalPresente = personalPresente
+                .Select(p => new EmpleadoPresenteDto
+                {
+                    EmpleadoId = p.EmpleadoId,
+                    NombreCompleto = p.Empleado?.NombreCompleto ?? "",
+                    Rol = _userManager.GetRolesAsync(p.Empleado).Result.FirstOrDefault() ?? "",
+                    EsResponsablePrincipal = p.EsResponsablePrincipal,
+                    FechaRegistro = p.FechaRegistro
+                })
+                .OrderByDescending(e => e.EsResponsablePrincipal)
+                .ThenBy(e => e.NombreCompleto)
+                .ToList();
+
+            // Estadísticas
+            viewModel.TotalUtensilios = viewModel.Detalles.Count;
+            viewModel.UtensiliosConFaltantes = viewModel.Detalles.Count(d => d.TieneFaltantes);
+            viewModel.TotalFaltantes = viewModel.Detalles.Where(d => d.TieneFaltantes).Sum(d => Math.Abs(d.Diferencia));
+
+            _logger.LogInformation($"✅ Kardex de salón obtenido para revisión");
+
+            return viewModel;
+        }
+
+        /// <summary>
+        /// Obtener kardex de bebidas para revisión
+        /// </summary>
+        public async Task<KardexBebidasRevisionViewModel> ObtenerKardexBebidasParaRevisionAsync(int kardexId)
+        {
+            _logger.LogInformation($"🔍 Obteniendo kardex de bebidas para revisión: {kardexId}");
+
+            var kardex = await _context.KardexBebidas
+                .Include(k => k.Empleado)
+                .Include(k => k.Detalles)
+                    .ThenInclude(d => d.Producto)
+                        .ThenInclude(p => p.Categoria)
+                .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+            if (kardex == null)
+            {
+                throw new Exception("Kardex no encontrado");
+            }
+
+            var viewModel = new KardexBebidasRevisionViewModel
+            {
+                Id = kardex.Id,
+                Fecha = kardex.Fecha,
+                LocalId = kardex.LocalId,
+                EmpleadoId = kardex.EmpleadoId,
+                EmpleadoNombre = kardex.Empleado?.NombreCompleto ?? "",
+                Estado = kardex.Estado,
+                FechaEnvio = kardex.FechaEnvio,
+                Observaciones = kardex.Observaciones
+            };
+
+            // Mapear detalles
+            viewModel.Detalles = kardex.Detalles
+                .OrderBy(d => d.Orden)
+                .Select(d => new KardexBebidasDetalleViewModel
+                {
+                    Id = d.Id,
+                    ProductoId = d.ProductoId,
+                    Categoria = d.Producto?.Categoria?.Nombre ?? "",
+                    Codigo = d.Producto?.Codigo ?? "",
+                    Descripcion = d.Producto?.Nombre ?? "",
+                    Unidad = d.Producto?.Unidad ?? "",
+                    InventarioInicial = d.InventarioInicial,
+                    Ingresos = d.Ingresos,
+                    ConteoAlmacen = d.ConteoAlmacen,
+                    ConteoRefri1 = d.ConteoRefri1,
+                    ConteoRefri2 = d.ConteoRefri2,
+                    ConteoRefri3 = d.ConteoRefri3,
+                    ConteoFinal = d.ConteoFinal,
+                    Ventas = d.Ventas,
+                    DiferenciaPorcentual = d.DiferenciaPorcentual,
+                    TieneDiferenciaSignificativa = d.TieneDiferenciaSignificativa,
+                    Observaciones = d.Observaciones,
+                    Orden = d.Orden,
+                    EstaCompleto = d.ConteoAlmacen.HasValue &&
+                                d.ConteoRefri1.HasValue &&
+                                d.ConteoRefri2.HasValue &&
+                                d.ConteoRefri3.HasValue
+                })
+                .ToList();
+
+            // Obtener personal presente
+            var personalPresente = await _context.PersonalPresente
+                .Include(p => p.Empleado)
+                .Where(p => p.KardexId == kardexId && p.TipoKardex == TipoKardex.MozoBebidas)
+                .ToListAsync();
+
+            viewModel.PersonalPresente = personalPresente
+                .Select(p => new EmpleadoPresenteDto
+                {
+                    EmpleadoId = p.EmpleadoId,
+                    NombreCompleto = p.Empleado?.NombreCompleto ?? "",
+                    Rol = _userManager.GetRolesAsync(p.Empleado).Result.FirstOrDefault() ?? "",
+                    EsResponsablePrincipal = p.EsResponsablePrincipal,
+                    FechaRegistro = p.FechaRegistro
+                })
+                .OrderByDescending(e => e.EsResponsablePrincipal)
+                .ThenBy(e => e.NombreCompleto)
+                .ToList();
+
+            // Estadísticas
+            viewModel.TotalProductos = viewModel.Detalles.Count;
+            viewModel.ProductosConDiferencia = viewModel.Detalles.Count(d => d.TieneDiferenciaSignificativa);
+
+            _logger.LogInformation($"✅ Kardex de bebidas obtenido para revisión");
+
+            return viewModel;
+        }
+
+        /// <summary>
+        /// Obtener kardex de vajilla para revisión
+        /// </summary>
+        public async Task<KardexVajillaRevisionViewModel> ObtenerKardexVajillaParaRevisionAsync(int kardexId)
+        {
+            _logger.LogInformation($"🔍 Obteniendo kardex de vajilla para revisión: {kardexId}");
+
+            var kardex = await _context.KardexVajilla
+                .Include(k => k.Empleado)
+                .Include(k => k.Detalles)
+                    .ThenInclude(d => d.Utensilio)
+                        .ThenInclude(u => u.Categoria)
+                .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+            if (kardex == null)
+            {
+                throw new Exception("Kardex no encontrado");
+            }
+
+            var viewModel = new KardexVajillaRevisionViewModel
+            {
+                Id = kardex.Id,
+                Fecha = kardex.Fecha,
+                LocalId = kardex.LocalId,
+                EmpleadoId = kardex.EmpleadoId,
+                EmpleadoNombre = kardex.Empleado?.NombreCompleto ?? "",
+                Estado = kardex.Estado,
+                FechaEnvio = kardex.FechaEnvio,
+                DescripcionFaltantes = kardex.DescripcionFaltantes,
+                CantidadRotos = kardex.CantidadRotos,
+                CantidadExtraviados = kardex.CantidadExtraviados,
+                Observaciones = kardex.Observaciones
+            };
+
+            // Mapear detalles
+            viewModel.Detalles = kardex.Detalles
+                .OrderBy(d => d.Orden)
+                .Select(d => new KardexVajillaDetalleViewModel
+                {
+                    Id = d.Id,
+                    UtensilioId = d.UtensilioId,
+                    Categoria = d.Utensilio?.Categoria?.Nombre ?? "",
+                    Codigo = d.Utensilio?.Codigo ?? "",
+                    Descripcion = d.Utensilio?.Nombre ?? "",
+                    Unidad = d.Utensilio?.Unidad ?? "",
+                    InventarioInicial = d.InventarioInicial,
+                    UnidadesContadas = d.UnidadesContadas,
+                    Diferencia = d.Diferencia,
+                    TieneFaltantes = d.TieneFaltantes,
+                    Observaciones = d.Observaciones,
+                    Orden = d.Orden,
+                    EstaCompleto = d.UnidadesContadas.HasValue
+                })
+                .ToList();
+
+            // Obtener personal presente
+            var personalPresente = await _context.PersonalPresente
+                .Include(p => p.Empleado)
+                .Where(p => p.KardexId == kardexId && p.TipoKardex == TipoKardex.Vajilla)
+                .ToListAsync();
+
+            viewModel.PersonalPresente = personalPresente
+                .Select(p => new EmpleadoPresenteDto
+                {
+                    EmpleadoId = p.EmpleadoId,
+                    NombreCompleto = p.Empleado?.NombreCompleto ?? "",
+                    Rol = _userManager.GetRolesAsync(p.Empleado).Result.FirstOrDefault() ?? "",
+                    EsResponsablePrincipal = p.EsResponsablePrincipal,
+                    FechaRegistro = p.FechaRegistro
+                })
+                .OrderByDescending(e => e.EsResponsablePrincipal)
+                .ThenBy(e => e.NombreCompleto)
+                .ToList();
+
+            // Estadísticas
+            viewModel.TotalUtensilios = viewModel.Detalles.Count;
+            viewModel.UtensiliosConFaltantes = viewModel.Detalles.Count(d => d.TieneFaltantes);
+            viewModel.TotalFaltantes = viewModel.Detalles.Where(d => d.TieneFaltantes).Sum(d => Math.Abs(d.Diferencia));
+
+            _logger.LogInformation($"✅ Kardex de vajilla obtenido para revisión");
+
+            return viewModel;
+        }
+
+        // ==========================================
+        // MÉTODOS AUXILIARES PRIVADOS
+        // ==========================================
+
+        /// <summary>
+        /// Determinar si una categoría es específica de un tipo de cocina
+        /// </summary>
+        private bool EsCategoriaEspecial(string nombreCategoria)
+        {
+            var categoriasEspeciales = new[]
+            {
+                "FRÍOS Y CEVICHES",
+                "CALIENTES Y ARROCES",
+                "CROCANTES"
+            };
+
+            return categoriasEspeciales.Contains(nombreCategoria, StringComparer.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Obtener el tipo de cocina responsable de una categoría específica
+        /// </summary>
+        private string? ObtenerTipoCocinaResponsable(string nombreCategoria)
+        {
+            return nombreCategoria.ToUpper() switch
+            {
+                "FRÍOS Y CEVICHES" => "Cocina Fría",
+                "CALIENTES Y ARROCES" => "Cocina Caliente",
+                "CROCANTES" => "Parrilla",
+                _ => null
+            };
+        }
+    }
+}
+/// <summary>
+/// Métodos de extensión para mapeo de kardex
+/// </summary>
+public static class KardexExtensions
+{
+    public static KardexCocinaIndividualDto? ToIndividualDto(this KardexCocina? kardex)
+    {
+        if (kardex == null) return null;
+        
+        return new KardexCocinaIndividualDto
+        {
+            Id = kardex.Id,
+            TipoCocina = kardex.TipoCocina,
+            EmpleadoId = kardex.EmpleadoId,
+            EmpleadoNombre = kardex.Empleado?.NombreCompleto ?? "",
+            Estado = kardex.Estado,
+            FechaEnvio = kardex.FechaEnvio,
+            Observaciones = kardex.Observaciones
+        };
     }
 }
