@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Puerto92.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialDBd : Migration
+    public partial class InitialDBb : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

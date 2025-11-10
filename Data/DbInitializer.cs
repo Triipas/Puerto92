@@ -186,6 +186,8 @@ namespace Puerto92.Data
                 await EnsureUserWithRole(userManager, roleManager, "mozo2", "Mozo Pruebas2", "Mozo", localPuerto92.Id, "Puerto92_Moz2");
                 await EnsureUserWithRole(userManager, roleManager, "cocinero1", "Cocinero Pruebas1", "Cocinero", localPuerto92.Id, "Puerto92_Co1");
                 await EnsureUserWithRole(userManager, roleManager, "cocinero2", "Cocinero Pruebas2", "Cocinero", localPuerto92.Id, "Puerto92_Co2");
+                await EnsureUserWithRole(userManager, roleManager, "cocinero3", "Cocinero Pruebas3", "Cocinero", localPuerto92.Id, "Puerto92_Co3");
+                await EnsureUserWithRole(userManager, roleManager, "Vajillero1", "Vajillero Pruebas1", "Vajillero", localPuerto92.Id, "Puerto92_Vaj1");
 
                 Console.WriteLine("✅ Usuarios de prueba creados/verificados");
             }
@@ -252,15 +254,21 @@ namespace Puerto92.Data
                         var catJugos = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre == "Jugos");
                         var catAbarrotes = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre == "Abarrotes");
                         var catCarnes = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre == "Carnes");
+                        var catFrio = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre == "FRÍOS Y CEVICHES");
+                        var catCaliente = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre == "CALIENTES Y ARROCES");
+                        var catParrilla = await context.Categorias.FirstOrDefaultAsync(c => c.Nombre == "CROCANTES");
 
-                        if (catGaseosas != null && catJugos != null && catAbarrotes != null && catCarnes != null)
+                        if (catGaseosas != null && catJugos != null && catAbarrotes != null && catCarnes != null && catFrio != null && catCaliente != null && catParrilla != null)
                         {
                             var productos = new List<Producto>
                             {
                                 new Producto { Codigo = "BEB-001", Nombre = "Coca Cola 2L", CategoriaId = catGaseosas.Id, Unidad = "Unidad", PrecioCompra = 4.50m, PrecioVenta = 6.00m, Descripcion = "Gaseosa Coca Cola 2 litros", Activo = true, FechaCreacion = DateTime.Now, CreadoPor = "Sistema" },
                                 new Producto { Codigo = "BEB-002", Nombre = "Jugo Naranja Gloria 1L", CategoriaId = catJugos.Id, Unidad = "Unidad", PrecioCompra = 5.00m, PrecioVenta = 7.00m, Descripcion = "Jugo de naranja Gloria 1 litro", Activo = true, FechaCreacion = DateTime.Now, CreadoPor = "Sistema" },
                                 new Producto { Codigo = "COC-001", Nombre = "Arroz Superior 1kg", CategoriaId = catAbarrotes.Id, Unidad = "Kilogramo", PrecioCompra = 3.50m, PrecioVenta = 4.50m, Descripcion = "Arroz superior extra", Activo = true, FechaCreacion = DateTime.Now, CreadoPor = "Sistema" },
-                                new Producto { Codigo = "COC-002", Nombre = "Pollo Entero", CategoriaId = catCarnes.Id, Unidad = "Kilogramo", PrecioCompra = 8.00m, PrecioVenta = 12.00m, Descripcion = "Pollo fresco entero", Activo = true, FechaCreacion = DateTime.Now, CreadoPor = "Sistema" }
+                                new Producto { Codigo = "COC-002", Nombre = "Pollo Entero", CategoriaId = catCarnes.Id, Unidad = "Kilogramo", PrecioCompra = 8.00m, PrecioVenta = 12.00m, Descripcion = "Pollo fresco entero", Activo = true, FechaCreacion = DateTime.Now, CreadoPor = "Sistema" },
+                                new Producto { Codigo = "COC-010", Nombre = "Producto Frio", CategoriaId = catFrio.Id, Unidad = "Kilogramo", PrecioCompra = 8.00m, PrecioVenta = 12.00m, Descripcion = "DESCRIPCIÓN", Activo = true, FechaCreacion = DateTime.Now, CreadoPor = "Sistema" },
+                                new Producto { Codigo = "COC-020", Nombre = "Producto Caliente", CategoriaId = catCaliente.Id, Unidad = "Kilogramo", PrecioCompra = 8.00m, PrecioVenta = 12.00m, Descripcion = "DESCRIPCIÓN", Activo = true, FechaCreacion = DateTime.Now, CreadoPor = "Sistema" },
+                                new Producto { Codigo = "COC-030", Nombre = "Producto Parrilla", CategoriaId = catParrilla.Id, Unidad = "Kilogramo", PrecioCompra = 8.00m, PrecioVenta = 12.00m, Descripcion = "DESCRIPCIÓN", Activo = true, FechaCreacion = DateTime.Now, CreadoPor = "Sistema" },
                             };
 
                             context.Productos.AddRange(productos);
