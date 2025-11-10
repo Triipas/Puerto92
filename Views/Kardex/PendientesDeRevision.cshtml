@@ -1,0 +1,330 @@
+@model Puerto92.ViewModels.KardexPendientesViewModel
+@{
+    ViewData["Title"] = "Kardex Pendientes de Revisión";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/kardex-pendientes.css" asp-append-version="true" />
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Kardex Pendientes de Revisión</h1>
+        <p class="page-subtitle">Revise y apruebe los kardex enviados por el equipo</p>
+    </div>
+</div>
+
+<!-- Instrucciones -->
+<div class="instrucciones-card">
+    <div class="instrucciones-icon">
+        <i class="fa-solid fa-clipboard-list"></i>
+    </div>
+    <div class="instrucciones-content">
+        <h3>Instrucciones de revisión</h3>
+        <p>Los kardex están organizados por área. Cocina muestra los 3 cocineros consolidados, Mozos separa Salón y Bebidas, y Vajilla muestra el vajillero responsable del día.</p>
+    </div>
+</div>
+
+<!-- Tabs de Áreas -->
+<div class="kardex-tabs-container">
+    <div class="kardex-tabs">
+        <button class="kardex-tab active" data-tab="cocina" onclick="cambiarTab('cocina')">
+            <i class="fa-solid fa-fire"></i>
+            Cocina
+            @if (Model.TotalPendientesCocina > 0)
+            {
+                <span class="tab-badge">@Model.TotalPendientesCocina</span>
+            }
+        </button>
+        
+        <button class="kardex-tab" data-tab="mozos" onclick="cambiarTab('mozos')">
+            <i class="fa-solid fa-users"></i>
+            Mozos
+            @if (Model.TotalPendientesMozos > 0)
+            {
+                <span class="tab-badge">@Model.TotalPendientesMozos</span>
+            }
+        </button>
+        
+        <button class="kardex-tab" data-tab="vajilla" onclick="cambiarTab('vajilla')">
+            <i class="fa-solid fa-plate-utensils"></i>
+            Vajilla
+            @if (Model.TotalPendientesVajilla > 0)
+            {
+                <span class="tab-badge">@Model.TotalPendientesVajilla</span>
+            }
+        </button>
+    </div>
+</div>
+
+<!-- Contenido de Tabs -->
+<div class="kardex-content">
+    
+    <!-- ============================================ -->
+    <!-- TAB COCINA -->
+    <!-- ============================================ -->
+    <div class="tab-panel active" id="tab-cocina">
+        <div class="content-card">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Kardex por Área</h2>
+                    <p class="card-subtitle">Seleccione un área para ver los kardex pendientes</p>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                @if (Model.KardexCocina.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="kardex-pendientes-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Responsable(s)</th>
+                                    <th>Personal Presente</th>
+                                    <th>Estado</th>
+                                    <th style="text-align: center;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var kardex in Model.KardexCocina)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fecha-cell">
+                                                <i class="fa-solid fa-calendar-day"></i>
+                                                <span>@kardex.Fecha.ToString("dddd, dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="responsables-list">
+                                                @foreach (var responsable in kardex.Responsables)
+                                                {
+                                                    <div class="responsable-item">
+                                                        <i class="fa-solid fa-user"></i>
+                                                        <span>@responsable</span>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="personal-presente-badge">
+                                                <i class="fa-solid fa-users"></i>
+                                                <span>@kardex.CantidadPersonalPresente empleados</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-pendiente">
+                                                <i class="fa-solid fa-clock"></i>
+                                                Pendiente de Revisión
+                                            </span>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <a href="@Url.Action("RevisarCocina", "Kardex", new { ids = string.Join(",", kardex.KardexIdsAgrupados) })" 
+                                               class="btn-revisar">
+                                                <i class="fa-solid fa-eye"></i>
+                                                Ver/Revisar
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <i class="fa-solid fa-clipboard-check"></i>
+                        <h3>No hay kardex pendientes de cocina</h3>
+                        <p>Todos los kardex de cocina han sido revisados</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    
+    <!-- ============================================ -->
+    <!-- TAB MOZOS -->
+    <!-- ============================================ -->
+    <div class="tab-panel" id="tab-mozos">
+        <div class="content-card">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Kardex por Área</h2>
+                    <p class="card-subtitle">Seleccione un área para ver los kardex pendientes</p>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                @if (Model.KardexMozos.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="kardex-pendientes-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Responsable(s)</th>
+                                    <th>Personal Presente</th>
+                                    <th>Estado</th>
+                                    <th style="text-align: center;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var kardex in Model.KardexMozos)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fecha-cell">
+                                                <i class="fa-solid fa-calendar-day"></i>
+                                                <span>@kardex.Fecha.ToString("dddd, dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-tipo-@kardex.TipoDetalle?.ToLower()">
+                                                @kardex.TipoDetalle
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="responsables-list">
+                                                @foreach (var responsable in kardex.Responsables)
+                                                {
+                                                    <div class="responsable-item">
+                                                        <i class="fa-solid fa-user"></i>
+                                                        <span>@responsable</span>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="personal-presente-badge">
+                                                <i class="fa-solid fa-users"></i>
+                                                <span>@kardex.CantidadPersonalPresente empleados</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-pendiente">
+                                                <i class="fa-solid fa-clock"></i>
+                                                Pendiente de Revisión
+                                            </span>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            @{
+                                                var accionController = kardex.TipoDetalle == "Salón" ? "RevisarSalon" : "RevisarBebidas";
+                                            }
+                                            <a href="@Url.Action(accionController, "Kardex", new { id = kardex.KardexId })" 
+                                               class="btn-revisar">
+                                                <i class="fa-solid fa-eye"></i>
+                                                Ver/Revisar
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <i class="fa-solid fa-clipboard-check"></i>
+                        <h3>No hay kardex pendientes de mozos</h3>
+                        <p>Todos los kardex de mozos han sido revisados</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    
+    <!-- ============================================ -->
+    <!-- TAB VAJILLA -->
+    <!-- ============================================ -->
+    <div class="tab-panel" id="tab-vajilla">
+        <div class="content-card">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Kardex por Área</h2>
+                    <p class="card-subtitle">Seleccione un área para ver los kardex pendientes</p>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                @if (Model.KardexVajilla.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="kardex-pendientes-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Responsable(s)</th>
+                                    <th>Personal Presente</th>
+                                    <th>Estado</th>
+                                    <th style="text-align: center;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var kardex in Model.KardexVajilla)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fecha-cell">
+                                                <i class="fa-solid fa-calendar-day"></i>
+                                                <span>@kardex.Fecha.ToString("dddd, dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="responsables-list">
+                                                @foreach (var responsable in kardex.Responsables)
+                                                {
+                                                    <div class="responsable-item">
+                                                        <i class="fa-solid fa-user"></i>
+                                                        <span>@responsable</span>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="personal-presente-badge">
+                                                <i class="fa-solid fa-users"></i>
+                                                <span>@kardex.CantidadPersonalPresente empleados</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-pendiente">
+                                                <i class="fa-solid fa-clock"></i>
+                                                Pendiente de Revisión
+                                            </span>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <a href="@Url.Action("RevisarVajilla", "Kardex", new { id = kardex.KardexId })" 
+                                               class="btn-revisar">
+                                                <i class="fa-solid fa-eye"></i>
+                                                Ver/Revisar
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <i class="fa-solid fa-clipboard-check"></i>
+                        <h3>No hay kardex pendientes de vajilla</h3>
+                        <p>Todos los kardex de vajilla han sido revisados</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+@section Scripts {
+    <script src="~/js/kardex-pendientes.js" asp-append-version="true"></script>
+}

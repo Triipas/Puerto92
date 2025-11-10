@@ -39,6 +39,16 @@ namespace Puerto92.Services
                     Action = "Index",
                     RequiredRoles = new List<string> { "Administrador Local" }
                 });
+                
+                // ⭐ NUEVO: Kardex Pendientes
+                items.Add(new NavigationItemViewModel
+                {
+                    Icon = "fa-clipboard-list",
+                    Title = "Kardex Pendientes",
+                    Controller = "Kardex",
+                    Action = "PendientesDeRevision",
+                    RequiredRoles = new List<string> { "Administrador Local" }
+                });
             }
 
             // === ADMIN MAESTRO Y ADMINISTRADOR LOCAL ===

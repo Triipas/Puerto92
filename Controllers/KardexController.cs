@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Puerto92.Services;
 using Puerto92.ViewModels;
 using Puerto92.Models;
 using System.Security.Claims;
 using System.Net;
+using Puerto92.Data;
 
 namespace Puerto92.Controllers
 {
@@ -13,11 +15,14 @@ namespace Puerto92.Controllers
     {
         private readonly IKardexService _kardexService;
         private readonly ILogger<KardexController> _logger;
+        private readonly ApplicationDbContext _context;
 
         public KardexController(
+            ApplicationDbContext context,
             IKardexService kardexService,
             ILogger<KardexController> logger)
         {
+            _context = context;
             _kardexService = kardexService;
             _logger = logger;
         }
@@ -762,6 +767,199 @@ namespace Puerto92.Controllers
                 return Json(new { success = false, message = "Error al procesar la solicitud" });
             }
         }
+
+        // ==========================================
+        // KARDEX PENDIENTES DE REVISIÓN
+        // ==========================================
+
+        /// <summary>
+        /// Vista principal de Kardex Pendientes de Revisión (solo Administrador Local)
+        /// </summary>
+        [Authorize(Roles = "Administrador Local")]
+        [HttpGet]
+        public async Task<IActionResult> PendientesDeRevision()
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            // Obtener el local del administrador
+            var usuario = await _context.Users
+                .Include(u => u.Local)
+                .FirstOrDefaultAsync(u => u.Id == usuarioId);
+
+            if (usuario == null || usuario.LocalId == 0)
+            {
+                _logger.LogError($"❌ Usuario no encontrado o sin local asignado: {usuarioId}");
+                SetErrorMessage("Error: No se encontró información del usuario");
+                return RedirectToAction("Index", "Home");
+            }
+
+            var localId = usuario.LocalId;
+            _logger.LogInformation($"📋 Cargando kardex pendientes para Local ID: {localId}");
+
+            var viewModel = new KardexPendientesViewModel
+            {
+                KardexCocina = await ObtenerKardexCocinaPendientes(localId),
+                KardexMozos = await ObtenerKardexMozosPendientes(localId),
+                KardexVajilla = await ObtenerKardexVajillaPendientes(localId)
+            };
+
+            viewModel.TotalPendientesCocina = viewModel.KardexCocina.Count;
+            viewModel.TotalPendientesMozos = viewModel.KardexMozos.Count;
+            viewModel.TotalPendientesVajilla = viewModel.KardexVajilla.Count;
+
+            _logger.LogInformation($"✅ Kardex pendientes cargados:");
+            _logger.LogInformation($"   Cocina: {viewModel.TotalPendientesCocina}");
+            _logger.LogInformation($"   Mozos: {viewModel.TotalPendientesMozos}");
+            _logger.LogInformation($"   Vajilla: {viewModel.TotalPendientesVajilla}");
+
+            return View(viewModel);
+        }
+
+        /// <summary>
+        /// Obtener kardex de cocina pendientes (AGRUPADOS por día)
+        /// </summary>
+        private async Task<List<KardexPendienteItem>> ObtenerKardexCocinaPendientes(int localId)
+        {
+            // Obtener todos los kardex de cocina pendientes
+            var kardexCocina = await _context.KardexCocina
+                .Include(k => k.Empleado)
+                .Where(k => k.LocalId == localId && 
+                        k.Estado == EstadoKardex.Enviado)
+                .OrderByDescending(k => k.Fecha)
+                .ToListAsync();
+
+            // Agrupar por fecha (los 3 tipos de cocina del mismo día en una fila)
+            var agrupados = kardexCocina
+                .GroupBy(k => k.Fecha.Date)
+                .Select(g => new KardexPendienteItem
+                {
+                    // Usar el ID del primero como referencia
+                    KardexId = g.First().Id,
+                    TipoKardex = "Cocina", // Tipo genérico
+                    Fecha = g.Key,
+                    
+                    // Consolidar los 3 responsables
+                    Responsables = g.Select(k => k.Empleado?.NombreCompleto ?? "Sin nombre")
+                                    .Distinct()
+                                    .ToList(),
+                    
+                    // Sumar todo el personal presente de los 3 kardex
+                    CantidadPersonalPresente = _context.PersonalPresente
+                        .Count(p => g.Select(k => k.Id).Contains(p.KardexId) && 
+                                p.TipoKardex.Contains("Cocina")),
+                    
+                    Estado = "Pendiente de Revisión",
+                    
+                    // Guardar los IDs de los 3 kardex agrupados
+                    KardexIdsAgrupados = g.Select(k => k.Id).ToList(),
+                    EsAgrupacion = true
+                })
+                .ToList();
+
+            return agrupados;
+        }
+
+        /// <summary>
+        /// Obtener kardex de mozos pendientes (SEPARADOS: Salón y Bebidas)
+        /// </summary>
+        private async Task<List<KardexPendienteItem>> ObtenerKardexMozosPendientes(int localId)
+        {
+            var items = new List<KardexPendienteItem>();
+
+            // Kardex de Salón
+            var kardexSalon = await _context.KardexSalon
+                .Include(k => k.Empleado)
+                .Where(k => k.LocalId == localId && 
+                        k.Estado == EstadoKardex.Enviado)
+                .OrderByDescending(k => k.Fecha)
+                .ToListAsync();
+
+            foreach (var kardex in kardexSalon)
+            {
+                var cantidadPersonal = await _context.PersonalPresente
+                    .CountAsync(p => p.KardexId == kardex.Id && 
+                                p.TipoKardex == TipoKardex.MozoSalon);
+
+                items.Add(new KardexPendienteItem
+                {
+                    KardexId = kardex.Id,
+                    TipoKardex = TipoKardex.MozoSalon,
+                    Fecha = kardex.Fecha,
+                    Responsables = new List<string> { kardex.Empleado?.NombreCompleto ?? "Sin nombre" },
+                    CantidadPersonalPresente = cantidadPersonal,
+                    Estado = "Pendiente de Revisión",
+                    TipoDetalle = "Salón"
+                });
+            }
+
+            // Kardex de Bebidas
+            var kardexBebidas = await _context.KardexBebidas
+                .Include(k => k.Empleado)
+                .Where(k => k.LocalId == localId && 
+                        k.Estado == EstadoKardex.Enviado)
+                .OrderByDescending(k => k.Fecha)
+                .ToListAsync();
+
+            foreach (var kardex in kardexBebidas)
+            {
+                var cantidadPersonal = await _context.PersonalPresente
+                    .CountAsync(p => p.KardexId == kardex.Id && 
+                                p.TipoKardex == TipoKardex.MozoBebidas);
+
+                items.Add(new KardexPendienteItem
+                {
+                    KardexId = kardex.Id,
+                    TipoKardex = TipoKardex.MozoBebidas,
+                    Fecha = kardex.Fecha,
+                    Responsables = new List<string> { kardex.Empleado?.NombreCompleto ?? "Sin nombre" },
+                    CantidadPersonalPresente = cantidadPersonal,
+                    Estado = "Pendiente de Revisión",
+                    TipoDetalle = "Bebidas"
+                });
+            }
+
+            // Ordenar por fecha descendente
+            return items.OrderByDescending(i => i.Fecha).ToList();
+        }
+
+        /// <summary>
+        /// Obtener kardex de vajilla pendientes
+        /// </summary>
+        private async Task<List<KardexPendienteItem>> ObtenerKardexVajillaPendientes(int localId)
+        {
+            var kardexVajilla = await _context.KardexVajilla
+                .Include(k => k.Empleado)
+                .Where(k => k.LocalId == localId && 
+                        k.Estado == EstadoKardex.Enviado)
+                .OrderByDescending(k => k.Fecha)
+                .ToListAsync();
+
+            var items = new List<KardexPendienteItem>();
+
+            foreach (var kardex in kardexVajilla)
+            {
+                var cantidadPersonal = await _context.PersonalPresente
+                    .CountAsync(p => p.KardexId == kardex.Id && 
+                                p.TipoKardex == TipoKardex.Vajilla);
+
+                items.Add(new KardexPendienteItem
+                {
+                    KardexId = kardex.Id,
+                    TipoKardex = TipoKardex.Vajilla,
+                    Fecha = kardex.Fecha,
+                    Responsables = new List<string> { kardex.Empleado?.NombreCompleto ?? "Sin nombre" },
+                    CantidadPersonalPresente = cantidadPersonal,
+                    Estado = "Pendiente de Revisión",
+                    TipoDetalle = null
+                });
+            }
+
+            return items;
+        }
         
         // ==========================================
         // MÉTODO AUXILIAR PRIVADO
@@ -784,6 +982,6 @@ namespace Puerto92.Controllers
             _logger.LogDebug($"🔄 TipoKardex normalizado: '{tipoKardex}' → '{normalizado}'");
             
             return normalizado;
-}
+        }
     }
 }
