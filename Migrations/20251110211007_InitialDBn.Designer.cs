@@ -11,8 +11,8 @@ using Puerto92.Data;
 namespace Puerto92.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251110203947_InitialDBv")]
-    partial class InitialDBv
+    [Migration("20251110211007_InitialDBn")]
+    partial class InitialDBn
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

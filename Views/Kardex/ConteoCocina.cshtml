@@ -196,29 +196,20 @@
 
 @section Scripts {
     <script>
-        // ⭐ CORRECCIÓN: Pasar los IDs de los 3 KARDEX, no de productos
+        // ⭐ CRÍTICO: Obtener los IDs de los 3 kardex de cocina
         const KARDEX_IDS = [
             @(Model.KardexCocinaFria?.Id ?? 0),
             @(Model.KardexCocinaCaliente?.Id ?? 0),
             @(Model.KardexParrilla?.Id ?? 0)
-        ].filter(id => id > 0); // Filtrar los que sean 0 (no existen)
+        ].filter(id => id > 0); // Eliminar IDs inválidos (0)
         
-        const TIPO_KARDEX = 'Cocina';
+        const TIPO_KARDEX = '@Html.Raw(Model.TipoCocina)';
         
-        // Log para debug
-        console.log('🍳 Kardex de Cocina - IDs:', KARDEX_IDS);
-        console.log('📋 Total de kardex:', KARDEX_IDS.length);
-
-        // Configurar mensajes del modal al cargar
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('aprobarModalSubtitle').textContent = 'Confirmación para Kardex de Cocina Consolidado';
-            document.getElementById('aprobarModalMensaje').textContent = `Se aprobarán ${KARDEX_IDS.length} kardex de cocina`;
-            document.getElementById('aprobarModalDetalle').textContent = `Los ${KARDEX_IDS.length} cocineros recibirán una notificación de aprobación`;
-            
-            document.getElementById('rechazarModalSubtitle').textContent = 'Rechazo de Kardex de Cocina';
-            document.getElementById('rechazarModalMensaje').textContent = `Se rechazarán ${KARDEX_IDS.length} kardex de cocina`;
-            document.getElementById('rechazarModalDetalle').textContent = 'Los cocineros deberán corregir y reenviar el kardex';
-        });
+        // Debug: Verificar valores
+        console.log('🔍 DEBUG - Variables inicializadas:');
+        console.log('   KARDEX_IDS:', KARDEX_IDS);
+        console.log('   TIPO_KARDEX:', TIPO_KARDEX);
+        console.log('   Es consolidado:', KARDEX_IDS.length > 1);
     </script>
     <script src="~/js/kardex-revision.js" asp-append-version="true"></script>
 }

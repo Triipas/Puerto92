@@ -2688,7 +2688,39 @@ namespace Puerto92.Services
             string empleadoNombre = "";
             DateTime fecha = DateTime.Today;
 
-            if (tipoKardex == TipoKardex.MozoBebidas)
+            // ⭐ NUEVO: Detectar si es un kardex de cocina por el ID
+            if (tipoKardex == "Cocina")
+            {
+                // Primero, obtener el kardex para saber su tipo real
+                var kardexCocina = await _context.KardexCocina
+                    .Include(k => k.Empleado)
+                    .Include(k => k.Detalles)
+                    .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+                if (kardexCocina == null)
+                {
+                    throw new Exception($"Kardex de cocina no encontrado: {kardexId}");
+                }
+
+                // Usar el tipo real del kardex
+                tipoKardex = kardexCocina.TipoCocina;
+                _logger.LogInformation($"🔄 Tipo de cocina detectado: {tipoKardex}");
+
+                kardexCocina.Estado = EstadoKardex.Aprobado;
+                kardexCocina.FechaAprobacion = DateTime.Now;
+                kardexCocina.ObservacionesRevision = observaciones;
+
+                empleadoId = kardexCocina.EmpleadoId;
+                empleadoNombre = kardexCocina.Empleado?.NombreCompleto ?? "Desconocido";
+                fecha = kardexCocina.Fecha;
+
+                await _context.SaveChangesAsync();
+
+                // ✅ ACTUALIZAR STOCK
+                _logger.LogInformation($"📦 Actualizando stock de {tipoKardex}...");
+                await _stockService.ActualizarStockDesdeKardexCocinaAsync(kardexId);
+            }
+            else if (tipoKardex == TipoKardex.MozoBebidas)
             {
                 var kardex = await _context.KardexBebidas
                     .Include(k => k.Empleado)
@@ -2708,7 +2740,6 @@ namespace Puerto92.Services
 
                 await _context.SaveChangesAsync();
 
-                // ✅ ACTUALIZAR STOCK DE BEBIDAS
                 _logger.LogInformation("📦 Actualizando stock de bebidas...");
                 await _stockService.ActualizarStockDesdeKardexBebidasAsync(kardexId);
             }
@@ -2732,7 +2763,6 @@ namespace Puerto92.Services
 
                 await _context.SaveChangesAsync();
 
-                // ✅ ACTUALIZAR STOCK DE SALÓN
                 _logger.LogInformation("📦 Actualizando stock de utensilios de salón...");
                 await _stockService.ActualizarStockDesdeKardexSalonAsync(kardexId);
             }
@@ -2756,7 +2786,6 @@ namespace Puerto92.Services
 
                 await _context.SaveChangesAsync();
 
-                // ✅ ACTUALIZAR STOCK DE VAJILLA
                 _logger.LogInformation("📦 Actualizando stock de utensilios de vajilla...");
                 await _stockService.ActualizarStockDesdeKardexVajillaAsync(kardexId);
             }
@@ -2782,7 +2811,6 @@ namespace Puerto92.Services
 
                 await _context.SaveChangesAsync();
 
-                // ✅ ACTUALIZAR STOCK DE COCINA
                 _logger.LogInformation($"📦 Actualizando stock de {tipoKardex}...");
                 await _stockService.ActualizarStockDesdeKardexCocinaAsync(kardexId);
             }

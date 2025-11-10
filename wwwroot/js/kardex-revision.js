@@ -131,6 +131,12 @@ function inicializarFormularios() {
 async function aprobarKardex() {
     const observaciones = document.getElementById('observacionesAprobacion')?.value || '';
     
+    // ⭐ DEBUG: Verificar valores antes de enviar
+    console.log('🔍 DEBUG - Antes de aprobar:');
+    console.log('   KARDEX_IDS:', KARDEX_IDS);
+    console.log('   KARDEX_IDS.length:', KARDEX_IDS.length);
+    console.log('   TIPO_KARDEX:', TIPO_KARDEX);
+    
     const btnSubmit = document.querySelector('#formAprobar button[type="submit"]');
     if (btnSubmit) {
         btnSubmit.disabled = true;
@@ -141,6 +147,8 @@ async function aprobarKardex() {
         // ⭐ DETERMINAR SI ES KARDEX CONSOLIDADO O INDIVIDUAL
         const esConsolidado = KARDEX_IDS && KARDEX_IDS.length > 1;
         
+        console.log('   Es consolidado:', esConsolidado);
+        
         let requestData;
         
         if (esConsolidado) {
@@ -148,14 +156,14 @@ async function aprobarKardex() {
             console.log('🍳 Aprobando kardex consolidado de cocina:', KARDEX_IDS);
             
             requestData = {
-                kardexId: KARDEX_IDS[0], // El primero como referencia
+                kardexId: KARDEX_IDS[0],
                 tipoKardex: 'Cocina',
                 accion: 'Aprobar',
                 observacionesRevision: observaciones,
-                kardexIdsConsolidados: KARDEX_IDS // ⭐ PASAR LOS 3 IDS
+                kardexIdsConsolidados: KARDEX_IDS
             };
         } else {
-            // ✅ KARDEX INDIVIDUAL (Salón, Bebidas, Vajilla, o Cocina individual)
+            // ✅ KARDEX INDIVIDUAL
             console.log('📋 Aprobando kardex individual:', KARDEX_IDS[0]);
             
             requestData = {
@@ -166,7 +174,7 @@ async function aprobarKardex() {
             };
         }
         
-        console.log('📤 Request de aprobación:', requestData);
+        console.log('📤 Request completo:', JSON.stringify(requestData, null, 2));
         
         const response = await fetch('/Kardex/AprobarRechazarKardex', {
             method: 'POST',
