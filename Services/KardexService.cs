@@ -1003,7 +1003,7 @@ namespace Puerto92.Services
                 {
                     KardexSalonId = kardex.Id,
                     UtensilioId = utensilio.Id,
-                    InventarioInicial = 120, // TODO: Obtener del sistema o configuración
+                    InventarioInicial = 0, // TODO: Obtener del sistema o configuración
                     Orden = orden++
                 };
 
