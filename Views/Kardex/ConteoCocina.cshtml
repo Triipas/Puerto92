@@ -7,6 +7,16 @@
     var colorKardex = Puerto92.Models.TipoKardex.ObtenerColor(Model.TipoCocina);
 }
 
+@if (Model.EsResponsableCategoriasCompartidas)
+{
+    <div style="margin-top: 0.5rem;">
+        <span style="background: #3B82F6; color: white; padding: 0.375rem 0.875rem; border-radius: 8px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-star"></i>
+            Responsable de Categorías Compartidas
+        </span>
+    </div>
+}
+
 <div class="page-header">
     <div>
         <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
@@ -186,8 +196,29 @@
 
 @section Scripts {
     <script>
-        const KARDEX_ID = @Model.Id;
-        const TIPO_KARDEX = '@Html.Raw(Model.TipoCocina)';
+        // ⭐ CORRECCIÓN: Pasar los IDs de los 3 KARDEX, no de productos
+        const KARDEX_IDS = [
+            @(Model.KardexCocinaFria?.Id ?? 0),
+            @(Model.KardexCocinaCaliente?.Id ?? 0),
+            @(Model.KardexParrilla?.Id ?? 0)
+        ].filter(id => id > 0); // Filtrar los que sean 0 (no existen)
+        
+        const TIPO_KARDEX = 'Cocina';
+        
+        // Log para debug
+        console.log('🍳 Kardex de Cocina - IDs:', KARDEX_IDS);
+        console.log('📋 Total de kardex:', KARDEX_IDS.length);
+
+        // Configurar mensajes del modal al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('aprobarModalSubtitle').textContent = 'Confirmación para Kardex de Cocina Consolidado';
+            document.getElementById('aprobarModalMensaje').textContent = `Se aprobarán ${KARDEX_IDS.length} kardex de cocina`;
+            document.getElementById('aprobarModalDetalle').textContent = `Los ${KARDEX_IDS.length} cocineros recibirán una notificación de aprobación`;
+            
+            document.getElementById('rechazarModalSubtitle').textContent = 'Rechazo de Kardex de Cocina';
+            document.getElementById('rechazarModalMensaje').textContent = `Se rechazarán ${KARDEX_IDS.length} kardex de cocina`;
+            document.getElementById('rechazarModalDetalle').textContent = 'Los cocineros deberán corregir y reenviar el kardex';
+        });
     </script>
-    <script src="~/js/kardex-cocina.js" asp-append-version="true"></script>
+    <script src="~/js/kardex-revision.js" asp-append-version="true"></script>
 }

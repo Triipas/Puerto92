@@ -158,7 +158,7 @@ namespace Puerto92.Controllers
                 _logger.LogInformation($"📝 Creando asignación: {request.TipoKardex} - {request.Fecha} - EmpleadoId: {request.EmpleadoId}");
 
                 var usuario = await _context.Users
-                    .Include(u => u.Local) // ⭐ INCLUIR Local para validación
+                    .Include(u => u.Local)
                     .FirstOrDefaultAsync(u => u.UserName == User.Identity!.Name);
 
                 if (usuario == null)
@@ -223,13 +223,39 @@ namespace Puerto92.Controllers
                     return JsonError("El empleado no pertenece a su local");
                 }
 
-                // Crear asignación
+                // ⭐ PASO 1: CALCULAR ORDEN ANTES DE CREAR LA ASIGNACIÓN
+                int ordenAsignacion = 0;
+
+                if (request.TipoKardex == TipoKardex.CocinaFria || 
+                    request.TipoKardex == TipoKardex.CocinaCaliente || 
+                    request.TipoKardex == TipoKardex.Parrilla)
+                {
+                    // Contar cuántas asignaciones de cocina ya existen para esta fecha
+                    var asignacionesExistentes = await _context.AsignacionesKardex
+                        .Where(a => a.LocalId == usuario.LocalId &&
+                                a.Fecha.Date == fechaAsignacion.Date &&
+                                (a.TipoKardex == TipoKardex.CocinaFria ||
+                                    a.TipoKardex == TipoKardex.CocinaCaliente ||
+                                    a.TipoKardex == TipoKardex.Parrilla) &&
+                                (a.Estado == EstadoAsignacion.Pendiente ||
+                                    a.Estado == EstadoAsignacion.Asignada ||
+                                    a.Estado == EstadoAsignacion.EnProceso))
+                        .CountAsync();
+                    
+                    ordenAsignacion = asignacionesExistentes; // 0, 1, o 2
+                    
+                    _logger.LogInformation($"📋 Asignaciones existentes de cocina para {fechaAsignacion.Date:dd/MM/yyyy}: {asignacionesExistentes}");
+                    _logger.LogInformation($"📋 Orden calculado para {request.TipoKardex}: {ordenAsignacion}");
+                }
+
+                // ⭐ PASO 2: CREAR ASIGNACIÓN CON EL ORDEN YA CALCULADO
                 var asignacion = new AsignacionKardex
                 {
                     TipoKardex = request.TipoKardex,
                     Fecha = fechaAsignacion.Date,
                     EmpleadoId = request.EmpleadoId,
-                    LocalId = usuario.LocalId, // ✅ Usar LocalId del usuario administrador
+                    LocalId = usuario.LocalId,
+                    OrdenAsignacion = ordenAsignacion, // ✅ YA TIENE EL VALOR CORRECTO
                     Estado = EstadoAsignacion.Pendiente,
                     FechaCreacion = DateTime.Now,
                     CreadoPor = User.Identity!.Name
@@ -240,11 +266,13 @@ namespace Puerto92.Controllers
                 _logger.LogInformation($"   EmpleadoId: {asignacion.EmpleadoId}");
                 _logger.LogInformation($"   LocalId: {asignacion.LocalId}");
                 _logger.LogInformation($"   Fecha: {asignacion.Fecha}");
+                _logger.LogInformation($"   OrdenAsignacion: {asignacion.OrdenAsignacion}");
 
+                // ⭐ PASO 3: GUARDAR EN BASE DE DATOS (FUERA DE CUALQUIER IF)
                 _context.AsignacionesKardex.Add(asignacion);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation($"✅ Asignación creada exitosamente con ID: {asignacion.Id}");
+                _logger.LogInformation($"✅ Asignación creada exitosamente con ID: {asignacion.Id}, Orden: {asignacion.OrdenAsignacion}");
 
                 // ⭐ VERIFICACIÓN POST-GUARDADO
                 if (asignacion.LocalId == 0)
@@ -310,7 +338,6 @@ namespace Puerto92.Controllers
                     asignacion.FechaNotificacion = DateTime.Now;
                     asignacion.NotificacionEnviada = true;
 
-                    // ⭐ NUEVO: Enviar notificación al empleado
                     string? empleadosAdicionales = null;
 
                     // Si es kardex de cocina, buscar otros cocineros asignados ese día
@@ -319,9 +346,11 @@ namespace Puerto92.Controllers
                         var otrosCocineros = await _context.AsignacionesKardex
                             .Include(a => a.Empleado)
                             .Where(a => a.Fecha.Date == asignacion.Fecha.Date &&
-                                       a.LocalId == asignacion.LocalId &&
-                                       a.TipoKardex == asignacion.TipoKardex &&
-                                       a.Id != asignacion.Id)
+                                    a.LocalId == asignacion.LocalId &&
+                                    (a.TipoKardex == TipoKardex.CocinaFria ||
+                                        a.TipoKardex == TipoKardex.CocinaCaliente ||
+                                        a.TipoKardex == TipoKardex.Parrilla) &&
+                                    a.Id != asignacion.Id)
                             .Select(a => a.Empleado!.NombreCompleto)
                             .ToListAsync();
 
@@ -331,12 +360,16 @@ namespace Puerto92.Controllers
                         }
                     }
 
+                    // ⭐ NUEVO: Pasar si es responsable de compartidas
+                    var esResponsableCompartidas = asignacion.OrdenAsignacion == 0;
+
                     // Crear notificación
                     await _notificationService.CrearNotificacionAsignacionKardexAsync(
                         usuarioId: asignacion.EmpleadoId,
                         tipoKardex: asignacion.TipoKardex,
                         fecha: asignacion.Fecha,
-                        empleadosAdicionales: empleadosAdicionales
+                        empleadosAdicionales: empleadosAdicionales,
+                        esResponsableCompartidas: esResponsableCompartidas // ⭐ NUEVO parámetro
                     );
 
                     _logger.LogInformation($"Notificación enviada a {asignacion.Empleado?.NombreCompleto} para kardex {asignacion.TipoKardex} del {asignacion.Fecha:dd/MM/yyyy}");
@@ -693,8 +726,97 @@ namespace Puerto92.Controllers
 
             return Json(historial);
         }
+
+        /// <summary>
+        /// Endpoint de debug para verificar órdenes de asignación
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> VerificarOrdenesAsignacion(DateTime fecha, string tipoKardex)
+        {
+            var usuario = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity!.Name);
+            if (usuario == null)
+            {
+                return JsonError("Usuario no encontrado");
+            }
+
+            var asignaciones = await _context.AsignacionesKardex
+                .Include(a => a.Empleado)
+                .Where(a => a.LocalId == usuario.LocalId &&
+                        a.Fecha.Date == fecha.Date &&
+                        a.TipoKardex == tipoKardex)
+                .OrderBy(a => a.OrdenAsignacion)
+                .Select(a => new
+                {
+                    id = a.Id,
+                    tipoKardex = a.TipoKardex,
+                    empleado = a.Empleado!.NombreCompleto,
+                    orden = a.OrdenAsignacion,
+                    estado = a.Estado,
+                    fechaCreacion = a.FechaCreacion
+                })
+                .ToListAsync();
+
+            return Json(new { success = true, asignaciones });
+        }
+
+        /// <summary>
+        /// TEMPORAL: Corregir órdenes de asignación existentes
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> CorregirOrdenesAsignacion()
+        {
+            try
+            {
+                var usuario = await _context.Users.FirstOrDefaultAsync(u => u.UserName == User.Identity!.Name);
+                if (usuario == null)
+                {
+                    return JsonError("Usuario no encontrado");
+                }
+
+                // Obtener todas las asignaciones de cocina agrupadas por fecha
+                var asignacionesCocina = await _context.AsignacionesKardex
+                    .Where(a => a.LocalId == usuario.LocalId &&
+                            (a.TipoKardex == TipoKardex.CocinaFria ||
+                                a.TipoKardex == TipoKardex.CocinaCaliente ||
+                                a.TipoKardex == TipoKardex.Parrilla))
+                    .OrderBy(a => a.Fecha)
+                    .ThenBy(a => a.FechaCreacion) // Orden de creación
+                    .ToListAsync();
+
+                var agrupadas = asignacionesCocina
+                    .GroupBy(a => a.Fecha.Date)
+                    .ToList();
+
+                int corregidas = 0;
+
+                foreach (var grupo in agrupadas)
+                {
+                    var asignaciones = grupo.OrderBy(a => a.FechaCreacion).ToList();
+                    
+                    for (int i = 0; i < asignaciones.Count; i++)
+                    {
+                        if (asignaciones[i].OrdenAsignacion != i)
+                        {
+                            _logger.LogInformation($"🔧 Corrigiendo orden: {asignaciones[i].TipoKardex} - {grupo.Key:dd/MM/yyyy} - Orden {asignaciones[i].OrdenAsignacion} → {i}");
+                            asignaciones[i].OrdenAsignacion = i;
+                            corregidas++;
+                        }
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation($"✅ Órdenes corregidas: {corregidas} asignación(es)");
+
+                return JsonSuccess($"Se corrigieron {corregidas} asignación(es)");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al corregir órdenes");
+                return JsonError("Error al corregir órdenes");
+            }
+        }
     }
-    // Agregar al final del archivo, FUERA de la clase AsignacionesController
     public class AsignacionRequest
     {
         public string TipoKardex { get; set; } = string.Empty;

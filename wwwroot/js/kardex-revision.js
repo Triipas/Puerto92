@@ -138,15 +138,35 @@ async function aprobarKardex() {
     }
     
     try {
-        const requestData = {
-            kardexId: KARDEX_IDS && KARDEX_IDS.length > 0 ? KARDEX_IDS[0] : 0,
-            tipoKardex: TIPO_KARDEX || 'Cocina',
-            accion: 'Aprobar',
-            observacionesRevision: observaciones,
-            kardexIdsConsolidados: KARDEX_IDS || []
-        };
+        // ⭐ DETERMINAR SI ES KARDEX CONSOLIDADO O INDIVIDUAL
+        const esConsolidado = KARDEX_IDS && KARDEX_IDS.length > 1;
         
-        console.log('📤 Aprobando kardex:', requestData);
+        let requestData;
+        
+        if (esConsolidado) {
+            // ✅ KARDEX CONSOLIDADO DE COCINA (3 kardex)
+            console.log('🍳 Aprobando kardex consolidado de cocina:', KARDEX_IDS);
+            
+            requestData = {
+                kardexId: KARDEX_IDS[0], // El primero como referencia
+                tipoKardex: 'Cocina',
+                accion: 'Aprobar',
+                observacionesRevision: observaciones,
+                kardexIdsConsolidados: KARDEX_IDS // ⭐ PASAR LOS 3 IDS
+            };
+        } else {
+            // ✅ KARDEX INDIVIDUAL (Salón, Bebidas, Vajilla, o Cocina individual)
+            console.log('📋 Aprobando kardex individual:', KARDEX_IDS[0]);
+            
+            requestData = {
+                kardexId: KARDEX_IDS && KARDEX_IDS.length > 0 ? KARDEX_IDS[0] : 0,
+                tipoKardex: TIPO_KARDEX || 'Individual',
+                accion: 'Aprobar',
+                observacionesRevision: observaciones
+            };
+        }
+        
+        console.log('📤 Request de aprobación:', requestData);
         
         const response = await fetch('/Kardex/AprobarRechazarKardex', {
             method: 'POST',
@@ -158,14 +178,21 @@ async function aprobarKardex() {
         });
         
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            const errorText = await response.text();
+            console.error('❌ Error HTTP:', response.status, errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
         
         const result = await response.json();
         
         if (result.success) {
             console.log('✅ Kardex aprobado exitosamente');
-            showNotification('Kardex aprobado exitosamente', 'success');
+            
+            if (esConsolidado) {
+                showNotification(`Los ${KARDEX_IDS.length} kardex de cocina han sido aprobados exitosamente`, 'success');
+            } else {
+                showNotification('Kardex aprobado exitosamente', 'success');
+            }
             
             setTimeout(() => {
                 window.location.href = '/Kardex/PendientesDeRevision';
@@ -202,15 +229,35 @@ async function rechazarKardex() {
     }
     
     try {
-        const requestData = {
-            kardexId: KARDEX_IDS && KARDEX_IDS.length > 0 ? KARDEX_IDS[0] : 0,
-            tipoKardex: TIPO_KARDEX || 'Cocina',
-            accion: 'Rechazar',
-            motivoRechazo: motivo,
-            kardexIdsConsolidados: KARDEX_IDS || []
-        };
+        // ⭐ DETERMINAR SI ES KARDEX CONSOLIDADO O INDIVIDUAL
+        const esConsolidado = KARDEX_IDS && KARDEX_IDS.length > 1;
         
-        console.log('📤 Rechazando kardex:', requestData);
+        let requestData;
+        
+        if (esConsolidado) {
+            // ✅ KARDEX CONSOLIDADO DE COCINA (3 kardex)
+            console.log('🍳 Rechazando kardex consolidado de cocina:', KARDEX_IDS);
+            
+            requestData = {
+                kardexId: KARDEX_IDS[0], // El primero como referencia
+                tipoKardex: 'Cocina',
+                accion: 'Rechazar',
+                motivoRechazo: motivo,
+                kardexIdsConsolidados: KARDEX_IDS // ⭐ PASAR LOS 3 IDS
+            };
+        } else {
+            // ✅ KARDEX INDIVIDUAL
+            console.log('📋 Rechazando kardex individual:', KARDEX_IDS[0]);
+            
+            requestData = {
+                kardexId: KARDEX_IDS && KARDEX_IDS.length > 0 ? KARDEX_IDS[0] : 0,
+                tipoKardex: TIPO_KARDEX || 'Individual',
+                accion: 'Rechazar',
+                motivoRechazo: motivo
+            };
+        }
+        
+        console.log('📤 Request de rechazo:', requestData);
         
         const response = await fetch('/Kardex/AprobarRechazarKardex', {
             method: 'POST',
@@ -222,14 +269,21 @@ async function rechazarKardex() {
         });
         
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            const errorText = await response.text();
+            console.error('❌ Error HTTP:', response.status, errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
         
         const result = await response.json();
         
         if (result.success) {
             console.log('✅ Kardex rechazado exitosamente');
-            showNotification('Kardex rechazado. Los cocineros recibirán una notificación.', 'success');
+            
+            if (esConsolidado) {
+                showNotification(`Los ${KARDEX_IDS.length} kardex de cocina han sido rechazados. Los cocineros recibirán una notificación.`, 'success');
+            } else {
+                showNotification('Kardex rechazado. El empleado recibirá una notificación.', 'success');
+            }
             
             setTimeout(() => {
                 window.location.href = '/Kardex/PendientesDeRevision';

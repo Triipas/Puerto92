@@ -83,7 +83,8 @@ namespace Puerto92.Services
             string usuarioId,
             string tipoKardex,
             DateTime fecha,
-            string? empleadosAdicionales = null)
+            string? empleadosAdicionales = null,
+            bool esResponsableCompartidas = false) // ⭐ NUEVO parámetro
         {
             var fechaFormateada = fecha.ToString("dd/MM/yyyy");
             var horaLimite = "5:30 PM";
@@ -91,19 +92,31 @@ namespace Puerto92.Services
             string mensaje;
             string titulo;
 
-            // Si es un kardex de cocina y hay otros cocineros
             if (tipoKardex.Contains("Cocina") && !string.IsNullOrEmpty(empleadosAdicionales))
             {
                 titulo = $"Asignación de Kardex - {tipoKardex}";
-                mensaje = $"Has sido asignado como responsable del Kardex de {tipoKardex} para el {fechaFormateada}. " +
-                         $"Junto a: {empleadosAdicionales}. " +
-                         $"Recuerda enviar antes de las {horaLimite}.";
+                
+                // ⭐ NUEVO: Mensaje diferenciado
+                if (esResponsableCompartidas)
+                {
+                    mensaje = $"Has sido asignado como responsable del Kardex de {tipoKardex} para el {fechaFormateada}. " +
+                            $"⭐ IMPORTANTE: También deberás llenar las categorías compartidas (Abarrotes, Verduras, Frutiver, Limpieza). " +
+                            $"Junto a: {empleadosAdicionales}. " +
+                            $"Recuerda enviar antes de las {horaLimite}.";
+                }
+                else
+                {
+                    mensaje = $"Has sido asignado como responsable del Kardex de {tipoKardex} para el {fechaFormateada}. " +
+                            $"Solo deberás llenar tu categoría especial. " +
+                            $"Junto a: {empleadosAdicionales}. " +
+                            $"Recuerda enviar antes de las {horaLimite}.";
+                }
             }
             else
             {
                 titulo = $"Asignación de Kardex - {tipoKardex}";
                 mensaje = $"Has sido asignado como responsable del Kardex de {tipoKardex} para el {fechaFormateada}. " +
-                         $"Recuerda enviar antes de las {horaLimite}.";
+                        $"Recuerda enviar antes de las {horaLimite}.";
             }
 
             var datosAdicionales = JsonSerializer.Serialize(new

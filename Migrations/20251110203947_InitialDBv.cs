@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Puerto92.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialDBq : Migration
+    public partial class InitialDBv : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -343,7 +343,8 @@ namespace Puerto92.Migrations
                     RegistroIniciado = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false),
                     DatosParciales = table.Column<string>(type: "TEXT", nullable: true),
                     FechaNotificacion = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    NotificacionEnviada = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false)
+                    NotificacionEnviada = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false),
+                    OrdenAsignacion = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {

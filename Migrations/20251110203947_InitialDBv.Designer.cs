@@ -11,8 +11,8 @@ using Puerto92.Data;
 namespace Puerto92.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251111015952_InitialDBq")]
-    partial class InitialDBq
+    [Migration("20251110203947_InitialDBv")]
+    partial class InitialDBv
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -209,6 +209,9 @@ namespace Puerto92.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(false);
+
+                    b.Property<int>("OrdenAsignacion")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("ReasignadoPor")
                         .HasMaxLength(100)

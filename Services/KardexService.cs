@@ -1451,7 +1451,7 @@ namespace Puerto92.Services
                 throw new Exception("Error: La asignación no tiene un Local válido asignado. Contacte al administrador.");
             }
 
-            _logger.LogInformation($"✅ Asignación encontrada - LocalId: {asignacion.LocalId}, Tipo: {asignacion.TipoKardex}");
+            _logger.LogInformation($"✅ Asignación encontrada - LocalId: {asignacion.LocalId}, Tipo: {asignacion.TipoKardex}, Orden: {asignacion.OrdenAsignacion}");
 
             // Verificar si ya existe un kardex para esta asignación
             var kardexExistente = await _context.KardexCocina
@@ -1481,6 +1481,7 @@ namespace Puerto92.Services
             _logger.LogInformation($"💾 Creando nuevo Kardex de Cocina:");
             _logger.LogInformation($"   LocalId: {kardex.LocalId}");
             _logger.LogInformation($"   TipoCocina: {kardex.TipoCocina}");
+            _logger.LogInformation($"   Orden: {asignacion.OrdenAsignacion}");
 
             _context.KardexCocina.Add(kardex);
             await _context.SaveChangesAsync();
@@ -1494,26 +1495,87 @@ namespace Puerto92.Services
                 throw new Exception("Error al guardar el kardex: LocalId inválido");
             }
 
-            // Obtener categoría especial según tipo de cocina
-            var categoriaEspecial = TipoCocinaKardex.ObtenerCategoriaEspecial(asignacion.TipoKardex);
-
-            // Obtener productos de cocina activos
-            var productosCocina = await _context.Productos
-                .Include(p => p.Categoria)
-                .Where(p => p.Activo &&
-                        p.Categoria!.Tipo == TipoCategoria.Cocina &&
-                        p.Categoria.Activo &&
-                        (
-                            // Productos generales (sin tipo especial)
-                            p.Categoria.TipoCocinaEspecial == null ||
-                            // Productos de la categoría especial de este tipo de cocina
-                            p.Categoria.Nombre == categoriaEspecial
-                        ))
-                .OrderBy(p => p.Categoria!.Orden)
-                .ThenBy(p => p.Codigo)
+            // ⭐ VALIDACIÓN ADICIONAL: Verificar orden en tiempo real
+            var asignacionesDelDia = await _context.AsignacionesKardex
+                .Where(a => a.LocalId == asignacion.LocalId &&
+                        a.Fecha.Date == asignacion.Fecha.Date &&
+                        (a.TipoKardex == TipoKardex.CocinaFria ||
+                            a.TipoKardex == TipoKardex.CocinaCaliente ||
+                            a.TipoKardex == TipoKardex.Parrilla))
+                .OrderBy(a => a.OrdenAsignacion)
+                .Select(a => new { a.Id, a.TipoKardex, a.OrdenAsignacion, a.EmpleadoId })
                 .ToListAsync();
 
+            _logger.LogInformation($"🔍 Asignaciones de cocina del día {asignacion.Fecha.Date:dd/MM/yyyy}:");
+            foreach (var asig in asignacionesDelDia)
+            {
+                var estaAsignacion = asig.Id == asignacionId ? " ← ESTA" : "";
+                _logger.LogInformation($"   - {asig.TipoKardex}: Orden={asig.OrdenAsignacion}{estaAsignacion}");
+            }
+
+            // Determinar qué productos cargar según el orden
+            var categoriaEspecial = TipoCocinaKardex.ObtenerCategoriaEspecial(asignacion.TipoKardex);
+            var esPrimerCocinero = asignacion.OrdenAsignacion == 0;
+
+            // ⭐ VALIDACIÓN ADICIONAL: Verificar que realmente sea el primero en orden
+            var hayOtroConOrden0 = asignacionesDelDia.Any(a => a.OrdenAsignacion == 0 && a.Id != asignacionId);
+            if (esPrimerCocinero && hayOtroConOrden0)
+            {
+                _logger.LogWarning($"⚠️ CONFLICTO: Hay otro cocinero con OrdenAsignacion = 0");
+                // Recalcular orden basado en el orden real
+                var miPosicion = asignacionesDelDia.FindIndex(a => a.Id == asignacionId);
+                esPrimerCocinero = miPosicion == 0;
+                _logger.LogInformation($"🔄 Orden recalculado: Posición {miPosicion}, EsPrimero: {esPrimerCocinero}");
+            }
+
+            _logger.LogInformation($"✅ Asignación encontrada - LocalId: {asignacion.LocalId}, Tipo: {asignacion.TipoKardex}, Orden: {asignacion.OrdenAsignacion}, EsPrimero: {esPrimerCocinero}");
+
+            List<Producto> productosCocina;
+
+            if (esPrimerCocinero)
+            {
+                // ✅ PRIMER COCINERO: Cargar categorías COMPARTIDAS + SU categoría especial
+                _logger.LogInformation($"👨‍🍳 PRIMER COCINERO ({asignacion.TipoKardex}) - Cargando categorías compartidas + {categoriaEspecial}");
+                
+                productosCocina = await _context.Productos
+                    .Include(p => p.Categoria)
+                    .Where(p => p.Activo &&
+                            p.Categoria!.Tipo == TipoCategoria.Cocina &&
+                            p.Categoria.Activo &&
+                            (
+                                // Categorías compartidas (sin tipo especial)
+                                p.Categoria.TipoCocinaEspecial == null ||
+                                // O su categoría especial
+                                p.Categoria.Nombre == categoriaEspecial
+                            ))
+                    .OrderBy(p => p.Categoria!.Orden)
+                    .ThenBy(p => p.Codigo)
+                    .ToListAsync();
+            }
+            else
+            {
+                // ✅ SEGUNDO/TERCER COCINERO: Cargar SOLO su categoría especial
+                _logger.LogInformation($"👨‍🍳 COCINERO #{asignacion.OrdenAsignacion + 1} ({asignacion.TipoKardex}) - Cargando SOLO categoría especial: {categoriaEspecial}");
+                
+                productosCocina = await _context.Productos
+                    .Include(p => p.Categoria)
+                    .Where(p => p.Activo &&
+                            p.Categoria!.Tipo == TipoCategoria.Cocina &&
+                            p.Categoria.Activo &&
+                            p.Categoria.Nombre == categoriaEspecial) // SOLO su categoría especial
+                    .OrderBy(p => p.Codigo)
+                    .ToListAsync();
+            }
+
             _logger.LogInformation($"📦 {productosCocina.Count} productos encontrados para el kardex");
+
+            // Log detallado de categorías cargadas
+            var categoriasUnicas = productosCocina
+                .Select(p => p.Categoria?.Nombre)
+                .Distinct()
+                .ToList();
+
+            _logger.LogInformation($"📋 Categorías cargadas: {string.Join(", ", categoriasUnicas)}");
 
             var orden = 1;
             foreach (var producto in productosCocina)
@@ -1522,9 +1584,9 @@ namespace Puerto92.Services
                 {
                     KardexCocinaId = kardex.Id,
                     ProductoId = producto.Id,
-                    UnidadMedida = producto.Unidad, // Usar unidad por defecto del producto
-                    CantidadAPedir = 0, // TODO: Calcular según lógica de negocio
-                    Ingresos = 0, // TODO: Obtener de compras del día
+                    UnidadMedida = producto.Unidad,
+                    CantidadAPedir = 0,
+                    Ingresos = 0,
                     Orden = orden++
                 };
 
@@ -1548,6 +1610,24 @@ namespace Puerto92.Services
             );
 
             return await ObtenerKardexCocinaAsync(kardex.Id);
+        }
+        
+        /// <summary>
+        /// Determinar si este cocinero es responsable de las categorías compartidas
+        /// </summary>
+        private async Task<bool> EsResponsableCategoriasCompartidas(int asignacionId)
+        {
+            var asignacion = await _context.AsignacionesKardex
+                .FirstOrDefaultAsync(a => a.Id == asignacionId);
+            
+            if (asignacion == null) return false;
+            
+            // Solo el primer cocinero asignado (OrdenAsignacion == 0) es responsable de compartidas
+            var esPrimerCocinero = asignacion.OrdenAsignacion == 0;
+            
+            _logger.LogInformation($"🔍 Verificando responsable de compartidas: AsignacionId={asignacionId}, Orden={asignacion.OrdenAsignacion}, EsResponsable={esPrimerCocinero}");
+            
+            return esPrimerCocinero;
         }
 
         public async Task<KardexCocinaViewModel> ObtenerKardexCocinaAsync(int kardexId)
@@ -1649,7 +1729,7 @@ namespace Puerto92.Services
                 {
                     NombreCategoria = grupo.Key,
                     EsEspecial = esEspecial,
-                    Expandida = true, // Todas expandidas por defecto
+                    Expandida = true,
                     Productos = grupo.Select(d => new KardexCocinaDetalleViewModel
                     {
                         Id = d.Id,
@@ -1672,6 +1752,9 @@ namespace Puerto92.Services
             var totalProductos = categorias.Sum(c => c.TotalProductos);
             var productosCompletos = categorias.Sum(c => c.ProductosCompletos);
 
+            // ⭐ NUEVO: Determinar si es responsable de compartidas
+            var esResponsableCompartidas = await EsResponsableCategoriasCompartidas(kardex.AsignacionId);
+
             return new KardexCocinaViewModel
             {
                 Id = kardex.Id,
@@ -1691,7 +1774,8 @@ namespace Puerto92.Services
                 ProductosCompletos = productosCompletos,
                 PorcentajeAvance = totalProductos > 0
                     ? (decimal)productosCompletos / totalProductos * 100
-                    : 0
+                    : 0,
+                EsResponsableCategoriasCompartidas = esResponsableCompartidas // ⭐ NUEVO
             };
         }
 
@@ -1984,16 +2068,17 @@ namespace Puerto92.Services
         // ==========================================
 
         /// <summary>
-        /// Obtener kardex de cocina consolidado (3 cocineros)
+        /// Obtener kardex de cocina consolidado SIMPLIFICADO
         /// </summary>
         public async Task<KardexCocinaConsolidadoViewModel> ObtenerKardexCocinaConsolidadoAsync(List<int> kardexIds)
         {
-            _logger.LogInformation($"🔍 Obteniendo kardex consolidado de cocina: {string.Join(", ", kardexIds)}");
+            _logger.LogInformation($"🔍 Obteniendo kardex consolidado de cocina (SIMPLIFICADO): {string.Join(", ", kardexIds)}");
 
             // Obtener los 3 kardex de cocina
             var kardexList = await _context.KardexCocina
                 .Include(k => k.Empleado)
                 .Include(k => k.Local)
+                .Include(k => k.Asignacion) // ⭐ INCLUIR para ver el orden
                 .Include(k => k.Detalles)
                     .ThenInclude(d => d.Producto)
                         .ThenInclude(p => p.Categoria)
@@ -2018,8 +2103,8 @@ namespace Puerto92.Services
                 KardexParrilla = kardexList.FirstOrDefault(k => k.TipoCocina == TipoKardex.Parrilla)?.ToIndividualDto()
             };
 
-            // Consolidar productos por categoría
-            var categoriasDict = new Dictionary<string, CategoriaCocinaConsolidadaViewModel>();
+            // ⭐ NUEVA LÓGICA SIMPLIFICADA: Consolidar productos
+            var categorias = new Dictionary<string, CategoriaCocinaSimplificadaViewModel>();
 
             // Obtener todas las categorías únicas
             var todasLasCategorias = kardexList
@@ -2029,13 +2114,13 @@ namespace Puerto92.Services
                 .OrderBy(c => c)
                 .ToList();
 
+            _logger.LogInformation($"📋 Categorías encontradas: {string.Join(", ", todasLasCategorias)}");
+
             foreach (var nombreCategoria in todasLasCategorias)
             {
-                var categoria = new CategoriaCocinaConsolidadaViewModel
+                var categoria = new CategoriaCocinaSimplificadaViewModel
                 {
                     NombreCategoria = nombreCategoria,
-                    EsEspecial = EsCategoriaEspecial(nombreCategoria),
-                    TipoCocinaResponsable = ObtenerTipoCocinaResponsable(nombreCategoria),
                     Expandida = true
                 };
 
@@ -2058,79 +2143,52 @@ namespace Puerto92.Services
                     var producto = productoGrupo.Producto;
                     if (producto == null) continue;
 
-                    var productoVm = new ProductoCocinaConsolidadoViewModel
+                    // ⭐ LÓGICA CLAVE: Obtener el stock del cocinero responsable
+                    var detalleResponsable = productoGrupo.Detalles.FirstOrDefault();
+                    
+                    if (detalleResponsable?.StockFinal == null)
+                    {
+                        _logger.LogWarning($"⚠️ Producto {producto.Nombre} no tiene stock registrado");
+                        continue;
+                    }
+
+                    var stockFinal = detalleResponsable.StockFinal.Value;
+                    var stockEsperado = detalleResponsable.CantidadAPedir + detalleResponsable.Ingresos;
+                    var diferencia = stockFinal - stockEsperado;
+
+                    decimal? diferenciaPorcentual = null;
+                    bool tieneDiferenciaSignificativa = false;
+
+                    if (stockEsperado > 0)
+                    {
+                        diferenciaPorcentual = Math.Abs((diferencia / stockEsperado) * 100);
+                        tieneDiferenciaSignificativa = diferenciaPorcentual > 10;
+                    }
+
+                    var productoVm = new ProductoCocinaSimplificadoViewModel
                     {
                         ProductoId = productoGrupo.ProductoId,
                         Codigo = producto.Codigo,
                         NombreProducto = producto.Nombre,
-                        UnidadMedida = productoGrupo.Detalles.First().UnidadMedida,
-                        CantidadAPedir = productoGrupo.Detalles.First().CantidadAPedir,
-                        Ingresos = productoGrupo.Detalles.First().Ingresos,
-                        Orden = productoGrupo.Detalles.First().Orden
+                        UnidadMedida = detalleResponsable.UnidadMedida,
+                        CantidadAPedir = detalleResponsable.CantidadAPedir,
+                        Ingresos = detalleResponsable.Ingresos,
+                        StockFinal = stockFinal,
+                        Diferencia = diferencia,
+                        DiferenciaPorcentual = diferenciaPorcentual,
+                        TieneDiferenciaSignificativa = tieneDiferenciaSignificativa,
+                        Orden = detalleResponsable.Orden
                     };
-
-                    if (categoria.EsEspecial)
-                    {
-                        // Producto específico: solo 1 cocinero responsable
-                        var detalleResponsable = productoGrupo.Detalles.FirstOrDefault();
-                        productoVm.StockFinalEspecifico = detalleResponsable?.StockFinal;
-
-                        // Calcular diferencia
-                        var stockEsperado = productoVm.CantidadAPedir + productoVm.Ingresos;
-                        productoVm.Diferencia = (productoVm.StockFinalEspecifico ?? 0) - stockEsperado;
-
-                        if (stockEsperado > 0)
-                        {
-                            productoVm.DiferenciaPorcentual = Math.Abs((productoVm.Diferencia / stockEsperado) * 100);
-                            productoVm.TieneDiferenciaSignificativa = productoVm.DiferenciaPorcentual > 10;
-                        }
-                    }
-                    else
-                    {
-                        // Producto compartido: conteo de los 3 cocineros
-                        foreach (var detalle in productoGrupo.Detalles)
-                        {
-                            var kardexOrigen = kardexList.First(k => k.Detalles.Contains(detalle));
-
-                            if (kardexOrigen.TipoCocina == TipoKardex.CocinaFria)
-                                productoVm.StockFinalCocinaFria = detalle.StockFinal;
-                            else if (kardexOrigen.TipoCocina == TipoKardex.CocinaCaliente)
-                                productoVm.StockFinalCocinaCaliente = detalle.StockFinal;
-                            else if (kardexOrigen.TipoCocina == TipoKardex.Parrilla)
-                                productoVm.StockFinalParrilla = detalle.StockFinal;
-                        }
-
-                        // Calcular promedio
-                        var conteos = new List<decimal>();
-                        if (productoVm.StockFinalCocinaFria.HasValue) conteos.Add(productoVm.StockFinalCocinaFria.Value);
-                        if (productoVm.StockFinalCocinaCaliente.HasValue) conteos.Add(productoVm.StockFinalCocinaCaliente.Value);
-                        if (productoVm.StockFinalParrilla.HasValue) conteos.Add(productoVm.StockFinalParrilla.Value);
-
-                        if (conteos.Any())
-                        {
-                            productoVm.StockFinalPromedio = conteos.Average();
-
-                            // Calcular diferencia basada en el promedio
-                            var stockEsperado = productoVm.CantidadAPedir + productoVm.Ingresos;
-                            productoVm.Diferencia = productoVm.StockFinalPromedio.Value - stockEsperado;
-
-                            if (stockEsperado > 0)
-                            {
-                                productoVm.DiferenciaPorcentual = Math.Abs((productoVm.Diferencia / stockEsperado) * 100);
-                                productoVm.TieneDiferenciaSignificativa = productoVm.DiferenciaPorcentual > 10;
-                            }
-                        }
-                    }
 
                     categoria.Productos.Add(productoVm);
                 }
 
-                categoriasDict[nombreCategoria] = categoria;
+                categorias[nombreCategoria] = categoria;
             }
 
-            viewModel.CategoriasConsolidadas = categoriasDict.Values.ToList();
-            viewModel.TotalProductos = viewModel.CategoriasConsolidadas.Sum(c => c.TotalProductos);
-            viewModel.ProductosConDiferencia = viewModel.CategoriasConsolidadas.Sum(c => c.ProductosConDiferencia);
+            viewModel.Categorias = categorias.Values.ToList();
+            viewModel.TotalProductos = viewModel.Categorias.Sum(c => c.TotalProductos);
+            viewModel.ProductosConDiferencia = viewModel.Categorias.Sum(c => c.ProductosConDiferencia);
 
             if (viewModel.TotalProductos > 0)
             {
@@ -2466,6 +2524,12 @@ namespace Puerto92.Services
 
             try
             {
+                _logger.LogInformation("📤 REQUEST RECIBIDO:");
+                _logger.LogInformation($"   KardexId: {request.KardexId}");
+                _logger.LogInformation($"   TipoKardex: {request.TipoKardex}");
+                _logger.LogInformation($"   Accion: {request.Accion}");
+                _logger.LogInformation($"   KardexIdsConsolidados: {(request.KardexIdsConsolidados != null ? string.Join(", ", request.KardexIdsConsolidados) : "NULL")}");
+                
                 if (request.Accion == "Aprobar")
                 {
                     return await AprobarKardexAsync(request, administradorId, transaction);
@@ -2496,6 +2560,21 @@ namespace Puerto92.Services
             Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction)
         {
             _logger.LogInformation($"✅ Iniciando aprobación de kardex: {request.TipoKardex}");
+
+            // ⭐ VALIDACIÓN: Verificar que haya kardex IDs
+            if (request.KardexIdsConsolidados != null && request.KardexIdsConsolidados.Count > 0)
+            {
+                _logger.LogInformation($"🍳 Aprobación CONSOLIDADA: {request.KardexIdsConsolidados.Count} kardex");
+                _logger.LogInformation($"   IDs: {string.Join(", ", request.KardexIdsConsolidados)}");
+            }
+            else if (request.KardexId > 0)
+            {
+                _logger.LogInformation($"📋 Aprobación INDIVIDUAL: Kardex ID {request.KardexId}");
+            }
+            else
+            {
+                throw new Exception("No se proporcionaron IDs de kardex para aprobar");
+            }
 
             // Determinar si es kardex consolidado de cocina
             var esKardexConsolidado = request.KardexIdsConsolidados != null && 
@@ -2736,6 +2815,8 @@ namespace Puerto92.Services
         /// </summary>
         private async Task ActualizarStockDesdeCocinaConsolidadaAsync(List<int> kardexIds)
         {
+            _logger.LogInformation($"🔄 Actualizando stock desde kardex de cocina consolidado...");
+            _logger.LogInformation($"   Kardex IDs: {string.Join(", ", kardexIds)}");
             
             // Obtener todos los kardex
             var kardexList = await _context.KardexCocina
@@ -2746,9 +2827,13 @@ namespace Puerto92.Services
                 .ToListAsync();
 
             if (!kardexList.Any())
+            {
+                _logger.LogWarning("⚠️ No se encontraron kardex para actualizar stock");
                 return;
+            }
 
             var localId = kardexList.First().LocalId;
+            _logger.LogInformation($"📍 Local ID: {localId}");
 
             // Agrupar productos por ProductoId
             var productosAgrupados = kardexList
@@ -2757,29 +2842,27 @@ namespace Puerto92.Services
                 .GroupBy(d => d.ProductoId)
                 .ToList();
 
+            _logger.LogInformation($"📦 Total de productos únicos: {productosAgrupados.Count}");
+
+            int productosActualizados = 0;
+
             foreach (var grupoProducto in productosAgrupados)
             {
                 var productoId = grupoProducto.Key;
                 var detalles = grupoProducto.ToList();
 
-                // Determinar si es producto compartido o específico
-                var producto = detalles.First().Producto;
-                var esEspecifico = producto?.Categoria?.TipoCocinaEspecial != null;
+                // ⭐ LÓGICA SIMPLIFICADA: Usar el stock del primer detalle (el cocinero responsable)
+                var detalleResponsable = detalles.First();
+                var stockFinal = detalleResponsable.StockFinal!.Value;
 
-                decimal stockFinal;
+                var producto = detalleResponsable.Producto;
+                var nombreProducto = producto?.Nombre ?? $"ID:{productoId}";
 
-                if (esEspecifico)
-                {
-                    // Producto específico: usar el valor del cocinero responsable
-                    stockFinal = detalles.First().StockFinal!.Value;
-                }
-                else
-                {
-                    // Producto compartido: usar promedio de los 3 cocineros
-                    stockFinal = detalles.Average(d => d.StockFinal!.Value);
-                }
+                _logger.LogInformation($"   📦 Producto: {nombreProducto}");
+                _logger.LogInformation($"      Stock Final: {stockFinal:F2}");
+                _logger.LogInformation($"      Detalles encontrados: {detalles.Count}");
 
-                // ✅ ACTUALIZAR STOCK USANDO EL SERVICIO INYECTADO
+                // ✅ ACTUALIZAR STOCK USANDO EL SERVICIO
                 await _stockService.ActualizarStockProductoAsync(
                     productoId: productoId,
                     localId: localId,
@@ -2789,8 +2872,11 @@ namespace Puerto92.Services
                     observaciones: $"Aprobación de kardex de cocina consolidado - {detalles.Count} cocinero(s)"
                 );
 
-                _logger.LogInformation($"📦 Stock actualizado: Producto {productoId} = {stockFinal:F2}");
+                productosActualizados++;
+                _logger.LogInformation($"      ✅ Stock actualizado");
             }
+
+            _logger.LogInformation($"✅ Stock consolidado actualizado: {productosActualizados} producto(s)");
         }
 
         /// <summary>

@@ -114,6 +114,12 @@ namespace Puerto92.Models
         /// Indica si la notificación fue enviada
         /// </summary>
         public bool NotificacionEnviada { get; set; } = false;
+
+        /// <summary>
+        /// Orden de asignación para el mismo tipo de kardex y fecha (0 = primero, 1 = segundo, etc.)
+        /// Usado para determinar quién llena las categorías compartidas en kardex de cocina
+        /// </summary>
+        public int OrdenAsignacion { get; set; } = 0;
     }
 
     /// <summary>

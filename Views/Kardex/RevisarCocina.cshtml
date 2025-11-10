@@ -1,6 +1,6 @@
 @model Puerto92.ViewModels.KardexCocinaConsolidadoViewModel
 @{
-    ViewData["Title"] = "Revisión de Kardex de Cocina Consolidado";
+    ViewData["Title"] = "Revisión de Kardex de Cocina";
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
 }
 
@@ -17,7 +17,7 @@
         </div>
         <p class="page-subtitle">
             @Model.Fecha.ToString("dddd, dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES")) - 
-            Vista Consolidada de los 3 Cocineros
+            Kardex Consolidado de los 3 Cocineros
         </p>
     </div>
 </div>
@@ -129,8 +129,8 @@
                     Instrucciones de revisión
                 </h3>
                 <ul style="font-size: 13px; color: #1E40AF; line-height: 1.8; margin: 0; padding-left: 1.5rem;">
-                    <li><strong>Productos compartidos</strong> (Abarrotes, Verduras, Frutiver, Limpieza): Muestra el conteo de los 3 cocineros y su promedio</li>
-                    <li><strong>Productos específicos</strong> (Fríos, Calientes, Crocantes): Muestra solo el conteo del cocinero responsable de esa área</li>
+                    <li>Las <strong>categorías compartidas</strong> fueron llenadas por el primer cocinero asignado</li>
+                    <li>Las <strong>categorías especiales</strong> fueron llenadas por el cocinero responsable de cada área</li>
                     <li><strong>Diferencias significativas</strong>: Productos con diferencia >10% se resaltan en amarillo con ícono ⚠️</li>
                     <li><strong>Secciones colapsables</strong>: Haga clic en el encabezado para expandir/contraer cada categoría</li>
                 </ul>
@@ -153,37 +153,21 @@
     </div>
 </div>
 
-<!-- Categorías Consolidadas -->
+<!-- ⭐ CATEGORÍAS SIMPLIFICADAS - TODAS IGUALES -->
 <div id="categoriasContainer">
-    @foreach (var categoria in Model.CategoriasConsolidadas)
+    @foreach (var categoria in Model.Categorias)
     {
         var categoriaNormalizada = categoria.NombreCategoria.Replace(" ", "-").ToLower();
-        var iconoCategoria = categoria.EsEspecial ? "star" : "box";
-        var colorCategoria = categoria.EsEspecial ? "#F59E0B" : "#64748B";
         
         <div class="content-card categoria-card" data-categoria="@categoria.NombreCategoria" style="margin-bottom: 1rem;">
             <div class="categoria-header-revision" onclick="toggleCategoria('@categoriaNormalizada')">
                 <div class="categoria-info">
-                    <div class="categoria-icono" style="background: @(categoria.EsEspecial ? "rgba(245, 158, 11, 0.1)" : "rgba(100, 116, 123, 0.1)")">
-                        <i class="fa-solid fa-@iconoCategoria" style="color: @colorCategoria;"></i>
+                    <div class="categoria-icono" style="background: rgba(100, 116, 123, 0.1)">
+                        <i class="fa-solid fa-box" style="color: #64748B;"></i>
                     </div>
                     <div>
                         <h3 class="categoria-titulo">
                             @categoria.NombreCategoria
-                            @if (categoria.EsEspecial)
-                            {
-                                <span class="badge-especial">
-                                    <i class="fa-solid fa-shield-check"></i>
-                                    Específico - @categoria.TipoCocinaResponsable
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="badge-compartido">
-                                    <i class="fa-solid fa-users"></i>
-                                    Compartido - 3 Cocineros
-                                </span>
-                            }
                         </h3>
                         <p class="categoria-subtitulo">
                             @categoria.TotalProductos productos
@@ -202,127 +186,50 @@
             </div>
             
             <div class="categoria-body @(categoria.Expandida ? "expanded" : "")" id="categoria-@categoriaNormalizada">
-                @if (categoria.EsEspecial)
-                {
-                    <!-- Tabla para productos específicos (1 cocinero) -->
-                    <table class="kardex-revision-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 80px;">Código</th>
-                                <th style="width: 300px;">Producto</th>
-                                <th style="width: 100px;">Unidad</th>
-                                <th style="width: 120px;">Cantidad a Pedir</th>
-                                <th style="width: 100px;">Ingresos</th>
-                                <th style="width: 150px;">Stock Contado</th>
-                                <th style="width: 100px;">Diferencia</th>
+                <!-- ⭐ TABLA SIMPLE - TODOS LOS PRODUCTOS IGUAL -->
+                <table class="kardex-revision-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">Código</th>
+                            <th style="width: 300px;">Producto</th>
+                            <th style="width: 100px;">Unidad</th>
+                            <th style="width: 120px;">Cantidad a Pedir</th>
+                            <th style="width: 100px;">Ingresos</th>
+                            <th style="width: 150px;">Stock Contado</th>
+                            <th style="width: 120px;">Diferencia</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var producto in categoria.Productos)
+                        {
+                            var rowClass = producto.TieneDiferenciaSignificativa ? "row-diferencia" : "";
+                            
+                            <tr class="@rowClass" data-producto="@producto.NombreProducto">
+                                <td class="td-codigo">@producto.Codigo</td>
+                                <td class="td-nombre">@producto.NombreProducto</td>
+                                <td class="td-unidad">@producto.UnidadMedida</td>
+                                <td class="td-readonly">@producto.CantidadAPedir.ToString("0.##")</td>
+                                <td class="td-readonly">@producto.Ingresos.ToString("0.##")</td>
+                                <td class="td-stock">
+                                    <strong>@producto.StockFinal.ToString("0.##")</strong>
+                                </td>
+                                <td class="td-diferencia">
+                                    @if (producto.TieneDiferenciaSignificativa)
+                                    {
+                                        <span class="badge-diferencia">
+                                            <i class="fa-solid fa-exclamation-triangle"></i>
+                                            @producto.Diferencia.ToString("0.##") (@producto.DiferenciaPorcentual?.ToString("0.##")%)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span>@producto.Diferencia.ToString("0.##")</span>
+                                    }
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var producto in categoria.Productos)
-                            {
-                                var rowClass = producto.TieneDiferenciaSignificativa ? "row-diferencia" : "";
-                                
-                                <tr class="@rowClass" data-producto="@producto.NombreProducto">
-                                    <td class="td-codigo">@producto.Codigo</td>
-                                    <td class="td-nombre">@producto.NombreProducto</td>
-                                    <td class="td-unidad">@producto.UnidadMedida</td>
-                                    <td class="td-readonly">@producto.CantidadAPedir.ToString("0.##")</td>
-                                    <td class="td-readonly">@producto.Ingresos.ToString("0.##")</td>
-                                    <td class="td-stock">
-                                        <strong>@producto.StockFinalEspecifico?.ToString("0.##")</strong>
-                                    </td>
-                                    <td class="td-diferencia">
-                                        @if (producto.TieneDiferenciaSignificativa)
-                                        {
-                                            <span class="badge-diferencia">
-                                                <i class="fa-solid fa-exclamation-triangle"></i>
-                                                @producto.Diferencia.ToString("0.##") (@producto.DiferenciaPorcentual?.ToString("0.##")%)
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span>@producto.Diferencia.ToString("0.##")</span>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                }
-                else
-                {
-                    <!-- Tabla para productos compartidos (3 cocineros) -->
-                    <table class="kardex-revision-table kardex-consolidado-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 80px;">Código</th>
-                                <th style="width: 250px;">Producto</th>
-                                <th style="width: 80px;">Unidad</th>
-                                <th style="width: 100px;">Cant. a Pedir</th>
-                                <th style="width: 90px;">Ingresos</th>
-                                <th style="width: 110px;">
-                                    <div class="header-cocinero header-fria">
-                                        <i class="fa-solid fa-snowflake"></i>
-                                        Cocina Fría
-                                    </div>
-                                </th>
-                                <th style="width: 110px;">
-                                    <div class="header-cocinero header-caliente">
-                                        <i class="fa-solid fa-fire"></i>
-                                        Cocina Caliente
-                                    </div>
-                                </th>
-                                <th style="width: 110px;">
-                                    <div class="header-cocinero header-parrilla">
-                                        <i class="fa-solid fa-fire-burner"></i>
-                                        Parrilla
-                                    </div>
-                                </th>
-                                <th style="width: 110px;">Promedio</th>
-                                <th style="width: 100px;">Diferencia</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var producto in categoria.Productos)
-                            {
-                                var rowClass = producto.TieneDiferenciaSignificativa ? "row-diferencia" : "";
-                                
-                                <tr class="@rowClass" data-producto="@producto.NombreProducto">
-                                    <td class="td-codigo">@producto.Codigo</td>
-                                    <td class="td-nombre">@producto.NombreProducto</td>
-                                    <td class="td-unidad">@producto.UnidadMedida</td>
-                                    <td class="td-readonly">@producto.CantidadAPedir.ToString("0.##")</td>
-                                    <td class="td-readonly">@producto.Ingresos.ToString("0.##")</td>
-                                    <td class="td-stock td-stock-fria">
-                                        @(producto.StockFinalCocinaFria?.ToString("0.##") ?? "-")
-                                    </td>
-                                    <td class="td-stock td-stock-caliente">
-                                        @(producto.StockFinalCocinaCaliente?.ToString("0.##") ?? "-")
-                                    </td>
-                                    <td class="td-stock td-stock-parrilla">
-                                        @(producto.StockFinalParrilla?.ToString("0.##") ?? "-")
-                                    </td>
-                                    <td class="td-promedio">
-                                        <strong>@producto.StockFinalPromedio?.ToString("0.##")</strong>
-                                    </td>
-                                    <td class="td-diferencia">
-                                        @if (producto.TieneDiferenciaSignificativa)
-                                        {
-                                            <span class="badge-diferencia">
-                                                <i class="fa-solid fa-exclamation-triangle"></i>
-                                                @producto.Diferencia.ToString("0.##") (@producto.DiferenciaPorcentual?.ToString("0.##")%)
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span>@producto.Diferencia.ToString("0.##")</span>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                }
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
     }
@@ -380,25 +287,14 @@
     </div>
 </div>
 
-@* Cargar Modales usando partials *@
+@* Cargar Modales *@
 <partial name="Modals/_AprobarKardexModal" />
 <partial name="Modals/_RechazarKardexModal" />
 
 @section Scripts {
     <script>
-        const KARDEX_IDS = [@string.Join(",", Model.CategoriasConsolidadas.FirstOrDefault()?.Productos.Select(_ => _.ProductoId) ?? new List<int>())];
+        const KARDEX_IDS = [@string.Join(",", Model.Categorias.FirstOrDefault()?.Productos.Select(p => p.ProductoId) ?? new List<int>())];
         const TIPO_KARDEX = 'Cocina';
-
-        // Configurar mensajes del modal al cargar
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('aprobarModalSubtitle').textContent = 'Confirmación para Kardex de Cocina Consolidado';
-            document.getElementById('aprobarModalMensaje').textContent = 'Se aprobarán los 3 kardex de cocina';
-            document.getElementById('aprobarModalDetalle').textContent = 'Los 3 cocineros recibirán una notificación de aprobación';
-            
-            document.getElementById('rechazarModalSubtitle').textContent = 'Rechazo de Kardex de Cocina';
-            document.getElementById('rechazarModalMensaje').textContent = 'Se rechazarán los 3 kardex de cocina';
-            document.getElementById('rechazarModalDetalle').textContent = 'Los cocineros deberán corregir y reenviar el kardex';
-        });
     </script>
     <script src="~/js/kardex-revision.js" asp-append-version="true"></script>
 }

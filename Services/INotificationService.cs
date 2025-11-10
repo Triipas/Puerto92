@@ -31,7 +31,8 @@ namespace Puerto92.Services
             string usuarioId,
             string tipoKardex,
             DateTime fecha,
-            string? empleadosAdicionales = null);
+            string? empleadosAdicionales = null,
+            bool esResponsableCompartidas = false);
 
         /// <summary>
         /// Crear notificación de reasignación de kardex

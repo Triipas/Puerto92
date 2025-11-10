@@ -32,6 +32,10 @@ namespace Puerto92.ViewModels
         public int TotalProductos { get; set; }
         public int ProductosCompletos { get; set; }
         public decimal PorcentajeAvance { get; set; }
+        /// <summary>
+        /// Indica si este cocinero es responsable de llenar las categorías compartidas
+        /// </summary>
+        public bool EsResponsableCategoriasCompartidas { get; set; }
     }
 
     /// <summary>

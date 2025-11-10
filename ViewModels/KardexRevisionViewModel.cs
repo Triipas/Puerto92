@@ -13,22 +13,72 @@ namespace Puerto92.ViewModels
         public DateTime Fecha { get; set; }
         public int LocalId { get; set; }
         public string LocalNombre { get; set; } = string.Empty;
-        
-        // Los 3 kardex individuales
+
+        // Los 3 kardex individuales (para referencia)
         public KardexCocinaIndividualDto? KardexCocinaFria { get; set; }
         public KardexCocinaIndividualDto? KardexCocinaCaliente { get; set; }
         public KardexCocinaIndividualDto? KardexParrilla { get; set; }
-        
-        // Categorías consolidadas
-        public List<CategoriaCocinaConsolidadaViewModel> CategoriasConsolidadas { get; set; } = new();
-        
+
+        // ⭐ SIMPLIFICADO: Categorías con productos y su conteo único
+        public List<CategoriaCocinaSimplificadaViewModel> Categorias { get; set; } = new();
+
         // Personal presente consolidado
         public List<EmpleadoPresenteDto> PersonalPresenteTotal { get; set; } = new();
-        
+
         // Estadísticas
         public int TotalProductos { get; set; }
         public int ProductosConDiferencia { get; set; }
         public decimal PorcentajeProductosConDiferencia { get; set; }
+    }
+
+    /// <summary>
+    /// Categoría simplificada (todas se muestran igual)
+    /// </summary>
+    public class CategoriaCocinaSimplificadaViewModel
+    {
+        public string NombreCategoria { get; set; } = string.Empty;
+        public bool Expandida { get; set; } = true;
+        public List<ProductoCocinaSimplificadoViewModel> Productos { get; set; } = new();
+
+        // Estadísticas
+        public int TotalProductos => Productos.Count;
+        public int ProductosConDiferencia => Productos.Count(p => p.TieneDiferenciaSignificativa);
+    }
+
+    /// <summary>
+    /// Producto SIMPLIFICADO - solo un conteo
+    /// </summary>
+    public class ProductoCocinaSimplificadoViewModel
+    {
+        public int ProductoId { get; set; }
+        public string Codigo { get; set; } = string.Empty;
+        public string NombreProducto { get; set; } = string.Empty;
+        public string UnidadMedida { get; set; } = string.Empty;
+        public decimal CantidadAPedir { get; set; }
+        public decimal Ingresos { get; set; }
+        
+        /// <summary>
+        /// Stock final único (del cocinero responsable)
+        /// </summary>
+        public decimal StockFinal { get; set; }
+        
+        /// <summary>
+        /// Diferencia: StockFinal - (CantidadAPedir + Ingresos)
+        /// </summary>
+        public decimal Diferencia { get; set; }
+        
+        /// <summary>
+        /// Porcentaje de diferencia
+        /// </summary>
+        public decimal? DiferenciaPorcentual { get; set; }
+        
+        /// <summary>
+        /// Si tiene diferencia mayor al 10%
+        /// </summary>
+        public bool TieneDiferenciaSignificativa { get; set; }
+        
+        public string? Observaciones { get; set; }
+        public int Orden { get; set; }
     }
 
     /// <summary>

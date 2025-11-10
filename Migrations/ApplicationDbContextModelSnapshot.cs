@@ -207,6 +207,9 @@ namespace Puerto92.Migrations
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(false);
 
+                    b.Property<int>("OrdenAsignacion")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("ReasignadoPor")
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
