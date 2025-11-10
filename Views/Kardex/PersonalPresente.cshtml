@@ -9,6 +9,24 @@
     var puedeEnviar = dentroDeHorario || Model.EnvioHabilitadoManualmente;
 }
 
+<!-- ⭐ SCRIPTS PRIMERO - Definir variables ANTES de cargar los JS -->
+<script>
+    // ⭐ DEFINIR VARIABLES GLOBALES INMEDIATAMENTE
+    window.KARDEX_ID = @Model.KardexId;
+    window.TIPO_KARDEX = '@Html.Raw(Model.TipoKardex)';
+    window.EMPLEADO_RESPONSABLE_ID = '@Model.EmpleadoResponsableId';
+    window.TOTAL_EMPLEADOS = @Model.TotalEmpleados;
+    window.DENTRO_DE_HORARIO = @(dentroDeHorario ? "true" : "false");
+    window.ENVIO_HABILITADO_MANUALMENTE = @(Model.EnvioHabilitadoManualmente ? "true" : "false");
+    window.HORA_LIMITE = "17:30:00";
+    
+    console.log('🔧 Variables JavaScript inicializadas en HEAD:');
+    console.log('   KARDEX_ID:', window.KARDEX_ID);
+    console.log('   TIPO_KARDEX:', window.TIPO_KARDEX);
+    console.log('   DENTRO_DE_HORARIO:', window.DENTRO_DE_HORARIO);
+    console.log('   ENVIO_HABILITADO_MANUALMENTE:', window.ENVIO_HABILITADO_MANUALMENTE);
+</script>
+
 <div class="page-header">
     <div>
         <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
@@ -108,7 +126,7 @@
     </div>
 </div>
 
-<!-- ⭐ NUEVO: Estado de Horario -->
+<!-- ⭐ Estado de Horario -->
 @if (dentroDeHorario)
 {
     <!-- Dentro de horario -->
@@ -142,7 +160,7 @@ else
                     <div class="horario-info">
                         <div class="horario-status">
                             <i class="fa-solid fa-circle-check"></i>
-                            i Registrando trabajo individual
+                            Registrando trabajo individual
                         </div>
                         <div class="horario-mensaje">
                             Será registrado como único empleado presente
@@ -199,7 +217,24 @@ else
 <div class="content-card" style="margin-top: 1.5rem;">
     <div class="card-body">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-            <a href="@Url.Action("ConteoUbicacionBebidas", "Kardex", new { id = Model.KardexId })" 
+            @{
+                string urlVolver = "#";
+                
+                if (Model.TipoKardex == "Mozo Bebidas")
+                {
+                    urlVolver = Url.Action("ConteoUbicacionBebidas", "Kardex", new { id = Model.KardexId }) ?? "#";
+                }
+                else if (Model.TipoKardex == "Mozo Salón")
+                {
+                    urlVolver = Url.Action("ConteoSalon", "Kardex", new { id = Model.KardexId }) ?? "#";
+                }
+                else if (Model.TipoKardex == "Cocina Fría" || Model.TipoKardex == "Cocina Caliente" || Model.TipoKardex == "Parrilla")
+                {
+                    urlVolver = Url.Action("ConteoCocina", "Kardex", new { id = Model.KardexId }) ?? "#";
+                }
+            }
+            
+            <a href="@urlVolver" 
                class="btn btn-secondary"
                style="min-width: 140px;">
                 <i class="fa-solid fa-arrow-left"></i>
@@ -219,14 +254,5 @@ else
 </div>
 
 @section Scripts {
-    <script>
-        const KARDEX_ID = @Model.KardexId;
-        const TIPO_KARDEX = '@Html.Raw(Model.TipoKardex)';
-        const EMPLEADO_RESPONSABLE_ID = '@Model.EmpleadoResponsableId';
-        const TOTAL_EMPLEADOS = @Model.TotalEmpleados;
-        const DENTRO_DE_HORARIO = @(dentroDeHorario ? "true" : "false");
-        const ENVIO_HABILITADO_MANUALMENTE = @(Model.EnvioHabilitadoManualmente ? "true" : "false");
-        const HORA_LIMITE = "17:30:00";
-    </script>
     <script src="~/js/personal-presente.js" asp-append-version="true"></script>
 }

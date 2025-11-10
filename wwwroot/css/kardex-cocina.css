@@ -1,0 +1,366 @@
+/* ========================================
+   KARDEX DE COCINA - ESTILOS
+   Sistema de conteo con categorías colapsables
+   ======================================== */
+
+/* === CATEGORÍA CARD === */
+.categoria-card {
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.categoria-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* === HEADER DE CATEGORÍA === */
+.categoria-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 2px solid #E2E8F0;
+}
+
+.categoria-header:hover {
+    background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
+}
+
+.categoria-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.categoria-icono {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.categoria-titulo {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1E293B;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.categoria-subtitulo {
+    font-size: 13px;
+    color: #64748B;
+    margin: 0.25rem 0 0 0;
+}
+
+.badge-especial {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    background: rgba(245, 158, 11, 0.15);
+    color: #F59E0B;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.categoria-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: white;
+    transition: all 0.2s ease;
+}
+
+.categoria-toggle i {
+    font-size: 16px;
+    color: #64748B;
+    transition: transform 0.3s ease;
+}
+
+.categoria-header:hover .categoria-toggle {
+    background: #E2E8F0;
+}
+
+/* === BODY DE CATEGORÍA (COLAPSABLE) === */
+.categoria-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.categoria-body.expanded {
+    max-height: 5000px; /* Valor alto para acomodar muchos productos */
+}
+
+/* === TABLA DE KARDEX COCINA === */
+.kardex-cocina-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.kardex-cocina-table thead {
+    background: #F8FAFC;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.kardex-cocina-table thead th {
+    padding: 1rem;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #E2E8F0;
+}
+
+.kardex-cocina-table tbody td {
+    padding: 1rem;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: middle;
+}
+
+.kardex-cocina-table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.kardex-cocina-table tbody tr:hover {
+    background: #F8FAFC;
+}
+
+/* === CELDAS ESPECÍFICAS === */
+.td-codigo {
+    font-weight: 600;
+    color: #3B82F6;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
+
+.td-nombre {
+    font-weight: 500;
+    color: #1E293B;
+    font-size: 14px;
+}
+
+.td-unidad {
+    padding: 0.5rem 1rem !important;
+}
+
+.td-readonly {
+    font-weight: 500;
+    color: #64748B;
+    font-size: 14px;
+    background: #F8FAFC;
+}
+
+.td-editable {
+    padding: 0.5rem 1rem !important;
+}
+
+/* === SELECT DE UNIDAD === */
+.select-unidad {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1E293B;
+    background: white;
+    border: 2px solid #E2E8F0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748B' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    padding-right: 2.5rem;
+}
+
+.select-unidad:hover {
+    border-color: #0092B8;
+    background-color: #F8FAFC;
+}
+
+.select-unidad:focus {
+    outline: none;
+    border-color: #0092B8;
+    box-shadow: 0 0 0 3px rgba(0, 146, 184, 0.1);
+}
+
+/* === INPUT DE STOCK === */
+.input-stock {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1E293B;
+    background: white;
+    border: 2px solid #E2E8F0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.input-stock:hover {
+    border-color: #10B981;
+    background-color: #F0FDF4;
+}
+
+.input-stock:focus {
+    outline: none;
+    border-color: #10B981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    background-color: white;
+}
+
+.input-stock.has-value {
+    background: #ECFDF5;
+    border-color: #10B981;
+    color: #047857;
+}
+
+/* Placeholder */
+.input-stock::placeholder {
+    color: #CBD5E1;
+    font-weight: 400;
+}
+
+/* === ESTADOS DE FILA === */
+.row-complete {
+    background: rgba(236, 253, 245, 0.3);
+}
+
+.row-complete:hover {
+    background: rgba(236, 253, 245, 0.6) !important;
+}
+
+.row-incomplete {
+    animation: pulse-warning 2s ease-in-out infinite;
+}
+
+@keyframes pulse-warning {
+    0%, 100% {
+        background: rgba(254, 243, 199, 0.3);
+    }
+    50% {
+        background: rgba(254, 243, 199, 0.6);
+    }
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 1200px) {
+    .kardex-cocina-table {
+        font-size: 13px;
+    }
+    
+    .kardex-cocina-table thead th {
+        padding: 0.75rem 0.5rem;
+        font-size: 11px;
+    }
+    
+    .kardex-cocina-table tbody td {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .categoria-header {
+        padding: 1rem;
+    }
+    
+    .categoria-icono {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 768px) {
+    .tabla-container {
+        overflow-x: auto;
+    }
+    
+    .kardex-cocina-table {
+        min-width: 800px;
+    }
+    
+    .categoria-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    
+    .categoria-toggle {
+        align-self: flex-end;
+    }
+}
+
+/* === ANIMACIONES === */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.categoria-body.expanded table {
+    animation: slideDown 0.3s ease;
+}
+
+/* === BÚSQUEDA ACTIVA === */
+.search-active .categoria-body:not(.expanded) {
+    max-height: 0;
+}
+
+/* === SCROLL SMOOTH === */
+html {
+    scroll-behavior: smooth;
+}
+
+/* === INDICADOR DE AUTOGUARDADO === */
+.autoguardado-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #ECFDF5;
+    color: #047857;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(-5px);
+    transition: all 0.3s ease;
+}
+
+.autoguardado-indicator.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.autoguardado-indicator.saving {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.autoguardado-indicator i {
+    font-size: 14px;
+}

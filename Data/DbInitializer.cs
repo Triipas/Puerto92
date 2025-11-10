@@ -220,6 +220,22 @@ namespace Puerto92.Data
                         new Categoria { Tipo = TipoCategoria.Utensilios, Nombre = "Cocina", Orden = 2, Activo = true, FechaCreacion = DateTime.Now, CreadoPor = "Sistema" }
                     };
 
+                    // Categorías especiales de cocina
+                    var categoriasEspeciales = new[]
+                    {
+                        new Categoria { Tipo = "Cocina", Nombre = "FRÍOS Y CEVICHES", Orden = 50, TipoCocinaEspecial = "Cocina Fría", Activo = true },
+                        new Categoria { Tipo = "Cocina", Nombre = "CALIENTES Y ARROCES", Orden = 60, TipoCocinaEspecial = "Cocina Caliente", Activo = true },
+                        new Categoria { Tipo = "Cocina", Nombre = "CROCANTES", Orden = 70, TipoCocinaEspecial = "Parrilla", Activo = true }
+                    };
+
+                    foreach (var cat in categoriasEspeciales)
+                    {
+                        if (!context.Categorias.Any(c => c.Nombre == cat.Nombre && c.Tipo == "Cocina"))
+                        {
+                            context.Categorias.Add(cat);
+                        }
+                    }
+
                     Console.WriteLine($"   Agregando {categorias.Count} categorías...");
                     context.Categorias.AddRange(categorias);
                     

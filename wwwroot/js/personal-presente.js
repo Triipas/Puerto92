@@ -14,20 +14,32 @@ let empleadoResponsableId = '';
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🔄 Inicializando Personal Presente...');
     
+    // ⭐ VERIFICAR QUE LAS VARIABLES YA ESTÉN CARGADAS (definidas en el HEAD)
+    if (typeof window.KARDEX_ID === 'undefined') {
+        console.error('❌ ERROR CRÍTICO: window.KARDEX_ID no está definido');
+        console.error('    Las variables deben estar definidas en el HEAD del HTML');
+        showNotification('Error de configuración. Recargue la página.', 'error');
+        return;
+    }
+    
+    console.log('✅ Variables globales verificadas:');
+    console.log('   KARDEX_ID:', window.KARDEX_ID);
+    console.log('   TIPO_KARDEX:', window.TIPO_KARDEX);
+    console.log('   DENTRO_DE_HORARIO:', window.DENTRO_DE_HORARIO);
+    console.log('   ENVIO_HABILITADO_MANUALMENTE:', window.ENVIO_HABILITADO_MANUALMENTE);
+    
     inicializarVariables();
     inicializarEventos();
     actualizarContador();
     
-    console.log('✅ Personal Presente inicializado');
+    console.log('✅ Personal Presente inicializado correctamente');
 });
 
 /**
  * Inicializar variables desde el contexto
  */
 function inicializarVariables() {
-    if (typeof EMPLEADO_RESPONSABLE_ID !== 'undefined') {
-        empleadoResponsableId = EMPLEADO_RESPONSABLE_ID;
-    }
+    empleadoResponsableId = window.EMPLEADO_RESPONSABLE_ID || '';
     
     // Obtener empleados pre-seleccionados
     empleadosSeleccionados = [];
@@ -57,9 +69,9 @@ function inicializarEventos() {
         });
     });
     
-    // ⭐ NUEVO: Actualizar hora en tiempo real
+    // Actualizar hora en tiempo real
     actualizarHoraActual();
-    setInterval(actualizarHoraActual, 1000); // Actualizar cada segundo
+    setInterval(actualizarHoraActual, 1000);
     
     console.log('✅ Eventos configurados');
 }
@@ -68,8 +80,8 @@ function inicializarEventos() {
  * Actualizar hora actual en la interfaz
  */
 function actualizarHoraActual() {
-    const horaElement = document.getElementById('horaActual');
-    if (!horaElement) return;
+    const horaElements = document.querySelectorAll('#horaActual');
+    if (horaElements.length === 0) return;
     
     const ahora = new Date();
     const horas = ahora.getHours();
@@ -77,9 +89,12 @@ function actualizarHoraActual() {
     const ampm = horas >= 12 ? 'p. m.' : 'a. m.';
     const horas12 = horas % 12 || 12;
     
-    horaElement.textContent = `${horas12.toString().padStart(2, '0')}:${minutos} ${ampm}`;
+    const horaFormateada = `${horas12.toString().padStart(2, '0')}:${minutos} ${ampm}`;
+    
+    horaElements.forEach(el => {
+        el.textContent = horaFormateada;
+    });
 }
-
 
 // ==========================================
 // MANEJO DE SELECCIÓN
@@ -149,10 +164,19 @@ function actualizarContador() {
 async function enviarAlAdministrador() {
     console.log('📤 Iniciando envío al administrador...');
     
+    // ⭐ VALIDACIÓN: Verificar que las variables existan
+    if (typeof window.KARDEX_ID === 'undefined' || typeof window.TIPO_KARDEX === 'undefined') {
+        showNotification('Error: Variables de configuración no encontradas. Recargue la página.', 'error');
+        return;
+    }
+    
     // ⭐ VALIDAR HORARIO
-    if (!DENTRO_DE_HORARIO && !ENVIO_HABILITADO_MANUALMENTE) {
+    const dentroDeHorario = window.DENTRO_DE_HORARIO === true || window.DENTRO_DE_HORARIO === 'true';
+    const habilitadoManual = window.ENVIO_HABILITADO_MANUALMENTE === true || window.ENVIO_HABILITADO_MANUALMENTE === 'true';
+    
+    if (!dentroDeHorario && !habilitadoManual) {
         showNotification(
-            'Fuera de horario. El envío ha sido bloqueado. El horario límite de envío es 5:30 PM. Si necesita enviar este kardex, contacte al administrador para solicitar habilitación manual.',
+            'Fuera de horario. El envío ha sido bloqueado. El horario límite de envío es 5:30 PM.',
             'error'
         );
         return;
@@ -165,7 +189,7 @@ async function enviarAlAdministrador() {
     }
     
     // Validar que el responsable esté incluido
-    if (!empleadosSeleccionados.includes(empleadoResponsableId)) {
+    if (empleadoResponsableId && !empleadosSeleccionados.includes(empleadoResponsableId)) {
         showNotification('Error: El responsable principal debe estar seleccionado', 'error');
         return;
     }
@@ -175,6 +199,11 @@ async function enviarAlAdministrador() {
     const descripcionFaltantes = sessionStorage.getItem('kardexDescripcionFaltantes') || '';
     
     const btnEnviar = document.getElementById('btnEnviarAlAdministrador');
+    if (!btnEnviar) {
+        showNotification('Error: Botón de envío no encontrado', 'error');
+        return;
+    }
+    
     btnEnviar.disabled = true;
     btnEnviar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
     
@@ -183,29 +212,33 @@ async function enviarAlAdministrador() {
     
     try {
         const requestData = {
-            kardexId: KARDEX_ID,
-            tipoKardex: TIPO_KARDEX,
+            kardexId: parseInt(window.KARDEX_ID),
+            tipoKardex: window.TIPO_KARDEX,
             empleadosPresentes: empleadosSeleccionados,
             observacionesKardex: observacionesKardex
         };
         
         // ⭐ AGREGAR DESCRIPCIÓN DE FALTANTES SI ES KARDEX DE SALÓN
-        if (TIPO_KARDEX === 'Mozo Salón') {
+        if (window.TIPO_KARDEX === 'Mozo Salón') {
             requestData.descripcionFaltantes = descripcionFaltantes;
             console.log(`📋 Descripción de faltantes incluida: ${descripcionFaltantes ? 'Sí' : 'No'}`);
         }
+        
+        console.log('📦 Datos a enviar:', requestData);
         
         const response = await fetch('/Kardex/GuardarPersonalPresente', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
             },
             body: JSON.stringify(requestData)
         });
         
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            const errorText = await response.text();
+            console.error('❌ Error HTTP:', response.status, errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
         
         const result = await response.json();
@@ -274,28 +307,6 @@ function showNotification(message, type = 'info') {
         setTimeout(() => notification.remove(), 300);
     }, 4000);
 }
-
-/**
- * Confirmar antes de salir si hay cambios
- */
-window.addEventListener('beforeunload', function(e) {
-    const checkboxes = document.querySelectorAll('.personal-checkbox');
-    let haycambios = false;
-    
-    checkboxes.forEach(checkbox => {
-        const estadoActual = checkbox.checked;
-        const estadoInicial = checkbox.defaultChecked;
-        
-        if (estadoActual !== estadoInicial) {
-            hayChangios = true;
-        }
-    });
-    
-    if (hayChangios) {
-        e.preventDefault();
-        e.returnValue = '';
-    }
-});
 
 // ==========================================
 // EXPORTAR FUNCIONES GLOBALES

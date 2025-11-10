@@ -35,6 +35,13 @@ namespace Puerto92.Models
         public bool Activo { get; set; } = true;
 
         /// <summary>
+        /// Tipo de cocina especial (solo para categorías de Tipo = "Cocina")
+        /// Valores: null (general), "Cocina Fría", "Cocina Caliente", "Parrilla"
+        /// </summary>
+        [StringLength(50)]
+        public string? TipoCocinaEspecial { get; set; }
+
+        /// <summary>
         /// Fecha de creación
         /// </summary>
         public DateTime FechaCreacion { get; set; } = DateTime.Now;
@@ -44,9 +51,6 @@ namespace Puerto92.Models
         /// </summary>
         [StringLength(100)]
         public string? CreadoPor { get; set; }
-
-        // Propiedades de navegación (para cuando se implementen productos)
-        // public ICollection<Producto> Productos { get; set; } = new List<Producto>();
     }
 
     /// <summary>

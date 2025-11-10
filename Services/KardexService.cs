@@ -77,16 +77,13 @@ namespace Puerto92.Services
                     break;
 
                 case TipoKardex.MozoSalon:
-                    // ✅ ACTUALIZADO: Ya está implementado
                     await VerificarBorradorSalon(viewModel, asignacion.Id);
                     break;
 
                 case TipoKardex.CocinaFria:
                 case TipoKardex.CocinaCaliente:
                 case TipoKardex.Parrilla:
-                    // TODO: Implementar cuando se cree el kardex de cocina
-                    viewModel.MensajeInformativo = "El kardex de Cocina estará disponible próximamente.";
-                    viewModel.PuedeIniciarRegistro = false;
+                    await VerificarBorradorCocina(viewModel, asignacion.Id);
                     break;
 
                 case TipoKardex.Vajilla:
@@ -158,6 +155,33 @@ namespace Puerto92.Services
                 var detallesCompletos = await _context.KardexSalonDetalle
                     .CountAsync(d => d.KardexSalonId == kardexBorrador.Id &&
                                     d.UnidadesContadas.HasValue);
+
+                viewModel.PorcentajeAvanceBorrador = totalDetalles > 0
+                    ? (decimal)detallesCompletos / totalDetalles * 100
+                    : 0;
+            }
+
+            viewModel.PuedeIniciarRegistro = true;
+        }
+
+        private async Task VerificarBorradorCocina(MiKardexViewModel viewModel, int asignacionId)
+        {
+            var kardexBorrador = await _context.KardexCocina
+                .FirstOrDefaultAsync(k => k.AsignacionId == asignacionId &&
+                                        k.Estado == EstadoKardex.Borrador);
+
+            if (kardexBorrador != null)
+            {
+                viewModel.ExisteKardexBorrador = true;
+                viewModel.KardexBorradorId = kardexBorrador.Id;
+
+                // Calcular porcentaje de avance
+                var totalDetalles = await _context.Set<KardexCocinaDetalle>()
+                    .CountAsync(d => d.KardexCocinaId == kardexBorrador.Id);
+
+                var detallesCompletos = await _context.Set<KardexCocinaDetalle>()
+                    .CountAsync(d => d.KardexCocinaId == kardexBorrador.Id &&
+                                    d.StockFinal.HasValue);
 
                 viewModel.PorcentajeAvanceBorrador = totalDetalles > 0
                     ? (decimal)detallesCompletos / totalDetalles * 100
@@ -566,7 +590,6 @@ namespace Puerto92.Services
                 viewModel.EmpleadoResponsableId = kardex.EmpleadoId;
                 viewModel.EmpleadoResponsableNombre = kardex.Empleado?.NombreCompleto ?? "";
             }
-            // ⭐ NUEVO: Agregar caso para Mozo Salón
             else if (tipoKardex == TipoKardex.MozoSalon)
             {
                 var kardex = await _context.KardexSalon
@@ -584,9 +607,57 @@ namespace Puerto92.Services
                 viewModel.EmpleadoResponsableId = kardex.EmpleadoId;
                 viewModel.EmpleadoResponsableNombre = kardex.Empleado?.NombreCompleto ?? "";
             }
-            // TODO: Agregar casos para otros tipos de kardex (Cocina, Vajilla)
+            // ⭐ NUEVO: Soporte para Cocina Fría, Caliente y Parrilla
+            else if (tipoKardex == TipoKardex.CocinaFria || 
+                    tipoKardex == TipoKardex.CocinaCaliente || 
+                    tipoKardex == TipoKardex.Parrilla)
+            {
+                var kardex = await _context.KardexCocina
+                    .Include(k => k.Empleado)
+                    .Include(k => k.Local)
+                    .FirstOrDefaultAsync(k => k.Id == kardexId);
 
-            // ⭐ NUEVO: Verificar horario
+                if (kardex == null)
+                {
+                    _logger.LogError($"❌ Kardex de Cocina no encontrado: {kardexId}");
+                    throw new Exception("Kardex no encontrado");
+                }
+
+                _logger.LogInformation($"✅ Kardex de Cocina encontrado: ID {kardex.Id}, LocalId: {kardex.LocalId}");
+
+                // ⭐ VALIDACIÓN CRÍTICA
+                if (kardex.LocalId == 0)
+                {
+                    _logger.LogError($"❌ ERROR: Kardex {kardexId} tiene LocalId = 0");
+                    throw new Exception("Error: El kardex no tiene un Local válido. Contacte al administrador.");
+                }
+
+                viewModel.Fecha = kardex.Fecha;
+                viewModel.LocalId = kardex.LocalId;
+                viewModel.EmpleadoResponsableId = kardex.EmpleadoId;
+                viewModel.EmpleadoResponsableNombre = kardex.Empleado?.NombreCompleto ?? "";
+                
+                _logger.LogInformation($"📋 ViewModel configurado:");
+                _logger.LogInformation($"   LocalId: {viewModel.LocalId}");
+                _logger.LogInformation($"   Empleado: {viewModel.EmpleadoResponsableNombre}");
+                _logger.LogInformation($"   TipoKardex: {tipoKardex}");
+            }
+            else
+            {
+                _logger.LogError($"❌ Tipo de kardex no soportado: {tipoKardex}");
+                throw new Exception($"Tipo de kardex no soportado: {tipoKardex}");
+            }
+
+            // ⭐ VERIFICACIÓN FINAL
+            if (viewModel.LocalId == 0)
+            {
+                _logger.LogError($"❌ ERROR FINAL: ViewModel tiene LocalId = 0 después de configuración");
+                _logger.LogError($"   TipoKardex: {tipoKardex}");
+                _logger.LogError($"   KardexId: {kardexId}");
+                throw new Exception("Error al configurar Personal Presente: LocalId inválido");
+            }
+
+            // ⭐ VERIFICACIÓN DE HORARIO
             viewModel.HoraActual = DateTime.Now;
             viewModel.HoraLimiteEnvio = new TimeSpan(17, 30, 0); // 5:30 PM
             viewModel.DentroDeHorario = DateTime.Now.TimeOfDay < viewModel.HoraLimiteEnvio;
@@ -603,6 +674,8 @@ namespace Puerto92.Services
 
             viewModel.TotalEmpleados = viewModel.EmpleadosDisponibles.Count;
             viewModel.TotalSeleccionados = viewModel.EmpleadosDisponibles.Count(e => e.Seleccionado);
+
+            _logger.LogInformation($"✅ Personal Presente configurado: {viewModel.TotalEmpleados} empleado(s) disponible(s)");
 
             return viewModel;
         }
@@ -800,6 +873,59 @@ namespace Puerto92.Services
 
                     _logger.LogInformation($"📋 Kardex de Salón actualizado a estado Enviado");
                     _logger.LogInformation($"   Descripción de Faltantes: {(!string.IsNullOrEmpty(kardex.DescripcionFaltantes) ? "Sí" : "No")}");
+                }
+                else if (request.TipoKardex == TipoKardex.CocinaFria || 
+                        request.TipoKardex == TipoKardex.CocinaCaliente || 
+                        request.TipoKardex == TipoKardex.Parrilla)
+                {
+                    _logger.LogInformation($"🍳 Procesando Kardex de Cocina: {request.TipoKardex} - ID: {request.KardexId}");
+
+                    var kardex = await _context.KardexCocina
+                        .Include(k => k.Empleado)
+                        .Include(k => k.Asignacion)
+                        .Include(k => k.Local) // ⭐ INCLUIR Local para debug
+                        .FirstOrDefaultAsync(k => k.Id == request.KardexId);
+
+                    if (kardex == null)
+                    {
+                        _logger.LogError($"❌ Kardex de Cocina no encontrado: {request.KardexId}");
+                        throw new Exception("Kardex no encontrado");
+                    }
+
+                    empleadoResponsableId = kardex.EmpleadoId;
+                    empleadoResponsableNombre = kardex.Empleado?.NombreCompleto ?? "";
+                    localId = kardex.LocalId;
+                    fechaKardex = kardex.Fecha;
+
+                    _logger.LogInformation($"📋 Datos del Kardex de Cocina:");
+                    _logger.LogInformation($"   LocalId: {localId}");
+                    _logger.LogInformation($"   Local: {kardex.Local?.Nombre ?? "NULL"}");
+                    _logger.LogInformation($"   EmpleadoId: {empleadoResponsableId}");
+                    _logger.LogInformation($"   Empleado: {empleadoResponsableNombre}");
+                    _logger.LogInformation($"   TipoCocina: {kardex.TipoCocina}");
+                    _logger.LogInformation($"   Fecha: {fechaKardex}");
+
+                    // ⭐ VALIDACIÓN CRÍTICA
+                    if (localId == 0)
+                    {
+                        _logger.LogError($"❌ ERROR CRÍTICO: Kardex de Cocina {request.KardexId} tiene LocalId = 0");
+                        _logger.LogError($"   Esto indica que el kardex se creó sin un Local válido");
+                        _logger.LogError($"   Asignación ID: {kardex.AsignacionId}");
+                        throw new Exception("Error: El kardex no tiene un Local válido asignado. Contacte al administrador del sistema.");
+                    }
+
+                    // Cambiar estado a "Enviado"
+                    kardex.Estado = EstadoKardex.Enviado;
+                    kardex.FechaFinalizacion = DateTime.Now;
+                    kardex.FechaEnvio = DateTime.Now;
+                    kardex.Observaciones = request.ObservacionesKardex;
+
+                    if (kardex.Asignacion != null)
+                    {
+                        kardex.Asignacion.Estado = EstadoAsignacion.Completada;
+                    }
+
+                    _logger.LogInformation($"📋 Kardex de Cocina actualizado a estado Enviado");
                 }
                 else
                 {
@@ -1199,6 +1325,275 @@ namespace Puerto92.Services
                     ? (decimal)utensiliosCompletos / totalUtensilios * 100
                     : 0,
                 RequiereDescripcionFaltantes = utensiliosConFaltantes > 0
+            };
+        }
+        // ==========================================
+        // KARDEX DE COCINA (Fría, Caliente, Parrilla)
+        // ==========================================
+
+        public async Task<KardexCocinaViewModel> IniciarKardexCocinaAsync(int asignacionId, string usuarioId)
+        {
+            _logger.LogInformation($"🍳 Iniciando Kardex de Cocina - AsignacionId: {asignacionId}, UsuarioId: {usuarioId}");
+
+            var asignacion = await _context.AsignacionesKardex
+                .Include(a => a.Local)
+                .Include(a => a.Empleado)
+                .FirstOrDefaultAsync(a => a.Id == asignacionId && a.EmpleadoId == usuarioId);
+
+            if (asignacion == null)
+            {
+                _logger.LogError($"❌ Asignación no encontrada: {asignacionId}");
+                throw new Exception("Asignación no encontrada o no autorizada");
+            }
+
+            // Validar LocalId
+            if (asignacion.LocalId == 0)
+            {
+                _logger.LogError($"❌ ERROR CRÍTICO: La asignación {asignacionId} tiene LocalId = 0");
+                throw new Exception("Error: La asignación no tiene un Local válido asignado. Contacte al administrador.");
+            }
+
+            _logger.LogInformation($"✅ Asignación encontrada - LocalId: {asignacion.LocalId}, Tipo: {asignacion.TipoKardex}");
+
+            // Verificar si ya existe un kardex para esta asignación
+            var kardexExistente = await _context.KardexCocina
+                .Include(k => k.Detalles)
+                    .ThenInclude(d => d.Producto)
+                        .ThenInclude(p => p.Categoria)
+                .FirstOrDefaultAsync(k => k.AsignacionId == asignacionId);
+
+            if (kardexExistente != null)
+            {
+                _logger.LogInformation($"📋 Kardex existente encontrado: ID {kardexExistente.Id}");
+                return await MapearKardexCocinaAViewModel(kardexExistente);
+            }
+
+            // Crear nuevo kardex
+            var kardex = new KardexCocina
+            {
+                AsignacionId = asignacionId,
+                Fecha = asignacion.Fecha,
+                LocalId = asignacion.LocalId,
+                EmpleadoId = usuarioId,
+                TipoCocina = asignacion.TipoKardex,
+                Estado = EstadoKardex.Borrador,
+                FechaInicio = DateTime.Now
+            };
+
+            _logger.LogInformation($"💾 Creando nuevo Kardex de Cocina:");
+            _logger.LogInformation($"   LocalId: {kardex.LocalId}");
+            _logger.LogInformation($"   TipoCocina: {kardex.TipoCocina}");
+
+            _context.KardexCocina.Add(kardex);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"✅ Kardex de Cocina creado: ID {kardex.Id}");
+
+            // Verificación post-guardado
+            if (kardex.LocalId == 0)
+            {
+                _logger.LogError($"❌ ERROR POST-GUARDADO: El kardex se guardó con LocalId = 0");
+                throw new Exception("Error al guardar el kardex: LocalId inválido");
+            }
+
+            // Obtener categoría especial según tipo de cocina
+            var categoriaEspecial = TipoCocinaKardex.ObtenerCategoriaEspecial(asignacion.TipoKardex);
+
+            // Obtener productos de cocina activos
+            var productosCocina = await _context.Productos
+                .Include(p => p.Categoria)
+                .Where(p => p.Activo && 
+                        p.Categoria!.Tipo == TipoCategoria.Cocina &&
+                        p.Categoria.Activo &&
+                        (
+                            // Productos generales (sin tipo especial)
+                            p.Categoria.TipoCocinaEspecial == null ||
+                            // Productos de la categoría especial de este tipo de cocina
+                            p.Categoria.Nombre == categoriaEspecial
+                        ))
+                .OrderBy(p => p.Categoria!.Orden)
+                .ThenBy(p => p.Codigo)
+                .ToListAsync();
+
+            _logger.LogInformation($"📦 {productosCocina.Count} productos encontrados para el kardex");
+
+            var orden = 1;
+            foreach (var producto in productosCocina)
+            {
+                var detalle = new KardexCocinaDetalle
+                {
+                    KardexCocinaId = kardex.Id,
+                    ProductoId = producto.Id,
+                    UnidadMedida = producto.Unidad, // Usar unidad por defecto del producto
+                    CantidadAPedir = 0, // TODO: Calcular según lógica de negocio
+                    Ingresos = 0, // TODO: Obtener de compras del día
+                    Orden = orden++
+                };
+
+                _context.Set<KardexCocinaDetalle>().Add(detalle);
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Marcar asignación como en proceso
+            asignacion.Estado = EstadoAsignacion.EnProceso;
+            asignacion.RegistroIniciado = true;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"✅ Kardex de cocina iniciado completamente: ID {kardex.Id}");
+
+            await _auditService.RegistrarInicioKardexAsync(
+                tipoKardex: asignacion.TipoKardex,
+                fecha: asignacion.Fecha,
+                empleadoNombre: asignacion.Empleado?.NombreCompleto ?? "Desconocido",
+                kardexId: kardex.Id
+            );
+
+            return await ObtenerKardexCocinaAsync(kardex.Id);
+        }
+
+        public async Task<KardexCocinaViewModel> ObtenerKardexCocinaAsync(int kardexId)
+        {
+            var kardex = await _context.KardexCocina
+                .Include(k => k.Asignacion)
+                .Include(k => k.Empleado)
+                .Include(k => k.Detalles)
+                    .ThenInclude(d => d.Producto)
+                        .ThenInclude(p => p.Categoria)
+                .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+            if (kardex == null)
+            {
+                throw new Exception("Kardex no encontrado");
+            }
+
+            return await MapearKardexCocinaAViewModel(kardex);
+        }
+
+        public async Task<bool> AutoguardarDetalleCocinaAsync(AutoguardadoKardexCocinaRequest request)
+        {
+            try
+            {
+                var detalle = await _context.Set<KardexCocinaDetalle>()
+                    .FirstOrDefaultAsync(d => d.Id == request.DetalleId &&
+                                            d.KardexCocinaId == request.KardexId);
+
+                if (detalle == null)
+                {
+                    _logger.LogWarning($"Detalle no encontrado: {request.DetalleId}");
+                    return false;
+                }
+
+                // Actualizar el campo correspondiente
+                switch (request.Campo)
+                {
+                    case "StockFinal":
+                        detalle.StockFinal = request.ValorNumerico;
+                        break;
+                    case "UnidadMedida":
+                        if (!string.IsNullOrEmpty(request.ValorTexto) && 
+                            UnidadMedidaCocina.Todas.Contains(request.ValorTexto))
+                        {
+                            detalle.UnidadMedida = request.ValorTexto;
+                        }
+                        break;
+                    default:
+                        _logger.LogWarning($"Campo no reconocido: {request.Campo}");
+                        return false;
+                }
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation($"Autoguardado exitoso: Detalle {request.DetalleId}, Campo {request.Campo}");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error en autoguardado: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<KardexCocinaViewModel> CalcularYActualizarCocinaAsync(int kardexId)
+        {
+            var kardex = await _context.KardexCocina
+                .Include(k => k.Detalles)
+                .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+            if (kardex == null)
+            {
+                throw new Exception("Kardex no encontrado");
+            }
+
+            // Aquí se pueden agregar cálculos adicionales si es necesario
+            await _context.SaveChangesAsync();
+
+            return await ObtenerKardexCocinaAsync(kardexId);
+        }
+
+        private async Task<KardexCocinaViewModel> MapearKardexCocinaAViewModel(KardexCocina kardex)
+        {
+            // Agrupar productos por categoría
+            var categorias = new List<KardexCocinaCategoriaViewModel>();
+            
+            var categoriaEspecial = TipoCocinaKardex.ObtenerCategoriaEspecial(kardex.TipoCocina);
+            
+            var productosAgrupados = kardex.Detalles
+                .OrderBy(d => d.Orden)
+                .GroupBy(d => d.Producto?.Categoria?.Nombre ?? "Sin Categoría");
+
+            foreach (var grupo in productosAgrupados)
+            {
+                var esEspecial = grupo.Key == categoriaEspecial;
+                
+                var categoria = new KardexCocinaCategoriaViewModel
+                {
+                    NombreCategoria = grupo.Key,
+                    EsEspecial = esEspecial,
+                    Expandida = true, // Todas expandidas por defecto
+                    Productos = grupo.Select(d => new KardexCocinaDetalleViewModel
+                    {
+                        Id = d.Id,
+                        ProductoId = d.ProductoId,
+                        Categoria = d.Producto?.Categoria?.Nombre ?? "",
+                        Codigo = d.Producto?.Codigo ?? "",
+                        NombreProducto = d.Producto?.Nombre ?? "",
+                        UnidadMedida = d.UnidadMedida,
+                        CantidadAPedir = d.CantidadAPedir,
+                        Ingresos = d.Ingresos,
+                        StockFinal = d.StockFinal,
+                        Observaciones = d.Observaciones,
+                        Orden = d.Orden
+                    }).ToList()
+                };
+                
+                categorias.Add(categoria);
+            }
+
+            var totalProductos = categorias.Sum(c => c.TotalProductos);
+            var productosCompletos = categorias.Sum(c => c.ProductosCompletos);
+
+            return new KardexCocinaViewModel
+            {
+                Id = kardex.Id,
+                AsignacionId = kardex.AsignacionId,
+                Fecha = kardex.Fecha,
+                LocalId = kardex.LocalId,
+                EmpleadoId = kardex.EmpleadoId,
+                EmpleadoNombre = kardex.Empleado?.NombreCompleto ?? "",
+                TipoCocina = kardex.TipoCocina,
+                Estado = kardex.Estado,
+                FechaInicio = kardex.FechaInicio,
+                FechaFinalizacion = kardex.FechaFinalizacion,
+                FechaEnvio = kardex.FechaEnvio,
+                Observaciones = kardex.Observaciones,
+                Categorias = categorias,
+                TotalProductos = totalProductos,
+                ProductosCompletos = productosCompletos,
+                PorcentajeAvance = totalProductos > 0
+                    ? (decimal)productosCompletos / totalProductos * 100
+                    : 0
             };
         }
     }
