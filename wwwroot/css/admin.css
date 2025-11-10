@@ -648,7 +648,6 @@ body {
     z-index: 99999 !important; /* Por encima de todo */
     align-items: center;
     justify-content: center;
-    opacity: 0;
     transition: opacity 0.2s ease;
     overflow-y: auto; /* Scroll vertical si es necesario */
 }

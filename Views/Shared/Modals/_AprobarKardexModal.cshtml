@@ -1,0 +1,46 @@
+@* Modal para Aprobar Kardex *@
+
+<div id="modalAprobar" class="modal-overlay" style="display: none;">
+    <div class="modal-container" style="max-width: 500px;">
+        <div class="modal-header">
+            <div>
+                <h2 class="modal-title">Aprobar Kardex</h2>
+                <p class="modal-subtitle" id="aprobarModalSubtitle">Confirme la aprobación del kardex</p>
+            </div>
+            <button class="modal-close" onclick="closeModal('modalAprobar')">&times;</button>
+        </div>
+        <form id="formAprobar">
+            <div class="modal-body">
+                <div style="background: #ECFDF5; border-left: 3px solid #10B981; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: start; gap: 0.75rem;">
+                        <i class="fa-solid fa-check-circle" style="color: #10B981; font-size: 20px; margin-top: 2px;"></i>
+                        <div>
+                            <strong style="color: #065F46; font-size: 14px; display: block; margin-bottom: 0.25rem;" id="aprobarModalMensaje">
+                                Se aprobará el kardex
+                            </strong>
+                            <p style="color: #065F46; font-size: 13px; margin: 0;" id="aprobarModalDetalle">
+                                El empleado recibirá una notificación de aprobación
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Observaciones de revisión (opcional)</label>
+                    <textarea id="observacionesAprobacion" 
+                              class="form-control" 
+                              rows="3"
+                              placeholder="Ej: Todo en orden, aprobado sin observaciones..."
+                              maxlength="500"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeModal('modalAprobar')">Cancelar</button>
+                <button type="submit" class="btn btn-success">
+                    <i class="fa-solid fa-check"></i>
+                    Aprobar Kardex
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
