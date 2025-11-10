@@ -24,6 +24,8 @@ namespace Puerto92.Data
         public DbSet<KardexSalon> KardexSalon { get; set; }
         public DbSet<KardexSalonDetalle> KardexSalonDetalle { get; set; }
         public DbSet<PersonalPresente> PersonalPresente { get; set; }
+        public DbSet<KardexVajilla> KardexVajilla { get; set; }
+public DbSet<KardexVajillaDetalle> KardexVajillaDetalle { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder builder)
