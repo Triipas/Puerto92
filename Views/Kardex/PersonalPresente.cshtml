@@ -2,6 +2,11 @@
 @{
     ViewData["Title"] = "Personal Presente Hoy";
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    
+    // Calcular si está dentro de horario
+    var horaActual = DateTime.Now.TimeOfDay;
+    var dentroDeHorario = horaActual < Model.HoraLimiteEnvio;
+    var puedeEnviar = dentroDeHorario || Model.EnvioHabilitadoManualmente;
 }
 
 <div class="page-header">
@@ -11,14 +16,14 @@
             <h1 class="page-title">Personal Presente Hoy</h1>
         </div>
         <p class="page-subtitle">
-            @Model.TipoKardex - @Model.Fecha.ToString("dddd, dd 'de' MMMM 'de' yyyy")
+            Seleccione los empleados que estuvieron presentes durante el kardex de @Model.Fecha.ToString("dd/MM/yyyy")
         </p>
     </div>
 </div>
 
 <!-- Instrucciones -->
 <div class="content-card" style="margin-bottom: 1.5rem;">
-    <div class="card-body" style="background: #F0F9FF; border-left: 3px solid #0092B8;">
+    <div class="card-body" style="background: #EFF6FF; border-left: 3px solid #0092B8;">
         <div style="display: flex; align-items: start; gap: 0.75rem;">
             <i class="fa-solid fa-info-circle" style="color: #0092B8; font-size: 20px; margin-top: 2px;"></i>
             <div>
@@ -103,6 +108,76 @@
     </div>
 </div>
 
+<!-- ⭐ NUEVO: Estado de Horario -->
+@if (dentroDeHorario)
+{
+    <!-- Dentro de horario -->
+    <div class="content-card" style="margin-top: 1.5rem;">
+        <div class="card-body horario-card horario-dentro">
+            <div class="horario-content">
+                <div class="horario-icon">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <div class="horario-info">
+                    <div class="horario-status">Dentro de horario</div>
+                    <div class="horario-mensaje">
+                        <span id="horaActual">@DateTime.Now.ToString("hh:mm tt")</span> - Puede enviar hasta 5:30 PM
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    @if (Model.EnvioHabilitadoManualmente)
+    {
+        <!-- Habilitado manualmente -->
+        <div class="content-card" style="margin-top: 1.5rem;">
+            <div class="card-body horario-card horario-habilitado">
+                <div class="horario-content">
+                    <div class="horario-icon">
+                        <i class="fa-solid fa-unlock"></i>
+                    </div>
+                    <div class="horario-info">
+                        <div class="horario-status">
+                            <i class="fa-solid fa-circle-check"></i>
+                            i Registrando trabajo individual
+                        </div>
+                        <div class="horario-mensaje">
+                            Será registrado como único empleado presente
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Fuera de horario -->
+        <div class="content-card" style="margin-top: 1.5rem;">
+            <div class="card-body horario-card horario-fuera">
+                <div class="horario-content">
+                    <div class="horario-icon">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                    </div>
+                    <div class="horario-info">
+                        <div class="horario-status">Fuera de horario</div>
+                        <div class="horario-mensaje">
+                            El envío ha sido bloqueado. El horario límite de envío es <strong>5:30 PM</strong>. 
+                            Si necesita enviar este kardex, contacte al administrador para solicitar habilitación manual.
+                        </div>
+                        <div class="horario-hora">
+                            <i class="fa-regular fa-clock"></i>
+                            Hora actual: <span id="horaActual">@DateTime.Now.ToString("hh:mm tt")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
 <!-- Advertencia de responsabilidad colectiva -->
 <div class="content-card" style="margin-top: 1.5rem;">
     <div class="card-body" style="background: #FEF3C7; border-left: 3px solid #F59E0B;">
@@ -134,6 +209,7 @@
                     id="btnEnviarAlAdministrador" 
                     class="btn btn-primary"
                     style="min-width: 200px;"
+                    @(!puedeEnviar ? "disabled" : "")
                     onclick="enviarAlAdministrador()">
                 <i class="fa-solid fa-paper-plane"></i>
                 Enviar al Administrador
@@ -148,6 +224,9 @@
         const TIPO_KARDEX = '@Model.TipoKardex';
         const EMPLEADO_RESPONSABLE_ID = '@Model.EmpleadoResponsableId';
         const TOTAL_EMPLEADOS = @Model.TotalEmpleados;
+        const DENTRO_DE_HORARIO = @(dentroDeHorario ? "true" : "false");
+        const ENVIO_HABILITADO_MANUALMENTE = @(Model.EnvioHabilitadoManualmente ? "true" : "false");
+        const HORA_LIMITE = "17:30:00";
     </script>
     <script src="~/js/personal-presente.js" asp-append-version="true"></script>
 }

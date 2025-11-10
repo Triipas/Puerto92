@@ -57,8 +57,29 @@ function inicializarEventos() {
         });
     });
     
+    // ⭐ NUEVO: Actualizar hora en tiempo real
+    actualizarHoraActual();
+    setInterval(actualizarHoraActual, 1000); // Actualizar cada segundo
+    
     console.log('✅ Eventos configurados');
 }
+
+/**
+ * Actualizar hora actual en la interfaz
+ */
+function actualizarHoraActual() {
+    const horaElement = document.getElementById('horaActual');
+    if (!horaElement) return;
+    
+    const ahora = new Date();
+    const horas = ahora.getHours();
+    const minutos = ahora.getMinutes().toString().padStart(2, '0');
+    const ampm = horas >= 12 ? 'p. m.' : 'a. m.';
+    const horas12 = horas % 12 || 12;
+    
+    horaElement.textContent = `${horas12.toString().padStart(2, '0')}:${minutos} ${ampm}`;
+}
+
 
 // ==========================================
 // MANEJO DE SELECCIÓN
@@ -123,10 +144,19 @@ function actualizarContador() {
 // ==========================================
 
 /**
- * Enviar al administrador
+ * Enviar al administrador - CON VALIDACIÓN DE HORARIO
  */
 async function enviarAlAdministrador() {
-    console.log('📤 Enviando personal presente...');
+    console.log('📤 Iniciando envío al administrador...');
+    
+    // ⭐ VALIDAR HORARIO
+    if (!DENTRO_DE_HORARIO && !ENVIO_HABILITADO_MANUALMENTE) {
+        showNotification(
+            'Fuera de horario. El envío ha sido bloqueado. El horario límite de envío es 5:30 PM. Si necesita enviar este kardex, contacte al administrador para solicitar habilitación manual.',
+            'error'
+        );
+        return;
+    }
     
     // Validar que hay al menos el responsable seleccionado
     if (empleadosSeleccionados.length === 0) {
@@ -139,6 +169,9 @@ async function enviarAlAdministrador() {
         showNotification('Error: El responsable principal debe estar seleccionado', 'error');
         return;
     }
+    
+    // ⭐ RECUPERAR OBSERVACIONES DEL KARDEX (guardadas en sessionStorage)
+    const observacionesKardex = sessionStorage.getItem('kardexObservaciones') || '';
     
     const btnEnviar = document.getElementById('btnEnviarAlAdministrador');
     btnEnviar.disabled = true;
@@ -157,7 +190,8 @@ async function enviarAlAdministrador() {
             body: JSON.stringify({
                 kardexId: KARDEX_ID,
                 tipoKardex: TIPO_KARDEX,
-                empleadosPresentes: empleadosSeleccionados
+                empleadosPresentes: empleadosSeleccionados,
+                observacionesKardex: observacionesKardex
             })
         });
         
@@ -168,18 +202,22 @@ async function enviarAlAdministrador() {
         const result = await response.json();
         
         if (result.success) {
-            console.log('✅ Personal presente guardado exitosamente');
-            showNotification(result.message, 'success');
+            console.log('✅ Kardex enviado exitosamente al administrador');
+            
+            // Limpiar sessionStorage
+            sessionStorage.removeItem('kardexObservaciones');
+            
+            showNotification('Kardex enviado exitosamente', 'success');
             
             setTimeout(() => {
                 window.location.href = result.redirectUrl || '/Kardex/MiKardex';
             }, 1500);
         } else {
-            throw new Error(result.message || 'Error al guardar');
+            throw new Error(result.message || 'Error al enviar');
         }
     } catch (error) {
         console.error('❌ Error al enviar:', error);
-        showNotification(error.message || 'Error al enviar los datos', 'error');
+        showNotification(error.message || 'Error al enviar el kardex', 'error');
         
         // Re-habilitar controles
         btnEnviar.disabled = false;

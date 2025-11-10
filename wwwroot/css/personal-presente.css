@@ -1,5 +1,5 @@
 /* ========================================
-   PERSONAL PRESENTE - ESTILOS
+   PERSONAL PRESENTE - Puerto 92
    ======================================== */
 
 .personal-presente-container {
@@ -21,74 +21,70 @@
 
 .personal-item {
     background: white;
-    border: 2px solid #E2E8F0;
+    border: 2px solid #E5E7EB;
     border-radius: 12px;
+    padding: 1rem;
     transition: all 0.3s ease;
+    position: relative;
     overflow: hidden;
 }
 
 .personal-item:hover {
-    border-color: #CBD5E1;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    transform: translateY(-2px);
+    border-color: #0092B8;
+    box-shadow: 0 4px 12px rgba(0, 146, 184, 0.1);
+    transform: translateX(4px);
 }
 
 .personal-item.selected {
-    background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+    background: #F0F9FF;
     border-color: #0092B8;
+}
+
+.personal-item.selecting {
+    animation: pulseSelection 0.3s ease;
+}
+
+@keyframes pulseSelection {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+/* Item principal (responsable) */
+.personal-item-main {
+    background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+    border: 2px solid #0092B8;
     box-shadow: 0 4px 12px rgba(0, 146, 184, 0.15);
 }
 
-.personal-item-main {
-    background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
-    border: 2px solid #0092B8;
-    box-shadow: 0 4px 12px rgba(0, 146, 184, 0.2);
-}
-
 .personal-item-main:hover {
-    border-color: #0092B8;
     transform: none;
+    box-shadow: 0 6px 16px rgba(0, 146, 184, 0.2);
 }
 
 .personal-label {
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding: 1.25rem;
     cursor: pointer;
-    user-select: none;
+    width: 100%;
 }
-
-.personal-item-main .personal-label {
-    cursor: not-allowed;
-}
-
-/* ========================================
-   CHECKBOXES
-   ======================================== */
 
 .personal-checkbox,
 .personal-checkbox-main {
     width: 24px;
     height: 24px;
-    flex-shrink: 0;
     cursor: pointer;
     accent-color: #0092B8;
-    transform: scale(1.2);
+    flex-shrink: 0;
 }
 
 .personal-checkbox-main {
     cursor: not-allowed;
-    accent-color: #0092B8;
+    opacity: 0.7;
 }
-
-/* ========================================
-   INFORMACIÓN DEL EMPLEADO
-   ======================================== */
 
 .personal-info {
     flex: 1;
-    min-width: 0;
 }
 
 .personal-name {
@@ -98,8 +94,7 @@
     margin-bottom: 0.25rem;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
+    gap: 0.5rem;
 }
 
 .personal-role {
@@ -111,14 +106,15 @@
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
-    background: #0092B8;
+    background: linear-gradient(135deg, #0092B8, #00C4B4);
     color: white;
-    padding: 0.25rem 0.75rem;
+    padding: 0.25rem 0.625rem;
     border-radius: 6px;
     font-size: 11px;
     font-weight: 600;
-    letter-spacing: 0.5px;
     text-transform: uppercase;
+    letter-spacing: 0.3px;
+    box-shadow: 0 2px 8px rgba(0, 146, 184, 0.3);
 }
 
 .badge-responsable i {
@@ -130,47 +126,144 @@
    ======================================== */
 
 .personal-counter {
-    background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+    background: linear-gradient(135deg, #F0F9FF 0%, #DBEAFE 100%);
     border: 2px solid #0092B8;
     border-radius: 12px;
     padding: 1.5rem;
-    text-align: center;
-    box-shadow: 0 4px 12px rgba(0, 146, 184, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 146, 184, 0.15);
 }
 
 /* ========================================
-   ANIMACIONES
+   TARJETAS DE HORARIO
    ======================================== */
 
-@keyframes checkIn {
-    0% {
-        transform: scale(1);
-        opacity: 1;
-    }
-    50% {
-        transform: scale(0.95);
-        opacity: 0.8;
-    }
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
+.horario-card {
+    border-radius: 12px;
+    padding: 0;
 }
 
-.personal-item.selecting {
-    animation: checkIn 0.3s ease;
+.horario-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+}
+
+.horario-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+}
+
+.horario-info {
+    flex: 1;
+}
+
+.horario-status {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.horario-mensaje {
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 0.5rem;
+}
+
+.horario-hora {
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-top: 0.75rem;
+}
+
+/* ⭐ DENTRO DE HORARIO (Verde) */
+.horario-dentro {
+    background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+    border-left: 4px solid #10B981;
+}
+
+.horario-dentro .horario-icon {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10B981;
+    border: 2px solid rgba(16, 185, 129, 0.3);
+}
+
+.horario-dentro .horario-status {
+    color: #047857;
+}
+
+.horario-dentro .horario-mensaje {
+    color: #065F46;
+}
+
+.horario-dentro .horario-hora {
+    color: #059669;
+}
+
+/* ⭐ FUERA DE HORARIO (Rojo) */
+.horario-fuera {
+    background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+    border-left: 4px solid #EF4444;
+}
+
+.horario-fuera .horario-icon {
+    background: rgba(239, 68, 68, 0.1);
+    color: #EF4444;
+    border: 2px solid rgba(239, 68, 68, 0.3);
+}
+
+.horario-fuera .horario-status {
+    color: #DC2626;
+}
+
+.horario-fuera .horario-mensaje {
+    color: #991B1B;
+}
+
+.horario-fuera .horario-hora {
+    color: #B91C1C;
+    font-weight: 600;
+}
+
+/* ⭐ HABILITADO MANUALMENTE (Azul) */
+.horario-habilitado {
+    background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+    border-left: 4px solid #3B82F6;
+}
+
+.horario-habilitado .horario-icon {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3B82F6;
+    border: 2px solid rgba(59, 130, 246, 0.3);
+}
+
+.horario-habilitado .horario-status {
+    color: #1E40AF;
+}
+
+.horario-habilitado .horario-mensaje {
+    color: #1E3A8A;
 }
 
 /* ========================================
-   ESTADOS HOVER ESPECÍFICOS
+   BOTONES
    ======================================== */
 
-.personal-item:not(.personal-item-main):hover .personal-checkbox {
-    transform: scale(1.3);
-}
-
-.personal-item:not(.personal-item-main).selected:hover {
-    background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 /* ========================================
@@ -181,54 +274,73 @@
     .personal-presente-container {
         padding: 1rem;
     }
-
-    .personal-label {
-        padding: 1rem;
+    
+    .personal-item {
+        padding: 0.875rem;
     }
-
+    
+    .personal-label {
+        gap: 0.75rem;
+    }
+    
     .personal-name {
         font-size: 14px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.375rem;
     }
-
-    .personal-role {
-        font-size: 12px;
-    }
-
+    
     .badge-responsable {
         font-size: 10px;
         padding: 0.2rem 0.5rem;
     }
-
+    
     .personal-counter {
-        padding: 1rem;
+        padding: 1.25rem;
+    }
+    
+    .horario-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    
+    .horario-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 22px;
+    }
+    
+    .horario-status {
+        font-size: 15px;
+    }
+    
+    .horario-mensaje {
+        font-size: 12px;
     }
 }
 
 /* ========================================
-   ACCESIBILIDAD
+   ANIMACIONES
    ======================================== */
 
-.personal-checkbox:focus,
-.personal-checkbox-main:focus {
-    outline: 2px solid #0092B8;
-    outline-offset: 2px;
+.personal-item {
+    animation: fadeInUp 0.4s ease;
 }
 
-.personal-item:focus-within {
-    border-color: #0092B8;
-    box-shadow: 0 0 0 3px rgba(0, 146, 184, 0.1);
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-/* ========================================
-   ESTADOS DE CARGA
-   ======================================== */
-
-.personal-list.loading {
-    opacity: 0.6;
-    pointer-events: none;
-}
-
-.personal-item.disabled {
-    opacity: 0.5;
-    pointer-events: none;
-}
+.personal-item:nth-child(1) { animation-delay: 0.05s; }
+.personal-item:nth-child(2) { animation-delay: 0.1s; }
+.personal-item:nth-child(3) { animation-delay: 0.15s; }
+.personal-item:nth-child(4) { animation-delay: 0.2s; }
+.personal-item:nth-child(5) { animation-delay: 0.25s; }

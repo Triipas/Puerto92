@@ -11,8 +11,8 @@ using Puerto92.Data;
 namespace Puerto92.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251109005410_AddPersonalPresenteTable")]
-    partial class AddPersonalPresenteTable
+    [Migration("20251109013807_AgregarEstadoEnviado")]
+    partial class AgregarEstadoEnviado
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

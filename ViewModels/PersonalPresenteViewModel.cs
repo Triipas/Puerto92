@@ -18,6 +18,12 @@ namespace Puerto92.ViewModels
         
         public int TotalEmpleados { get; set; }
         public int TotalSeleccionados { get; set; }
+        public DateTime HoraActual { get; set; } = DateTime.Now;
+        public TimeSpan HoraLimiteEnvio { get; set; } = new TimeSpan(17, 30, 0); // 5:30 PM
+        public bool DentroDeHorario { get; set; }
+        public bool EnvioHabilitadoManualmente { get; set; } = false;
+        public string? MotivoHabilitacionManual { get; set; }
+        public string? HabilitadoPor { get; set; }
     }
 
     /// <summary>
