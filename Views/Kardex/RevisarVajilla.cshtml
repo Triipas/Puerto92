@@ -1,0 +1,464 @@
+@model Puerto92.ViewModels.KardexVajillaRevisionViewModel
+@{
+    ViewData["Title"] = "Revisión de Kardex de Vajilla";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/kardex-revision.css" asp-append-version="true" />
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+            <i class="fa-solid fa-plate-utensils" style="color: #06B6D4; font-size: 24px;"></i>
+            <h1 class="page-title">Revisión de Kardex de Vajilla</h1>
+        </div>
+        <p class="page-subtitle">
+            @Model.Fecha.ToString("dddd, dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))
+        </p>
+    </div>
+</div>
+
+<!-- Información del Vajillero Responsable -->
+<div class="content-card" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Vajillero Responsable</h2>
+            <p class="card-subtitle">Empleado asignado y estado de envío</p>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="cocineros-grid">
+            <div class="cocinero-card" style="border-color: #06B6D4;">
+                <div class="cocinero-header" style="color: #06B6D4; border-color: #CFFAFE;">
+                    <i class="fa-solid fa-user" style="color: #06B6D4;"></i>
+                    <span>Vajillero</span>
+                </div>
+                <div class="cocinero-info">
+                    <div class="cocinero-nombre">@Model.EmpleadoNombre</div>
+                    <div class="cocinero-fecha">
+                        <i class="fa-regular fa-clock"></i>
+                        Enviado: @Model.FechaEnvio?.ToString("hh:mm tt")
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="estadisticas-revision">
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%);">
+            <i class="fa-solid fa-plate-utensils"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">@Model.TotalUtensilios</div>
+            <div class="stat-label">Total de Utensilios</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon stat-warning">
+            <i class="fa-solid fa-exclamation-triangle"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">@Model.UtensiliosConFaltantes</div>
+            <div class="stat-label">Con Faltantes</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);">
+            <i class="fa-solid fa-arrow-down"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">@Model.TotalFaltantes</div>
+            <div class="stat-label">Total Faltantes</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon stat-info">
+            <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">@Model.PersonalPresente.Count</div>
+            <div class="stat-label">Personal Presente</div>
+        </div>
+    </div>
+</div>
+
+<!-- Instrucciones -->
+<div class="content-card" style="margin-bottom: 1.5rem;">
+    <div class="card-body" style="background: #ECFEFF; border-left: 3px solid #06B6D4;">
+        <div style="display: flex; align-items: start; gap: 0.75rem;">
+            <i class="fa-solid fa-info-circle" style="color: #0891B2; font-size: 20px; margin-top: 2px;"></i>
+            <div style="flex: 1;">
+                <h3 style="font-size: 15px; font-weight: 600; color: #164E63; margin-bottom: 0.5rem;">
+                    Instrucciones de revisión
+                </h3>
+                <ul style="font-size: 13px; color: #164E63; line-height: 1.8; margin: 0; padding-left: 1.5rem;">
+                    <li>Revise el <strong>inventario inicial</strong> vs <strong>unidades contadas</strong> de cada utensilio</li>
+                    <li>Los utensilios con faltantes están resaltados en amarillo</li>
+                    <li>Verifique la <strong>descripción de faltantes</strong> con detalles de rotos y extraviados</li>
+                    <li>Revise las <strong>cantidades específicas</strong> de utensilios rotos y extraviados</li>
+                    <li>Confirme que el <strong>personal presente</strong> corresponde al turno</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Buscador -->
+<div class="content-card" style="margin-bottom: 1rem;">
+    <div class="card-body" style="padding: 1rem;">
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" 
+                   id="searchUtensilio" 
+                   class="form-control" 
+                   placeholder="Buscar utensilio por código o descripción..."
+                   style="padding-left: 2.5rem;" />
+        </div>
+    </div>
+</div>
+
+<!-- Resumen de Faltantes -->
+@if (Model.CantidadRotos.HasValue || Model.CantidadExtraviados.HasValue)
+{
+    <div class="content-card" style="margin-bottom: 1.5rem;">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Resumen de Faltantes</h2>
+                <p class="card-subtitle">Clasificación de utensilios faltantes</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                @if (Model.CantidadRotos.HasValue && Model.CantidadRotos > 0)
+                {
+                    <div style="background: #FEF2F2; border: 1px solid #FEE2E2; border-radius: 8px; padding: 1rem;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fa-solid fa-exclamation-triangle" style="color: white; font-size: 20px;"></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 24px; font-weight: 700; color: #991B1B;">@Model.CantidadRotos</div>
+                                <div style="font-size: 13px; color: #991B1B; font-weight: 500;">Utensilios Rotos</div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                
+                @if (Model.CantidadExtraviados.HasValue && Model.CantidadExtraviados > 0)
+                {
+                    <div style="background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 8px; padding: 1rem;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fa-solid fa-question-circle" style="color: white; font-size: 20px;"></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 24px; font-weight: 700; color: #92400E;">@Model.CantidadExtraviados</div>
+                                <div style="font-size: 13px; color: #92400E; font-weight: 500;">Utensilios Extraviados</div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Tabla de Utensilios -->
+<div class="content-card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Utensilios de Cocina y Vajilla</h2>
+            <p class="card-subtitle">Inventario revisado por el vajillero</p>
+        </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div style="overflow-x: auto;">
+            <table class="kardex-revision-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">#</th>
+                        <th style="width: 150px;">Categoría</th>
+                        <th style="width: 100px;">Código</th>
+                        <th style="width: 300px;">Descripción</th>
+                        <th style="width: 80px;">Unidad</th>
+                        <th style="width: 120px;">Inv. Inicial</th>
+                        <th style="width: 150px;">Unidades Contadas</th>
+                        <th style="width: 100px;">Diferencia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var detalle in Model.Detalles)
+                    {
+                        var rowClass = detalle.TieneFaltantes ? "row-diferencia" : "";
+                        
+                        <tr class="@rowClass" data-utensilio="@detalle.Descripcion @detalle.Codigo">
+                            <td class="td-codigo" style="text-align: center; color: #64748B;">@detalle.Orden</td>
+                            <td class="td-categoria">
+                                @if (detalle.Categoria == "Utensilios Cocina")
+                                {
+                                    <span style="background: rgba(245, 158, 11, 0.1); color: #92400E; padding: 0.375rem 0.75rem; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.375rem;">
+                                        <i class="fa-solid fa-utensils"></i>
+                                        Utensilios Cocina
+                                    </span>
+                                }
+                                else if (detalle.Categoria == "Menajería Cocina")
+                                {
+                                    <span style="background: rgba(59, 130, 246, 0.1); color: #1E40AF; padding: 0.375rem 0.75rem; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.375rem;">
+                                        <i class="fa-solid fa-plate-utensils"></i>
+                                        Menajería Cocina
+                                    </span>
+                                }
+                                else if (detalle.Categoria == "Equipos")
+                                {
+                                    <span style="background: rgba(16, 185, 129, 0.1); color: #065F46; padding: 0.375rem 0.75rem; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.375rem;">
+                                        <i class="fa-solid fa-gears"></i>
+                                        Equipos
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span style="color: #64748B;">@detalle.Categoria</span>
+                                }
+                            </td>
+                            <td class="td-codigo">@detalle.Codigo</td>
+                            <td class="td-nombre">@detalle.Descripcion</td>
+                            <td class="td-unidad">@detalle.Unidad</td>
+                            <td class="td-readonly">@detalle.InventarioInicial</td>
+                            <td class="td-stock" style="text-align: center; font-weight: 600; color: #0369A1;">
+                                @detalle.UnidadesContadas
+                            </td>
+                            <td class="td-diferencia">
+                                @if (detalle.TieneFaltantes)
+                                {
+                                    <span class="badge-diferencia">
+                                        <i class="fa-solid fa-exclamation-triangle"></i>
+                                        @detalle.Diferencia
+                                    </span>
+                                }
+                                else if (detalle.Diferencia > 0)
+                                {
+                                    <span style="color: #10B981; font-weight: 600;">+@detalle.Diferencia</span>
+                                }
+                                else
+                                {
+                                    <span style="color: #64748B;">@detalle.Diferencia</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Descripción de Faltantes -->
+@if (!string.IsNullOrEmpty(Model.DescripcionFaltantes))
+{
+    <div class="content-card" style="margin-top: 1.5rem;">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Descripción Detallada de Faltantes</h2>
+                <p class="card-subtitle">Explicación de qué pasó con los utensilios faltantes</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <div style="background: #FEF3C7; border-left: 3px solid #F59E0B; padding: 1.25rem; border-radius: 8px;">
+                <div style="white-space: pre-wrap; color: #92400E; font-size: 14px; line-height: 1.8;">@Model.DescripcionFaltantes</div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Observaciones -->
+@if (!string.IsNullOrEmpty(Model.Observaciones))
+{
+    <div class="content-card" style="margin-top: 1.5rem;">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Observaciones del Vajillero</h2>
+                <p class="card-subtitle">Comentarios adicionales</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <div style="background: #ECFEFF; border-left: 3px solid #06B6D4; padding: 1rem; border-radius: 8px;">
+                <div style="white-space: pre-wrap; color: #164E63; font-size: 14px; line-height: 1.6;">@Model.Observaciones</div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Personal Presente -->
+<div class="content-card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Personal Presente</h2>
+            <p class="card-subtitle">Empleados que estuvieron durante el turno</p>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="personal-presente-list">
+            @foreach (var empleado in Model.PersonalPresente)
+            {
+                <div class="personal-presente-item @(empleado.EsResponsablePrincipal ? "responsable" : "")">
+                    <i class="fa-solid @(empleado.EsResponsablePrincipal ? "fa-star" : "fa-user")"></i>
+                    <div>
+                        <div class="personal-nombre">
+                            @empleado.NombreCompleto
+                            @if (empleado.EsResponsablePrincipal)
+                            {
+                                <span class="badge-responsable">Responsable</span>
+                            }
+                        </div>
+                        <div class="personal-rol">@empleado.Rol</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Botones de acción -->
+<div class="content-card" style="margin-top: 1.5rem;">
+    <div class="card-body">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+            <a asp-action="PendientesDeRevision" class="btn btn-secondary">
+                <i class="fa-solid fa-arrow-left"></i>
+                Volver a Pendientes
+            </a>
+            <div style="display: flex; gap: 0.75rem;">
+                <button type="button" class="btn btn-danger" onclick="abrirModalRechazar()">
+                    <i class="fa-solid fa-xmark"></i>
+                    Rechazar
+                </button>
+                <button type="button" class="btn btn-success" onclick="abrirModalAprobar()">
+                    <i class="fa-solid fa-check"></i>
+                    Aprobar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Aprobar -->
+<div id="modalAprobar" class="modal-overlay" style="display: none;">
+    <div class="modal-container" style="max-width: 500px;">
+        <div class="modal-header">
+            <div>
+                <h2 class="modal-title">Aprobar Kardex de Vajilla</h2>
+                <p class="modal-subtitle">Confirme la aprobación del kardex</p>
+            </div>
+            <button class="modal-close" onclick="closeModal('modalAprobar')">&times;</button>
+        </div>
+        <form id="formAprobar">
+            <div class="modal-body">
+                <div style="background: #ECFDF5; border-left: 3px solid #10B981; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: start; gap: 0.75rem;">
+                        <i class="fa-solid fa-check-circle" style="color: #10B981; font-size: 20px; margin-top: 2px;"></i>
+                        <div>
+                            <strong style="color: #065F46; font-size: 14px; display: block; margin-bottom: 0.25rem;">
+                                Se aprobará el kardex de vajilla
+                            </strong>
+                            <p style="color: #065F46; font-size: 13px; margin: 0;">
+                                El vajillero @Model.EmpleadoNombre recibirá una notificación de aprobación
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Observaciones de revisión (opcional)</label>
+                    <textarea id="observacionesAprobacion" 
+                              class="form-control" 
+                              rows="3"
+                              placeholder="Ej: Inventario correcto, justificación de faltantes aceptable..."
+                              maxlength="500"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeModal('modalAprobar')">Cancelar</button>
+                <button type="submit" class="btn btn-success">
+                    <i class="fa-solid fa-check"></i>
+                    Aprobar Kardex
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Rechazar -->
+<div id="modalRechazar" class="modal-overlay" style="display: none;">
+    <div class="modal-container" style="max-width: 500px;">
+        <div class="modal-header">
+            <div>
+                <h2 class="modal-title">Rechazar Kardex de Vajilla</h2>
+                <p class="modal-subtitle">Especifique el motivo del rechazo</p>
+            </div>
+            <button class="modal-close" onclick="closeModal('modalRechazar')">&times;</button>
+        </div>
+        <form id="formRechazar">
+            <div class="modal-body">
+                <div style="background: #FEF2F2; border-left: 3px solid #EF4444; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: start; gap: 0.75rem;">
+                        <i class="fa-solid fa-exclamation-circle" style="color: #EF4444; font-size: 20px; margin-top: 2px;"></i>
+                        <div>
+                            <strong style="color: #991B1B; font-size: 14px; display: block; margin-bottom: 0.25rem;">
+                                Se rechazará el kardex de vajilla
+                            </strong>
+                            <p style="color: #991B1B; font-size: 13px; margin: 0;">
+                                El vajillero deberá corregir y reenviar el kardex
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        Motivo del rechazo <span style="color: #EF4444;">*</span>
+                    </label>
+                    <textarea id="motivoRechazo" 
+                              class="form-control" 
+                              rows="4"
+                              placeholder="Especifique claramente por qué se rechaza el kardex..."
+                              maxlength="1000"
+                              required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeModal('modalRechazar')">Cancelar</button>
+                <button type="submit" class="btn btn-danger">
+                    <i class="fa-solid fa-xmark"></i>
+                    Rechazar Kardex
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const KARDEX_ID = @Model.Id;
+        const TIPO_KARDEX = 'Vajilla';
+        const KARDEX_IDS = [@Model.Id];
+    </script>
+    <script src="~/js/kardex-revision.js" asp-append-version="true"></script>
+    <script>
+        // Búsqueda específica para utensilios
+        document.getElementById('searchUtensilio')?.addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase().trim();
+            document.querySelectorAll('.kardex-revision-table tbody tr').forEach(row => {
+                const text = row.dataset.utensilio?.toLowerCase() || '';
+                row.style.display = text.includes(term) || term === '' ? '' : 'none';
+            });
+        });
+    </script>
+}
