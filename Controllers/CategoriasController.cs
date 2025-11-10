@@ -58,7 +58,7 @@ namespace Puerto92.Controllers
                     CantidadProductos = c.Tipo == "Cocina" 
                         ? _context.Productos.Count(p => p.CategoriaId == c.Id && p.Activo)
                         : c.Tipo == "Utensilios"
-                            ? _context.Utensilios.Count(u => u.Tipo == c.Nombre && u.Activo)
+                            ? _context.Utensilios.Count(u => u.Categoria!.Nombre == c.Nombre && u.Activo)
                             : 0 // Para "Bebidas" u otros tipos sin tabla asociada aún
                 })
                 .ToListAsync();
@@ -320,7 +320,7 @@ namespace Puerto92.Controllers
                 {
                     // ✅ Contar utensilios REALES asociados a esta categoría
                     productosAsignados = await _context.Utensilios
-                        .CountAsync(u => u.Tipo == categoria.Nombre && u.Activo);
+                        .CountAsync(u => u.Categoria!.Nombre == categoria.Nombre && u.Activo);
                 }
                 // Para "Bebidas" u otros tipos, productosAsignados será 0
 
@@ -418,6 +418,43 @@ namespace Puerto92.Controllers
         {
             return _context.Categorias.Any(e => e.Id == id);
         }
+
+[HttpGet]
+[AllowAnonymous] // ⭐ IMPORTANTE: Permitir acceso sin autenticación para AJAX
+public async Task<IActionResult> GetCategoriasPorTipo(string tipo)
+{
+    try
+    {
+        Console.WriteLine($"🔍 GetCategoriasPorTipo llamado con tipo: {tipo}");
+        
+        if (string.IsNullOrWhiteSpace(tipo))
+        {
+            Console.WriteLine("⚠️ Tipo de categoría no proporcionado");
+            return Json(new List<object>());
+        }
+
+        var categorias = await _context.Categorias
+            .Where(c => c.Tipo == tipo && c.Activo)
+            .OrderBy(c => c.Orden)
+            .Select(c => new { 
+                id = c.Id, 
+                nombre = c.Nombre, 
+                orden = c.Orden 
+            })
+            .ToListAsync();
+
+        Console.WriteLine($"✅ Se encontraron {categorias.Count} categorías de tipo '{tipo}'");
+        
+        return Json(categorias);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Error en GetCategoriasPorTipo: {ex.Message}");
+        _logger.LogError(ex, "Error al obtener categorías por tipo");
+        return Json(new List<object>());
+    }
+}
+
     }
 
     // DTO para reordenamiento
