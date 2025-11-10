@@ -581,6 +581,48 @@ namespace Puerto92.Migrations
                     b.ToTable("Notificaciones", (string)null);
                 });
 
+            modelBuilder.Entity("Puerto92.Models.PersonalPresente", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("EmpleadoId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("EsResponsablePrincipal")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("FechaRegistro")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("getdate()");
+
+                    b.Property<int>("KardexId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Observaciones")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TipoKardex")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmpleadoId");
+
+                    b.HasIndex("KardexId", "TipoKardex");
+
+                    b.HasIndex("KardexId", "TipoKardex", "EmpleadoId")
+                        .IsUnique();
+
+                    b.ToTable("PersonalPresente", (string)null);
+                });
+
             modelBuilder.Entity("Puerto92.Models.Producto", b =>
                 {
                     b.Property<int>("Id")
@@ -999,6 +1041,17 @@ namespace Puerto92.Migrations
                         .IsRequired();
 
                     b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.PersonalPresente", b =>
+                {
+                    b.HasOne("Puerto92.Models.Usuario", "Empleado")
+                        .WithMany()
+                        .HasForeignKey("EmpleadoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Empleado");
                 });
 
             modelBuilder.Entity("Puerto92.Models.Producto", b =>

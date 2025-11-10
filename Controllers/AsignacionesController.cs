@@ -178,8 +178,8 @@ namespace Puerto92.Controllers
                 // Validar que el empleado no tenga asignación ese día
                 var existeAsignacion = await _context.AsignacionesKardex
                     .AnyAsync(a => a.EmpleadoId == request.EmpleadoId &&
-                                  a.Fecha.Date == fechaAsignacion.Date &&
-                                  a.LocalId == usuario.LocalId);
+                                a.Fecha.Date == fechaAsignacion.Date &&
+                                a.LocalId == usuario.LocalId);
 
                 if (existeAsignacion)
                 {
@@ -205,6 +205,14 @@ namespace Puerto92.Controllers
                 var empleado = await _context.Users.FindAsync(request.EmpleadoId);
 
                 _logger.LogInformation($"Asignación creada: {request.TipoKardex} - {empleado?.NombreCompleto} - {fechaAsignacion:dd/MM/yyyy}");
+
+                // ⭐ NUEVO: Registrar en auditoría
+                await _auditService.RegistrarCreacionAsignacionAsync(
+                    tipoKardex: request.TipoKardex,
+                    fecha: fechaAsignacion,
+                    empleadoNombre: empleado?.NombreCompleto ?? "Desconocido",
+                    localNombre: usuario.Local?.Nombre ?? $"Local {usuario.LocalId}"
+                );
 
                 return JsonSuccess("Asignación agregada correctamente", new { asignacionId = asignacion.Id });
             }
@@ -440,10 +448,23 @@ namespace Puerto92.Controllers
                     return JsonError("Solo se pueden eliminar asignaciones pendientes");
                 }
 
+                // Guardar datos antes de eliminar
+                var empleadoNombre = asignacion.Empleado?.NombreCompleto ?? "Desconocido";
+                var tipoKardex = asignacion.TipoKardex;
+                var fecha = asignacion.Fecha;
+
                 _context.AsignacionesKardex.Remove(asignacion);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation($"Asignación eliminada: {asignacion.TipoKardex} - {asignacion.Empleado?.NombreCompleto} - {asignacion.Fecha:dd/MM/yyyy}");
+                _logger.LogInformation($"Asignación eliminada: {tipoKardex} - {empleadoNombre} - {fecha:dd/MM/yyyy}");
+
+                // ⭐ NUEVO: Registrar en auditoría
+                await _auditService.RegistrarEliminacionAsignacionAsync(
+                    tipoKardex: tipoKardex,
+                    fecha: fecha,
+                    empleadoNombre: empleadoNombre,
+                    motivo: "Eliminación de asignación pendiente"
+                );
 
                 return JsonSuccess("Asignación eliminada correctamente");
             }

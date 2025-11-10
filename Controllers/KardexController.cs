@@ -251,5 +251,104 @@ namespace Puerto92.Controllers
             SetErrorMessage("El kardex de Vajilla estará disponible próximamente");
             return RedirectToAction(nameof(MiKardex));
         }
+
+        // ==========================================
+        // PERSONAL PRESENTE
+        // ==========================================
+
+        /// <summary>
+        /// GET: Mostrar pantalla de Personal Presente
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> PersonalPresente(int id, string tipo)
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            try
+            {
+                // Validar que el kardex pertenece al usuario
+                if (tipo == TipoKardex.MozoBebidas)
+                {
+                    var kardex = await _kardexService.ObtenerKardexBebidasAsync(id);
+                    
+                    if (kardex.EmpleadoId != usuarioId)
+                    {
+                        _logger.LogWarning($"Usuario {usuarioId} intenta acceder a personal presente de kardex {id} de otro usuario");
+                        SetErrorMessage("No tienes autorización para acceder a este kardex");
+                        return RedirectToAction(nameof(MiKardex));
+                    }
+                }
+                // TODO: Agregar validaciones para otros tipos de kardex
+
+                var viewModel = await _kardexService.ObtenerPersonalPresenteAsync(id, tipo);
+                
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al cargar personal presente para kardex {id}");
+                SetErrorMessage("Error al cargar la pantalla de personal presente");
+                return RedirectToAction(nameof(MiKardex));
+            }
+        }
+
+        /// <summary>
+        /// POST: Guardar personal presente y completar kardex
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GuardarPersonalPresente([FromBody] PersonalPresenteRequest request)
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return Json(new { success = false, message = "Usuario no autenticado" });
+            }
+
+            try
+            {
+                // Validar que el usuario sea el responsable del kardex
+                if (request.TipoKardex == TipoKardex.MozoBebidas)
+                {
+                    var kardex = await _kardexService.ObtenerKardexBebidasAsync(request.KardexId);
+                    
+                    if (kardex.EmpleadoId != usuarioId)
+                    {
+                        return Json(new { success = false, message = "No autorizado" });
+                    }
+                }
+                // TODO: Agregar validaciones para otros tipos de kardex
+
+                var result = await _kardexService.GuardarPersonalPresenteYCompletarAsync(request);
+
+                if (result.Success)
+                {
+                    _logger.LogInformation(
+                        $"Personal presente guardado exitosamente: Kardex {request.KardexId} - {result.TotalRegistrados} empleados"
+                    );
+
+                    return Json(new
+                    {
+                        success = true,
+                        message = result.Message,
+                        totalRegistrados = result.TotalRegistrados,
+                        redirectUrl = Url.Action(nameof(MiKardex))
+                    });
+                }
+                else
+                {
+                    return Json(new { success = false, message = result.Message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al guardar personal presente");
+                return Json(new { success = false, message = "Error al procesar la solicitud" });
+            }
+        }
     }
 }

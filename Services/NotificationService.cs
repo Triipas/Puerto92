@@ -37,6 +37,11 @@ namespace Puerto92.Services
         {
             try
             {
+                _logger.LogInformation($"🔔 Iniciando creación de notificación:");
+                _logger.LogInformation($"   Usuario ID: {usuarioId}");
+                _logger.LogInformation($"   Tipo: {tipo}");
+                _logger.LogInformation($"   Título: {titulo}");
+                
                 var notificacion = new Notificacion
                 {
                     UsuarioId = usuarioId,
@@ -56,16 +61,20 @@ namespace Puerto92.Services
                 };
 
                 _context.Notificaciones.Add(notificacion);
-                await _context.SaveChangesAsync();
+                
+                _logger.LogInformation($"💾 Guardando notificación en base de datos...");
+                var cambiosGuardados = await _context.SaveChangesAsync();
+                _logger.LogInformation($"✅ Cambios guardados: {cambiosGuardados}");
 
-                _logger.LogInformation(
-                    $"✅ Notificación creada: {tipo} para usuario {usuarioId}");
+                _logger.LogInformation($"✅ Notificación creada exitosamente con ID: {notificacion.Id} para usuario {usuarioId}");
 
                 return notificacion;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"❌ Error al crear notificación para usuario {usuarioId}");
+                _logger.LogError($"   Tipo: {tipo}, Título: {titulo}");
+                _logger.LogError($"   Stack Trace: {ex.StackTrace}");
                 throw;
             }
         }
@@ -317,6 +326,51 @@ namespace Puerto92.Services
                 datosAdicionales: datosAdicionales,
                 fechaExpiracion: fecha.AddDays(1)
             );
+        }
+
+        public async Task<Notificacion> CrearNotificacionKardexRecibidoAsync(
+            string administradorId,
+            string tipoKardex,
+            string empleadoResponsable,
+            DateTime fecha)
+        {
+            var fechaFormateada = fecha.ToString("dd/MM/yyyy");
+            var horaFormateada = DateTime.Now.ToString("hh:mm tt");
+
+            var titulo = $"Nuevo Kardex Recibido - {tipoKardex}";
+            var mensaje = $"{empleadoResponsable} ha enviado su Kardex de {tipoKardex} para el {fechaFormateada} a las {horaFormateada}. Pendiente de revisión.";
+
+            var datosAdicionales = JsonSerializer.Serialize(new
+            {
+                TipoKardex = tipoKardex,
+                EmpleadoResponsable = empleadoResponsable,
+                Fecha = fechaFormateada,
+                HoraEnvio = horaFormateada,
+                EstadoPendiente = true
+            });
+
+            _logger.LogInformation($"📝 Creando notificación KardexRecibido para: {administradorId}");
+            _logger.LogInformation($"   Título: {titulo}");
+            _logger.LogInformation($"   Mensaje: {mensaje}");
+
+            var notificacion = await CrearNotificacionAsync(
+                usuarioId: administradorId,
+                tipo: TipoNotificacion.KardexRecibido,
+                titulo: titulo,
+                mensaje: mensaje,
+                urlAccion: "/Asignaciones/Index",
+                textoAccion: "Ver Asignaciones",
+                icono: "clipboard-check",
+                color: ColorNotificacion.Success,
+                prioridad: PrioridadNotificacion.Alta,
+                mostrarPopup: true,
+                datosAdicionales: datosAdicionales,
+                fechaExpiracion: fecha.AddDays(7)
+            );
+
+            _logger.LogInformation($"✅ Notificación creada con ID: {notificacion.Id}");
+            
+            return notificacion;
         }
 
     }

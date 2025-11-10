@@ -108,15 +108,16 @@ namespace Puerto92.Models
     /// </summary>
     public static class TipoNotificacion
     {
-        public const string AsignacionKardex = "AsignacionKardex";
-        public const string ReasignacionKardex = "ReasignacionKardex";
-        public const string CancelacionKardex = "CancelacionKardex";
-        public const string RecordatorioKardex = "RecordatorioKardex";
-        public const string KardexAprobado = "KardexAprobado";
-        public const string KardexRechazado = "KardexRechazado";
-        public const string CambioPassword = "CambioPassword";
-        public const string AlertaSistema = "AlertaSistema";
-        public const string Mensaje = "Mensaje";
+    public const string AsignacionKardex = "AsignacionKardex";
+    public const string ReasignacionKardex = "ReasignacionKardex";
+    public const string CancelacionKardex = "CancelacionKardex";
+    public const string RecordatorioKardex = "RecordatorioKardex";
+    public const string KardexRecibido = "KardexRecibido";
+    public const string KardexAprobado = "KardexAprobado";
+    public const string KardexRechazado = "KardexRechazado";
+    public const string CambioPassword = "CambioPassword";
+    public const string AlertaSistema = "AlertaSistema";
+    public const string Mensaje = "Mensaje";
     }
 
     /// <summary>

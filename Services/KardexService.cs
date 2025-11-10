@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Puerto92.Data;
 using Puerto92.Models;
@@ -9,13 +10,22 @@ namespace Puerto92.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<KardexService> _logger;
+        private readonly UserManager<Usuario> _userManager;
+        private readonly INotificationService _notificationService;
+        private readonly IAuditService _auditService;
 
         public KardexService(
             ApplicationDbContext context,
-            ILogger<KardexService> logger)
+            ILogger<KardexService> logger,
+            UserManager<Usuario> userManager,
+            INotificationService notificationService,
+            IAuditService auditService)
         {
             _context = context;
             _logger = logger;
+            _userManager = userManager;
+            _notificationService = notificationService;
+            _auditService = auditService;
         }
 
         public async Task<bool> TieneAsignacionActivaAsync(string usuarioId)
@@ -271,6 +281,14 @@ namespace Puerto92.Services
 
             _logger.LogInformation($"Kardex de bebidas iniciado: ID {kardex.Id} por usuario {usuarioId}");
 
+            // ⭐ NUEVO: Registrar en auditoría
+            await _auditService.RegistrarInicioKardexAsync(
+                tipoKardex: TipoKardex.MozoBebidas,
+                fecha: asignacion.Fecha,
+                empleadoNombre: asignacion.Empleado?.NombreCompleto ?? "Desconocido",
+                kardexId: kardex.Id
+            );
+
             // Cargar kardex completo con detalles
             return await ObtenerKardexBebidasAsync(kardex.Id);
         }
@@ -491,6 +509,270 @@ namespace Puerto92.Services
                     ? (decimal)productosCompletos / totalProductos * 100
                     : 0
             };
+        }
+
+        public async Task<PersonalPresenteViewModel> ObtenerPersonalPresenteAsync(int kardexId, string tipoKardex)
+        {
+            var viewModel = new PersonalPresenteViewModel
+            {
+                KardexId = kardexId,
+                TipoKardex = tipoKardex
+            };
+
+            // Obtener información del kardex según el tipo
+            if (tipoKardex == TipoKardex.MozoBebidas)
+            {
+                var kardex = await _context.KardexBebidas
+                    .Include(k => k.Empleado)
+                    .Include(k => k.Local)
+                    .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+                if (kardex == null)
+                {
+                    throw new Exception("Kardex no encontrado");
+                }
+
+                viewModel.Fecha = kardex.Fecha;
+                viewModel.LocalId = kardex.LocalId;
+                viewModel.EmpleadoResponsableId = kardex.EmpleadoId;
+                viewModel.EmpleadoResponsableNombre = kardex.Empleado?.NombreCompleto ?? "";
+            }
+            // TODO: Agregar casos para otros tipos de kardex
+
+            // ⭐ NUEVO: Verificar horario
+            viewModel.HoraActual = DateTime.Now;
+            viewModel.HoraLimiteEnvio = new TimeSpan(17, 30, 0); // 5:30 PM
+            viewModel.DentroDeHorario = DateTime.Now.TimeOfDay < viewModel.HoraLimiteEnvio;
+
+            // ⭐ NUEVO: Verificar si hay habilitación manual (TODO: implementar lógica de habilitación)
+            viewModel.EnvioHabilitadoManualmente = false;
+
+            // Obtener empleados del área
+            viewModel.EmpleadosDisponibles = await ObtenerEmpleadosDelAreaAsync(
+                tipoKardex, 
+                viewModel.LocalId, 
+                viewModel.EmpleadoResponsableId
+            );
+
+            viewModel.TotalEmpleados = viewModel.EmpleadosDisponibles.Count;
+            viewModel.TotalSeleccionados = viewModel.EmpleadosDisponibles.Count(e => e.Seleccionado);
+
+            return viewModel;
+        }
+
+        public async Task<List<EmpleadoDisponibleDto>> ObtenerEmpleadosDelAreaAsync(
+            string tipoKardex, 
+            int localId, 
+            string empleadoResponsableId)
+        {
+            // Determinar roles permitidos según el tipo de kardex
+            var rolesPermitidos = TipoKardex.ObtenerRolesPermitidos(tipoKardex);
+
+            // Obtener empleados activos del local con los roles permitidos
+            var empleados = await _context.Users
+                .Where(u => u.Activo && u.LocalId == localId)
+                .ToListAsync();
+
+            var empleadosDto = new List<EmpleadoDisponibleDto>();
+
+            foreach (var empleado in empleados)
+            {
+                var roles = await _userManager.GetRolesAsync(empleado);
+                var tieneRolPermitido = roles.Any(r => rolesPermitidos.Contains(r));
+
+                if (tieneRolPermitido)
+                {
+                    var dto = new EmpleadoDisponibleDto
+                    {
+                        Id = empleado.Id,
+                        NombreCompleto = empleado.NombreCompleto,
+                        UserName = empleado.UserName ?? "",
+                        Rol = roles.FirstOrDefault() ?? "",
+                        EsResponsablePrincipal = empleado.Id == empleadoResponsableId,
+                        Seleccionado = empleado.Id == empleadoResponsableId // Pre-seleccionar al responsable
+                    };
+
+                    empleadosDto.Add(dto);
+                }
+            }
+
+            // Ordenar: responsable primero, luego por nombre
+            return empleadosDto
+                .OrderByDescending(e => e.EsResponsablePrincipal)
+                .ThenBy(e => e.NombreCompleto)
+                .ToList();
+        }
+
+        public async Task<PersonalPresenteResponse> GuardarPersonalPresenteYCompletarAsync(PersonalPresenteRequest request)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try {
+                // ⭐ VALIDAR HORARIO
+                var horaActual = DateTime.Now.TimeOfDay;
+                var horaLimite = new TimeSpan(17, 30, 0); // 5:30 PM
+                var dentroDeHorario = horaActual < horaLimite;
+
+                // TODO: Verificar si hay habilitación manual para este kardex
+                var envioHabilitadoManualmente = false;
+
+                if (!dentroDeHorario && !envioHabilitadoManualmente)
+                {
+                    return new PersonalPresenteResponse
+                    {
+                        Success = false,
+                        Message = "Fuera de horario. El envío ha sido bloqueado. El horario límite de envío es 5:30 PM. Si necesita enviar este kardex, contacte al administrador para solicitar habilitación manual."
+                    };
+                }
+
+                // Validar que hay al menos un empleado presente
+                if (request.EmpleadosPresentes == null || request.EmpleadosPresentes.Count == 0)
+                {
+                    return new PersonalPresenteResponse
+                    {
+                        Success = false,
+                        Message = "Debe seleccionar al menos un empleado presente"
+                    };
+                }
+
+                // Obtener información del kardex
+                string empleadoResponsableId = "";
+                string empleadoResponsableNombre = "";
+                int localId = 0;
+                DateTime fechaKardex = DateTime.Today;
+
+                if (request.TipoKardex == TipoKardex.MozoBebidas)
+                {
+                    var kardex = await _context.KardexBebidas
+                        .Include(k => k.Empleado)
+                        .Include(k => k.Asignacion)
+                        .FirstOrDefaultAsync(k => k.Id == request.KardexId);
+
+                    if (kardex == null)
+                    {
+                        throw new Exception("Kardex no encontrado");
+                    }
+
+                    empleadoResponsableId = kardex.EmpleadoId;
+                    empleadoResponsableNombre = kardex.Empleado?.NombreCompleto ?? "";
+                    localId = kardex.LocalId;
+                    fechaKardex = kardex.Fecha;
+
+                    // ⭐ CAMBIAR ESTADO A "ENVIADO"
+                    kardex.Estado = EstadoKardex.Enviado;
+                    kardex.FechaFinalizacion = DateTime.Now;
+                    kardex.FechaEnvio = DateTime.Now;
+                    kardex.Observaciones = request.ObservacionesKardex;
+
+                    // Actualizar asignación
+                    if (kardex.Asignacion != null)
+                    {
+                        kardex.Asignacion.Estado = EstadoAsignacion.Completada;
+                    }
+                }
+                // TODO: Agregar casos para otros tipos de kardex
+
+                // Eliminar registros anteriores de personal presente para este kardex
+                var registrosAnteriores = await _context.Set<PersonalPresente>()
+                    .Where(p => p.KardexId == request.KardexId && p.TipoKardex == request.TipoKardex)
+                    .ToListAsync();
+
+                _context.Set<PersonalPresente>().RemoveRange(registrosAnteriores);
+
+                // Guardar personal presente
+                foreach (var empleadoId in request.EmpleadosPresentes)
+                {
+                    var personalPresente = new PersonalPresente
+                    {
+                        KardexId = request.KardexId,
+                        TipoKardex = request.TipoKardex,
+                        EmpleadoId = empleadoId,
+                        EsResponsablePrincipal = empleadoId == empleadoResponsableId,
+                        FechaRegistro = DateTime.Now
+                    };
+
+                    _context.Set<PersonalPresente>().Add(personalPresente);
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                _logger.LogInformation(
+                    $"✅ Kardex ENVIADO al administrador: Kardex {request.KardexId} ({request.TipoKardex}) - {request.EmpleadosPresentes.Count} empleados - Enviado a las {DateTime.Now:HH:mm:ss}"
+                );
+
+                await _auditService.RegistrarEnvioKardexAsync(
+                    tipoKardex: request.TipoKardex,
+                    fecha: fechaKardex,
+                    empleadoNombre: empleadoResponsableNombre,
+                    kardexId: request.KardexId,
+                    totalPersonalPresente: request.EmpleadosPresentes.Count
+                );
+
+                // ⭐ NUEVO: Buscar y notificar al administrador local
+                _logger.LogInformation($"🔍 Buscando administrador local para Local ID: {localId}");
+                
+                // Query simplificada y más robusta
+                var usuariosLocal = await _context.Users
+                    .Where(u => u.LocalId == localId && u.Activo)
+                    .ToListAsync();
+                
+                _logger.LogInformation($"📋 Total usuarios activos en el local: {usuariosLocal.Count}");
+
+                Usuario? administradorLocal = null;
+                
+                foreach (var usuario in usuariosLocal)
+                {
+                    var roles = await _userManager.GetRolesAsync(usuario);
+                    _logger.LogInformation($"   - Usuario: {usuario.NombreCompleto} | Roles: {string.Join(", ", roles)}");
+                    
+                    if (roles.Contains("Administrador Local"))
+                    {
+                        administradorLocal = usuario;
+                        _logger.LogInformation($"✅ Administrador Local encontrado: {administradorLocal.NombreCompleto} (ID: {administradorLocal.Id})");
+                        break;
+                    }
+                }
+
+                if (administradorLocal != null)
+                {
+                    _logger.LogInformation($"📤 Creando notificación para administrador: {administradorLocal.NombreCompleto}");
+                    
+                    await _notificationService.CrearNotificacionKardexRecibidoAsync(
+                        administradorId: administradorLocal.Id,
+                        tipoKardex: request.TipoKardex,
+                        empleadoResponsable: empleadoResponsableNombre,
+                        fecha: fechaKardex
+                    );
+
+                    _logger.LogInformation(
+                        $"🔔 Notificación enviada exitosamente al administrador: {administradorLocal.NombreCompleto} - Kardex {request.TipoKardex} de {empleadoResponsableNombre}"
+                    );
+                }
+                else
+                {
+                    _logger.LogWarning($"⚠️ No se encontró administrador local para el local ID {localId}");
+                    _logger.LogWarning($"⚠️ Usuarios revisados: {usuariosLocal.Count}");
+                }
+
+                return new PersonalPresenteResponse
+                {
+                    Success = true,
+                    Message = "Kardex enviado exitosamente",
+                    TotalRegistrados = request.EmpleadosPresentes.Count
+                };
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "❌ Error al enviar kardex al administrador");
+
+                return new PersonalPresenteResponse
+                {
+                    Success = false,
+                    Message = $"Error al enviar el kardex: {ex.Message}"
+                };
+            }
         }
     }
 }

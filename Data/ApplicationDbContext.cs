@@ -21,7 +21,8 @@ namespace Puerto92.Data
         public DbSet<Notificacion> Notificaciones { get; set; }
         public DbSet<KardexBebidas> KardexBebidas { get; set; }
         public DbSet<KardexBebidasDetalle> KardexBebidasDetalles { get; set; }
-        
+        public DbSet<PersonalPresente> PersonalPresente { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -295,6 +296,24 @@ namespace Puerto92.Data
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasIndex(d => new { d.KardexBebidasId, d.Orden });
+            });
+
+            builder.Entity<PersonalPresente>(entity =>
+            {
+                entity.ToTable("PersonalPresente");
+
+                entity.HasOne(p => p.Empleado)
+                    .WithMany()
+                    .HasForeignKey(p => p.EmpleadoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(p => new { p.KardexId, p.TipoKardex, p.EmpleadoId })
+                    .IsUnique();
+
+                entity.HasIndex(p => new { p.KardexId, p.TipoKardex });
+
+                entity.Property(p => p.FechaRegistro)
+                    .HasDefaultValueSql("getdate()");
             });
 
         }

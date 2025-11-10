@@ -62,6 +62,15 @@ namespace Puerto92.Services
             string motivo);
 
         /// <summary>
+        /// Crear notificación cuando el administrador recibe un kardex completado
+        /// </summary>
+        Task<Notificacion> CrearNotificacionKardexRecibidoAsync(
+            string administradorId,
+            string tipoKardex,
+            string empleadoResponsable,
+            DateTime fecha);
+
+        /// <summary>
         /// Obtener notificaciones de un usuario
         /// </summary>
         Task<List<Notificacion>> ObtenerNotificacionesUsuarioAsync(
