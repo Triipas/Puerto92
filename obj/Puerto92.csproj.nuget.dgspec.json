@@ -1,30 +1,30 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\monke\\OneDrive\\Documentos\\waaa\\Puerto92\\Puerto92.csproj": {}
+    "D:\\mvc\\Kardex\\Puerto92\\Puerto92.csproj": {}
   },
   "projects": {
-    "C:\\Users\\monke\\OneDrive\\Documentos\\waaa\\Puerto92\\Puerto92.csproj": {
+    "D:\\mvc\\Kardex\\Puerto92\\Puerto92.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\monke\\OneDrive\\Documentos\\waaa\\Puerto92\\Puerto92.csproj",
+        "projectUniqueName": "D:\\mvc\\Kardex\\Puerto92\\Puerto92.csproj",
         "projectName": "Puerto92",
-        "projectPath": "C:\\Users\\monke\\OneDrive\\Documentos\\waaa\\Puerto92\\Puerto92.csproj",
-        "packagesPath": "C:\\Users\\monke\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\monke\\OneDrive\\Documentos\\waaa\\Puerto92\\obj\\",
+        "projectPath": "D:\\mvc\\Kardex\\Puerto92\\Puerto92.csproj",
+        "packagesPath": "C:\\Users\\Windows\\.nuget\\packages\\",
+        "outputPath": "D:\\mvc\\Kardex\\Puerto92\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\monke\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\Windows\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
-          "net8.0"
+          "net9.0"
         ],
         "sources": {
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net8.0": {
-            "targetAlias": "net8.0",
+          "net9.0": {
+            "targetAlias": "net9.0",
             "projectReferences": {}
           }
         },
@@ -41,28 +41,28 @@
         "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
-        "net8.0": {
-          "targetAlias": "net8.0",
+        "net9.0": {
+          "targetAlias": "net9.0",
           "dependencies": {
             "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
               "target": "Package",
-              "version": "[8.0.0, )"
+              "version": "[9.0.7, )"
             },
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
-              "version": "[8.0.0, )"
+              "version": "[9.0.7, )"
             },
             "Microsoft.EntityFrameworkCore.Sqlite": {
               "target": "Package",
-              "version": "[8.0.0, )"
+              "version": "[9.0.7, )"
             },
             "Microsoft.EntityFrameworkCore.Tools": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
-              "version": "[8.0.0, )"
+              "version": "[9.0.7, )"
             }
           },
           "imports": [
@@ -84,7 +84,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.303/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

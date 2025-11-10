@@ -19,9 +19,12 @@ namespace Puerto92.ViewModels
         [Display(Name = "Nombre del Utensilio")]
         public string Nombre { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Debe seleccionar un tipo")]
-        [Display(Name = "Tipo")]
-        public string Tipo { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Debe seleccionar una categoría")]
+        [Display(Name = "Categoría")]
+        public int CategoriaId { get; set; }
+
+        // Propiedades para mostrar en vistas
+        public string? CategoriaNombre { get; set; }
 
         [Required(ErrorMessage = "Debe seleccionar una unidad")]
         [Display(Name = "Unidad de Medida")]
@@ -76,7 +79,8 @@ namespace Puerto92.ViewModels
         public int NumeroFila { get; set; }
         public string? Codigo { get; set; }
         public string Nombre { get; set; } = string.Empty;
-        public string Tipo { get; set; } = string.Empty;
+        public string CategoriaNombre { get; set; } = string.Empty;
+        public int? CategoriaId { get; set; }
         public string Unidad { get; set; } = string.Empty;
         public string PrecioStr { get; set; } = string.Empty;
         public decimal Precio { get; set; }

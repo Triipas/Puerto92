@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Puerto92.Migrations
 {
     /// <inheritdoc />
-    public partial class DBinicial : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -113,29 +113,6 @@ namespace Puerto92.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Utensilios",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Codigo = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
-                    Nombre = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Tipo = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
-                    Unidad = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
-                    Precio = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Descripcion = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
-                    Activo = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: true),
-                    FechaCreacion = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "getdate()"),
-                    FechaModificacion = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    CreadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
-                    ModificadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Utensilios", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
@@ -180,6 +157,35 @@ namespace Puerto92.Migrations
                     table.PrimaryKey("PK_Productos", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Productos_Categorias_CategoriaId",
+                        column: x => x.CategoriaId,
+                        principalTable: "Categorias",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Utensilios",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Codigo = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Nombre = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    CategoriaId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Unidad = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Precio = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Descripcion = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    Activo = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: true),
+                    FechaCreacion = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "getdate()"),
+                    FechaModificacion = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    CreadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    ModificadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Utensilios", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Utensilios_Categorias_CategoriaId",
                         column: x => x.CategoriaId,
                         principalTable: "Categorias",
                         principalColumn: "Id",
@@ -679,6 +685,11 @@ namespace Puerto92.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Utensilios_CategoriaId_Activo",
+                table: "Utensilios",
+                columns: new[] { "CategoriaId", "Activo" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Utensilios_Codigo",
                 table: "Utensilios",
                 column: "Codigo",
@@ -688,11 +699,6 @@ namespace Puerto92.Migrations
                 name: "IX_Utensilios_Nombre",
                 table: "Utensilios",
                 column: "Nombre");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Utensilios_Tipo_Activo",
-                table: "Utensilios",
-                columns: new[] { "Tipo", "Activo" });
         }
 
         /// <inheritdoc />

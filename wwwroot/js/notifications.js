@@ -206,7 +206,7 @@ class NotificationManager {
                     </div>
                     ${notificacion.urlAccion ? `
                         <div class="notification-actions">
-                            <button class="notification-btn notification-btn-primary" onclick="notificationManager.accionarNotificacion(${notificacion.id}, '${notificacion.urlAccion}')">
+                            <button class="notification-btn notification-btn-primary" onclick="window.notificationManager.accionarNotificacion(${notificacion.id}, '${notificacion.urlAccion}')">
                                 ${notificacion.textoAccion || 'Ver más'}
                             </button>
                         </div>
@@ -251,13 +251,13 @@ class NotificationManager {
                 <div class="popup-title">${notificacion.titulo}</div>
                 <div class="popup-message">${notificacion.mensaje}</div>
                 ${notificacion.urlAccion ? `
-                    <a href="${notificacion.urlAccion}" class="popup-action" onclick="notificationManager.marcarComoLeida(${notificacion.id})">
+                    <a href="${notificacion.urlAccion}" class="popup-action" onclick="window.notificationManager.marcarComoLeida(${notificacion.id})">
                         <i class="fa-solid fa-arrow-right"></i>
                         ${notificacion.textoAccion || 'Ver más'}
                     </a>
                 ` : ''}
             </div>
-            <button class="popup-close" onclick="notificationManager.cerrarPopup(this)">
+            <button class="popup-close" onclick="window.notificationManager.cerrarPopup(this)">
                 <i class="fa-solid fa-xmark"></i>
             </button>
             <div class="popup-progress"></div>
@@ -378,7 +378,7 @@ class NotificationManager {
             const panel = document.getElementById('notificationPanel');
             const bell = document.getElementById('notificationBell');
 
-            if (panel && bell && !bell.contains(e.target)) {
+            if (panel && bell && !bell.contains(e.target) && !panel.contains(e.target)) {
                 panel.classList.remove('show');
                 this.panelOpen = false;
             }
@@ -394,6 +394,12 @@ class NotificationManager {
  * Toggle del panel de notificaciones
  */
 function toggleNotificationPanel() {
+    // ⭐ VERIFICAR QUE notificationManager EXISTE
+    if (!window.notificationManager) {
+        console.error('❌ NotificationManager no está inicializado');
+        return;
+    }
+
     const panel = document.getElementById('notificationPanel');
     
     if (!panel) {
@@ -405,16 +411,16 @@ function toggleNotificationPanel() {
 
     if (isOpen) {
         panel.classList.remove('show');
-        notificationManager.panelOpen = false;
+        window.notificationManager.panelOpen = false;
     } else {
         panel.style.display = 'block';
         setTimeout(() => {
             panel.classList.add('show');
         }, 10);
-        notificationManager.panelOpen = true;
+        window.notificationManager.panelOpen = true;
 
         // Cargar notificaciones
-        notificationManager.cargarNotificaciones();
+        window.notificationManager.cargarNotificaciones();
     }
 }
 
@@ -422,7 +428,9 @@ function toggleNotificationPanel() {
  * Marcar todas las notificaciones como leídas
  */
 function marcarTodasComoLeidas() {
-    notificationManager.marcarTodasComoLeidas();
+    if (window.notificationManager) {
+        window.notificationManager.marcarTodasComoLeidas();
+    }
 }
 
 /**
@@ -438,14 +446,13 @@ function verTodasLasNotificaciones() {
 // INICIALIZACIÓN
 // ==========================================
 
-let notificationManager;
-
+// ⭐ INICIALIZAR CORRECTAMENTE AL CARGAR LA PÁGINA
 document.addEventListener('DOMContentLoaded', () => {
-    notificationManager = new NotificationManager();
+    window.notificationManager = new NotificationManager();
+    console.log('✅ NotificationManager expuesto globalmente');
 });
 
-// Exponer globalmente
-window.notificationManager = notificationManager;
+// Exponer funciones globalmente
 window.toggleNotificationPanel = toggleNotificationPanel;
 window.marcarTodasComoLeidas = marcarTodasComoLeidas;
 window.verTodasLasNotificaciones = verTodasLasNotificaciones;

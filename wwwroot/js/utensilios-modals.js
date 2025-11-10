@@ -30,17 +30,102 @@ window.initUtensiliosPage = initUtensiliosPage;
 // GESTIÓN DE MODALES
 // ==========================================
 
+async function cargarCategoriasUtensilios() {
+    const createSelect = document.getElementById('createCategoriaId');
+    
+    try {
+        console.log('🔄 Cargando categorías de utensilios...');
+        
+        // Mostrar loading en el select
+        if (createSelect) {
+            createSelect.innerHTML = '<option value="">Cargando categorías...</option>';
+            createSelect.disabled = true;
+        }
+        
+        const response = await fetch('/Categorias/GetCategoriasPorTipo?tipo=Utensilios', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        // Verificar si la respuesta es JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('❌ Respuesta no es JSON:', text.substring(0, 200));
+            throw new Error('El servidor devolvió HTML en lugar de JSON. Verifica que el endpoint exista.');
+        }
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const categorias = await response.json();
+        console.log('✅ Categorías obtenidas:', categorias);
+        
+        // Llenar select de crear
+        if (createSelect) {
+            createSelect.innerHTML = '<option value="">Seleccione una categoría...</option>';
+            
+            if (categorias && categorias.length > 0) {
+                categorias.forEach(cat => {
+                    createSelect.innerHTML += `<option value="${cat.id}">${cat.nombre}</option>`;
+                });
+                console.log(`✅ ${categorias.length} categorías cargadas en el select`);
+            } else {
+                console.warn('⚠️ No se encontraron categorías activas de tipo Utensilios');
+                createSelect.innerHTML += '<option value="" disabled>No hay categorías disponibles</option>';
+                showNotification('No hay categorías de tipo "Utensilios" disponibles. Créelas primero en el módulo de Categorías.', 'warning');
+            }
+            
+            createSelect.disabled = false;
+        }
+        
+    } catch (error) {
+        console.error('❌ Error al cargar categorías:', error);
+        
+        // Mostrar error específico
+        let mensaje = 'Error al cargar categorías.';
+        if (error.message.includes('JSON')) {
+            mensaje += ' El endpoint puede no existir o no tiene permisos.';
+        }
+        
+        showNotification(mensaje, 'error');
+        
+        // Mostrar error en el select
+        if (createSelect) {
+            createSelect.innerHTML = '<option value="">⚠️ Error al cargar</option>';
+            createSelect.disabled = false;
+        }
+    }
+}
+
 /**
  * Abrir modal de crear utensilio
  */
-function openCreateUtensilioModal() {
+async function openCreateUtensilioModal() {
     console.log('📝 Abriendo modal de crear utensilio...');
     
+    // Mostrar modal primero
     const modal = document.getElementById('createUtensilioModal');
     modal.style.display = 'flex';
     modal.classList.add('active');
-    document.getElementById('createUtensilioForm').reset();
-    document.getElementById('guardarYAgregarOtro').checked = false;
+    
+    // Resetear formulario
+    const form = document.getElementById('createUtensilioForm');
+    if (form) {
+        form.reset();
+    }
+    
+    const checkbox = document.getElementById('guardarYAgregarOtro');
+    if (checkbox) {
+        checkbox.checked = false;
+    }
+    
+    // ⭐ CARGAR CATEGORÍAS DESPUÉS DE MOSTRAR EL MODAL
+    await cargarCategoriasUtensilios();
     
     console.log('✅ Modal de crear utensilio abierto');
 }
@@ -52,20 +137,31 @@ async function openEditUtensilioModal(id) {
     console.log(`✏️ Abriendo modal de editar utensilio: ${id}`);
     
     try {
-        const response = await fetch(`/Utensilios/GetUtensilio?id=${id}`);
+        const response = await fetch(`/Utensilios/GetUtensilio?id=${id}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
         
         if (!response.ok) {
             throw new Error('Utensilio no encontrado');
         }
 
         const utensilio = await response.json();
+        console.log('✅ Utensilio obtenido:', utensilio);
 
-        // Llenar formulario
+        // Llenar formulario con los datos correctos
         document.getElementById('editUtensilioId').value = utensilio.id;
         document.getElementById('editUtensilioCodigoDisplay').textContent = utensilio.codigo;
         document.getElementById('editUtensilioCodigoInput').value = utensilio.codigo;
-        document.getElementById('editUtensilioTipoDisplay').textContent = getTipoDisplay(utensilio.tipo);
-        document.getElementById('editUtensilioTipoInput').value = utensilio.tipo;
+        
+        // ⭐ USAR categoriaNombre EN LUGAR DE tipo
+        const categoriaNombre = utensilio.categoriaNombre || utensilio.tipo || 'Sin categoría';
+        document.getElementById('editUtensilioTipoDisplay').textContent = getCategoriaDisplay(categoriaNombre);
+        document.getElementById('editUtensilioTipoInput').value = categoriaNombre;
+        
         document.getElementById('editUtensilioNombre').value = utensilio.nombre;
         document.getElementById('editUtensilioUnidad').value = utensilio.unidad;
         document.getElementById('editUtensilioPrecio').value = utensilio.precio;
@@ -90,13 +186,13 @@ async function openEditUtensilioModal(id) {
 /**
  * Abrir modal de desactivar utensilio
  */
-function openDesactivarUtensilioModal(id, codigo, nombre, tipo) {
+function openDesactivarUtensilioModal(id, codigo, nombre, categoriaNombre) {
     console.log(`🗑️ Abriendo modal de desactivar utensilio: ${id}`);
     
     document.getElementById('desactivarUtensilioId').value = id;
     document.getElementById('desactivarUtensilioCode').textContent = codigo;
     document.getElementById('desactivarUtensilioNombre').textContent = nombre;
-    document.getElementById('desactivarUtensilioTipo').textContent = getTipoDisplay(tipo);
+    document.getElementById('desactivarUtensilioTipo').textContent = getCategoriaDisplay(categoriaNombre);
 
     document.getElementById('desactivarUtensilioForm').action = `/Utensilios/Desactivar/${id}`;
 
@@ -180,20 +276,33 @@ function setupModalEventListeners() {
  */
 function setupCreateFormHandler() {
     const createForm = document.getElementById('createUtensilioForm');
-    if (!createForm) return;
+    if (!createForm) {
+        console.warn('⚠️ Formulario createUtensilioForm no encontrado');
+        return;
+    }
+
+    console.log('🔧 Configurando handler del formulario de crear');
 
     // Remover listener anterior si existe
-    createForm.onsubmit = null;
+    const newForm = createForm.cloneNode(true);
+    createForm.parentNode.replaceChild(newForm, createForm);
     
-    createForm.addEventListener('submit', async function(e) {
+    newForm.addEventListener('submit', async function(e) {
         const guardarYAgregarOtro = document.getElementById('guardarYAgregarOtro');
         
         // Si está marcado "Guardar y Agregar Otro", prevenir el comportamiento por defecto
         if (guardarYAgregarOtro && guardarYAgregarOtro.checked) {
-            e.preventDefault();
+            e.preventDefault(); // ⭐ PREVENIR RECARGA
+            console.log('💾 Guardando con opción "Agregar Otro"...');
             
             const formData = new FormData(this);
             const submitButton = this.querySelector('button[type="submit"]');
+            
+            // Agregar token antiforgery si existe
+            const tokenInput = this.querySelector('input[name="__RequestVerificationToken"]');
+            if (tokenInput) {
+                formData.append('__RequestVerificationToken', tokenInput.value);
+            }
             
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
@@ -201,12 +310,20 @@ function setupCreateFormHandler() {
             try {
                 const response = await fetch(this.action, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
                 });
                 
                 if (response.ok) {
+                    console.log('✅ Utensilio guardado exitosamente');
+                    
                     // Limpiar formulario pero mantener el modal abierto
                     this.reset();
+                    
+                    // ⭐ RECARGAR CATEGORÍAS DESPUÉS DEL RESET
+                    await cargarCategoriasUtensilios();
                     
                     // Mostrar notificación de éxito
                     showNotification('Utensilio agregado exitosamente. Puede agregar otro.', 'success');
@@ -214,13 +331,15 @@ function setupCreateFormHandler() {
                     // Enfocar el campo de nombre
                     const nombreInput = this.querySelector('input[name="Nombre"]');
                     if (nombreInput) {
-                        nombreInput.focus();
+                        setTimeout(() => nombreInput.focus(), 100);
                     }
                 } else {
+                    const errorText = await response.text();
+                    console.error('❌ Error del servidor:', errorText);
                     showNotification('Error al guardar el utensilio', 'error');
                 }
             } catch (error) {
-                console.error('Error:', error);
+                console.error('❌ Error:', error);
                 showNotification('Error al guardar el utensilio', 'error');
             } finally {
                 submitButton.disabled = false;
@@ -229,6 +348,8 @@ function setupCreateFormHandler() {
         }
         // Si no está marcado, dejar que el formulario se envíe normalmente
     });
+    
+    console.log('✅ Handler del formulario configurado');
 }
 
 // ==========================================
@@ -275,15 +396,15 @@ function setupSearch() {
 // ==========================================
 
 /**
- * Obtener display amigable del tipo
+ * Obtener display amigable de la categoría
  */
-function getTipoDisplay(tipo) {
-    const tipos = {
+function getCategoriaDisplay(categoriaNombre) {
+    const categorias = {
         'Cocina': '🔥 Cocina',
         'Mozos': '👔 Mozos',
         'Vajilla': '🍽️ Vajilla'
     };
-    return tipos[tipo] || tipo;
+    return categorias[categoriaNombre] || categoriaNombre;
 }
 
 /**
@@ -292,11 +413,21 @@ function getTipoDisplay(tipo) {
 function showNotification(message, type = 'info') {
     console.log(`[${type.toUpperCase()}] ${message}`);
     
+    // Iconos según el tipo
+    const icons = {
+        'success': 'check-circle',
+        'error': 'exclamation-circle',
+        'warning': 'exclamation-triangle',
+        'info': 'info-circle'
+    };
+    
+    const icon = icons[type] || icons.info;
+    
     // Crear elemento de notificación
     const notification = document.createElement('div');
     notification.className = `app-notification ${type}`;
     notification.innerHTML = `
-        <i class="fa-solid fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+        <i class="fa-solid fa-${icon}"></i>
         <span>${message}</span>
     `;
     
@@ -383,3 +514,4 @@ window.openCargaMasivaModal = openCargaMasivaModal;
 window.closeModal = closeModal;
 window.handleDrop = handleDrop;
 window.mostrarNombreArchivo = mostrarNombreArchivo;
+window.cargarCategoriasUtensilios = cargarCategoriasUtensilios;

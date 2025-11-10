@@ -91,51 +91,53 @@ namespace Puerto92.Data
             });
 
             builder.Entity<Utensilio>(entity =>
-            {
-                entity.ToTable("Utensilios");
+{
+    entity.ToTable("Utensilios");
 
-                entity.Property(u => u.Codigo)
-                    .HasMaxLength(20)
-                    .IsRequired();
+    entity.Property(u => u.Codigo)
+        .HasMaxLength(20)
+        .IsRequired();
 
-                entity.Property(u => u.Nombre)
-                    .HasMaxLength(100)
-                    .IsRequired();
+    entity.Property(u => u.Nombre)
+        .HasMaxLength(100)
+        .IsRequired();
 
-                entity.Property(u => u.Tipo)
-                    .HasMaxLength(20)
-                    .IsRequired();
+    entity.Property(u => u.Unidad)
+        .HasMaxLength(20)
+        .IsRequired();
 
-                entity.Property(u => u.Unidad)
-                    .HasMaxLength(20)
-                    .IsRequired();
+    entity.Property(u => u.Precio)
+        .HasColumnType("decimal(18,2)")
+        .IsRequired();
 
-                entity.Property(u => u.Precio)
-                    .HasColumnType("decimal(18,2)")
-                    .IsRequired();
+    entity.Property(u => u.Descripcion)
+        .HasMaxLength(500);
 
-                entity.Property(u => u.Descripcion)
-                    .HasMaxLength(500);
+    entity.Property(u => u.Activo)
+        .HasDefaultValue(true);
 
-                entity.Property(u => u.Activo)
-                    .HasDefaultValue(true);
+    entity.Property(u => u.FechaCreacion)
+        .HasDefaultValueSql("getdate()");
 
-                entity.Property(u => u.FechaCreacion)
-                    .HasDefaultValueSql("getdate()");
+    entity.Property(u => u.CreadoPor)
+        .HasMaxLength(100);
 
-                entity.Property(u => u.CreadoPor)
-                    .HasMaxLength(100);
+    entity.Property(u => u.ModificadoPor)
+        .HasMaxLength(100);
 
-                entity.Property(u => u.ModificadoPor)
-                    .HasMaxLength(100);
+    // ⭐ NUEVA: Relación con Categoría
+    entity.HasOne(u => u.Categoria)
+        .WithMany()
+        .HasForeignKey(u => u.CategoriaId)
+        .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasIndex(u => u.Codigo)
-                    .IsUnique();
+    entity.HasIndex(u => u.Codigo)
+        .IsUnique();
 
-                entity.HasIndex(u => new { u.Tipo, u.Activo });
+    entity.HasIndex(u => new { u.CategoriaId, u.Activo });
 
-                entity.HasIndex(u => u.Nombre);
-            });
+    entity.HasIndex(u => u.Nombre);
+});
 
             // ⭐ NUEVO: Configuración de Productos
             builder.Entity<Producto>(entity =>
