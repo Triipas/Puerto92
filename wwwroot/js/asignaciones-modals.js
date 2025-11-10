@@ -20,7 +20,19 @@ function initAsignacionesPage() {
     extraerDatosContexto();
     
     setupModalEventListeners();
-    cargarAsignacionesPendientesDesdeServidor();
+    
+    // ⭐ NUEVO: Cargar asignaciones pendientes después de que el DOM esté listo
+    if (mesActual && anioActual && tipoKardexActual) {
+        cargarAsignacionesPendientesDesdeServidor();
+    } else {
+        console.warn('⚠️ Faltan datos de contexto, reintentando en 500ms...');
+        setTimeout(() => {
+            extraerDatosContexto();
+            if (mesActual && anioActual && tipoKardexActual) {
+                cargarAsignacionesPendientesDesdeServidor();
+            }
+        }, 500);
+    }
     
     console.log('✅ Página de asignaciones inicializada correctamente');
 }
@@ -219,8 +231,24 @@ async function confirmarAsignacion() {
 // REASIGNAR RESPONSABLE
 // ==========================================
 
+/**
+ * Abrir modal de reasignar responsable - CON VALIDACIONES
+ */
 async function openReasignarModal(asignacionId, tipoKardex, fecha, empleadoActualId, empleadoActualNombre, registroIniciado) {
     console.log(`🔄 Abriendo modal de reasignar: ${asignacionId}`);
+    
+    // ⭐ VALIDACIÓN ADICIONAL: Verificar estado antes de abrir el modal
+    try {
+        const response = await fetch(`/Asignaciones/ValidarReasignacion?id=${asignacionId}`);
+        const result = await response.json();
+        
+        if (!result.success) {
+            showNotification(result.message, 'error');
+            return;
+        }
+    } catch (error) {
+        console.error('Error al validar reasignación:', error);
+    }
     
     try {
         document.getElementById('reasignarAsignacionId').value = asignacionId;
@@ -435,9 +463,11 @@ async function confirmarCancelacion() {
 async function cargarAsignacionesPendientesDesdeServidor() {
     try {
         if (!mesActual || !anioActual || !tipoKardexActual) {
-            console.warn('⚠️ Faltan datos de contexto');
+            console.warn('⚠️ Faltan datos de contexto para cargar pendientes');
             return;
         }
+        
+        console.log(`📊 Cargando asignaciones pendientes: ${tipoKardexActual} - ${mesActual}/${anioActual}`);
         
         const response = await fetch(`/Asignaciones/GetAsignacionesPendientes?tipoKardex=${encodeURIComponent(tipoKardexActual)}&mes=${mesActual}&anio=${anioActual}`);
         
@@ -446,11 +476,23 @@ async function cargarAsignacionesPendientesDesdeServidor() {
         }
         
         asignacionesPendientes = await response.json();
-        console.log(`📊 Asignaciones pendientes cargadas: ${asignacionesPendientes.length}`);
+        console.log(`✅ Asignaciones pendientes cargadas: ${asignacionesPendientes.length}`);
+        
+        // ⭐ NUEVO: Mostrar detalles en consola para debug
+        if (asignacionesPendientes.length > 0) {
+            console.log('📋 Asignaciones pendientes encontradas:');
+            asignacionesPendientes.forEach((asig, index) => {
+                console.log(`   ${index + 1}. ${asig.empleado} - ${asig.tipoKardex} - ${new Date(asig.fecha).toLocaleDateString('es-ES')}`);
+            });
+        } else {
+            console.log('ℹ️ No hay asignaciones pendientes para este mes');
+        }
         
         actualizarContadorPendientes();
     } catch (error) {
         console.error('❌ Error al cargar asignaciones pendientes:', error);
+        // ⭐ NUEVO: Aún así intentar actualizar el contador (por si hay datos locales)
+        actualizarContadorPendientes();
     }
 }
 
@@ -461,11 +503,23 @@ function actualizarContadorPendientes() {
     const contador = document.getElementById('contadorPendientes');
     const btnGuardar = document.getElementById('btnGuardarAsignaciones');
     
-    if (asignacionesPendientes.length > 0) {
-        contador.textContent = asignacionesPendientes.length;
+    // ⭐ VALIDAR que los elementos existan
+    if (!contador || !btnGuardar) {
+        console.warn('⚠️ Elementos del contador no encontrados en el DOM');
+        return;
+    }
+    
+    const cantidadPendientes = asignacionesPendientes.length;
+    
+    if (cantidadPendientes > 0) {
+        contador.textContent = cantidadPendientes;
         btnGuardar.style.display = 'flex';
+        
+        console.log(`✅ Botón "Guardar Asignaciones" mostrado con ${cantidadPendientes} pendiente(s)`);
     } else {
         btnGuardar.style.display = 'none';
+        
+        console.log('ℹ️ Botón "Guardar Asignaciones" oculto (0 pendientes)');
     }
 }
 
