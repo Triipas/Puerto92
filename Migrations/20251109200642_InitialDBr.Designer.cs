@@ -11,8 +11,8 @@ using Puerto92.Data;
 namespace Puerto92.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251109195737_DBinicial")]
-    partial class DBinicial
+    [Migration("20251109200642_InitialDBr")]
+    partial class InitialDBr
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -864,6 +864,9 @@ namespace Puerto92.Migrations
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(true);
 
+                    b.Property<int>("CategoriaId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Codigo")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -897,11 +900,6 @@ namespace Puerto92.Migrations
                     b.Property<decimal>("Precio")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("Tipo")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Unidad")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -914,7 +912,7 @@ namespace Puerto92.Migrations
 
                     b.HasIndex("Nombre");
 
-                    b.HasIndex("Tipo", "Activo");
+                    b.HasIndex("CategoriaId", "Activo");
 
                     b.ToTable("Utensilios", (string)null);
                 });
@@ -1077,6 +1075,17 @@ namespace Puerto92.Migrations
                         .IsRequired();
 
                     b.Navigation("Local");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.Utensilio", b =>
+                {
+                    b.HasOne("Puerto92.Models.Categoria", "Categoria")
+                        .WithMany()
+                        .HasForeignKey("CategoriaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Categoria");
                 });
 
             modelBuilder.Entity("Puerto92.Models.KardexBebidas", b =>
