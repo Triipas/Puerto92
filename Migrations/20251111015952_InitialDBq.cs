@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Puerto92.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialDBb : Migration
+    public partial class InitialDBq : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -232,6 +232,96 @@ namespace Puerto92.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "HistorialStock",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    TipoItem = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    ItemId = table.Column<int>(type: "INTEGER", nullable: false),
+                    LocalId = table.Column<int>(type: "INTEGER", nullable: false),
+                    CantidadAnterior = table.Column<decimal>(type: "TEXT", nullable: false),
+                    CantidadNueva = table.Column<decimal>(type: "TEXT", nullable: false),
+                    Diferencia = table.Column<decimal>(type: "TEXT", nullable: false),
+                    TipoMovimiento = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    KardexId = table.Column<int>(type: "INTEGER", nullable: true),
+                    KardexTipo = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true),
+                    UsuarioId = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    FechaHora = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    Observaciones = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_HistorialStock", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_HistorialStock_Locales_LocalId",
+                        column: x => x.LocalId,
+                        principalTable: "Locales",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "StockProductos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    ProductoId = table.Column<int>(type: "INTEGER", nullable: false),
+                    LocalId = table.Column<int>(type: "INTEGER", nullable: false),
+                    CantidadActual = table.Column<decimal>(type: "TEXT", nullable: false),
+                    FechaUltimaActualizacion = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    UltimoKardexId = table.Column<int>(type: "INTEGER", nullable: true),
+                    UltimoKardexTipo = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_StockProductos", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_StockProductos_Locales_LocalId",
+                        column: x => x.LocalId,
+                        principalTable: "Locales",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_StockProductos_Productos_ProductoId",
+                        column: x => x.ProductoId,
+                        principalTable: "Productos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "StockUtensilios",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    UtensilioId = table.Column<int>(type: "INTEGER", nullable: false),
+                    LocalId = table.Column<int>(type: "INTEGER", nullable: false),
+                    CantidadActual = table.Column<int>(type: "INTEGER", nullable: false),
+                    FechaUltimaActualizacion = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    UltimoKardexId = table.Column<int>(type: "INTEGER", nullable: true),
+                    UltimoKardexTipo = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_StockUtensilios", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_StockUtensilios_Locales_LocalId",
+                        column: x => x.LocalId,
+                        principalTable: "Locales",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_StockUtensilios_Utensilios_UtensilioId",
+                        column: x => x.UtensilioId,
+                        principalTable: "Utensilios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AsignacionesKardex",
                 columns: table => new
                 {
@@ -428,7 +518,11 @@ namespace Puerto92.Migrations
                     FechaInicio = table.Column<DateTime>(type: "TEXT", nullable: true),
                     FechaFinalizacion = table.Column<DateTime>(type: "TEXT", nullable: true),
                     FechaEnvio = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    Observaciones = table.Column<string>(type: "TEXT", nullable: true)
+                    Observaciones = table.Column<string>(type: "TEXT", nullable: true),
+                    FechaAprobacion = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    ObservacionesRevision = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    MotivoRechazo = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
+                    FechaRechazo = table.Column<DateTime>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -468,7 +562,11 @@ namespace Puerto92.Migrations
                     FechaInicio = table.Column<DateTime>(type: "TEXT", nullable: true),
                     FechaFinalizacion = table.Column<DateTime>(type: "TEXT", nullable: true),
                     FechaEnvio = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    Observaciones = table.Column<string>(type: "TEXT", nullable: true)
+                    Observaciones = table.Column<string>(type: "TEXT", nullable: true),
+                    FechaAprobacion = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    ObservacionesRevision = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    MotivoRechazo = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
+                    FechaRechazo = table.Column<DateTime>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -508,7 +606,11 @@ namespace Puerto92.Migrations
                     FechaFinalizacion = table.Column<DateTime>(type: "TEXT", nullable: true),
                     FechaEnvio = table.Column<DateTime>(type: "TEXT", nullable: true),
                     DescripcionFaltantes = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
-                    Observaciones = table.Column<string>(type: "TEXT", nullable: true)
+                    Observaciones = table.Column<string>(type: "TEXT", nullable: true),
+                    FechaAprobacion = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    ObservacionesRevision = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    MotivoRechazo = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
+                    FechaRechazo = table.Column<DateTime>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -550,7 +652,11 @@ namespace Puerto92.Migrations
                     DescripcionFaltantes = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: true),
                     CantidadRotos = table.Column<int>(type: "INTEGER", nullable: true),
                     CantidadExtraviados = table.Column<int>(type: "INTEGER", nullable: true),
-                    Observaciones = table.Column<string>(type: "TEXT", nullable: true)
+                    Observaciones = table.Column<string>(type: "TEXT", nullable: true),
+                    FechaAprobacion = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    ObservacionesRevision = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    MotivoRechazo = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
+                    FechaRechazo = table.Column<DateTime>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -814,6 +920,11 @@ namespace Puerto92.Migrations
                 columns: new[] { "Tipo", "TipoCocinaEspecial" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_HistorialStock_LocalId",
+                table: "HistorialStock",
+                column: "LocalId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_KardexBebidas_AsignacionId",
                 table: "KardexBebidas",
                 column: "AsignacionId",
@@ -986,6 +1097,26 @@ namespace Puerto92.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_StockProductos_LocalId",
+                table: "StockProductos",
+                column: "LocalId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StockProductos_ProductoId",
+                table: "StockProductos",
+                column: "ProductoId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StockUtensilios_LocalId",
+                table: "StockUtensilios",
+                column: "LocalId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StockUtensilios_UtensilioId",
+                table: "StockUtensilios",
+                column: "UtensilioId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Utensilios_CategoriaId_Activo",
                 table: "Utensilios",
                 columns: new[] { "CategoriaId", "Activo" });
@@ -1024,6 +1155,9 @@ namespace Puerto92.Migrations
                 name: "AuditLogs");
 
             migrationBuilder.DropTable(
+                name: "HistorialStock");
+
+            migrationBuilder.DropTable(
                 name: "KardexBebidasDetalles");
 
             migrationBuilder.DropTable(
@@ -1045,6 +1179,12 @@ namespace Puerto92.Migrations
                 name: "Proveedores");
 
             migrationBuilder.DropTable(
+                name: "StockProductos");
+
+            migrationBuilder.DropTable(
+                name: "StockUtensilios");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
@@ -1054,13 +1194,13 @@ namespace Puerto92.Migrations
                 name: "KardexCocina");
 
             migrationBuilder.DropTable(
-                name: "Productos");
-
-            migrationBuilder.DropTable(
                 name: "KardexSalon");
 
             migrationBuilder.DropTable(
                 name: "KardexVajilla");
+
+            migrationBuilder.DropTable(
+                name: "Productos");
 
             migrationBuilder.DropTable(
                 name: "Utensilios");

@@ -50,6 +50,7 @@ namespace Puerto92.Services
         Task<KardexSalonRevisionViewModel> ObtenerKardexSalonParaRevisionAsync(int kardexId);
         Task<KardexBebidasRevisionViewModel> ObtenerKardexBebidasParaRevisionAsync(int kardexId);
         Task<KardexVajillaRevisionViewModel> ObtenerKardexVajillaParaRevisionAsync(int kardexId);
+        Task<AprobarRechazarKardexResponse> AprobarRechazarKardexAsync(AprobarRechazarKardexRequest request, string administradorId);
     
     }
 }

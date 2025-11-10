@@ -61,6 +61,7 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<INavigationService, NavigationService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IKardexService, KardexService>();
+builder.Services.AddScoped<IStockService, StockService>();
 
 var app = builder.Build();
 

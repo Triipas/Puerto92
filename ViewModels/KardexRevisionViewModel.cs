@@ -211,10 +211,21 @@ namespace Puerto92.ViewModels
         public string Accion { get; set; } = string.Empty; // "Aprobar" o "Rechazar"
         public string? MotivoRechazo { get; set; }
         public string? ObservacionesRevision { get; set; }
-        
+
         /// <summary>
         /// Para kardex de cocina consolidado
         /// </summary>
         public List<int>? KardexIdsConsolidados { get; set; }
+    }
+    
+    /// <summary>
+    /// Respuesta de aprobación/rechazo de kardex
+    /// </summary>
+    public class AprobarRechazarKardexResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public int? KardexId { get; set; }
+        public List<int>? KardexIdsAfectados { get; set; }
     }
 }

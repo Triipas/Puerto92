@@ -71,10 +71,31 @@ namespace Puerto92.Models
         public string? Observaciones { get; set; }
 
         /// <summary>
+        /// Fecha de aprobación del kardex
+        /// </summary>
+        public DateTime? FechaAprobacion { get; set; }
+
+        /// <summary>
+        /// Observaciones del revisor al aprobar
+        /// </summary>
+        [StringLength(500)]
+        public string? ObservacionesRevision { get; set; }
+
+        /// <summary>
+        /// Motivo del rechazo (si aplica)
+        /// </summary>
+        [StringLength(1000)]
+        public string? MotivoRechazo { get; set; }
+
+        /// <summary>
+        /// Fecha de rechazo (si aplica)
+        /// </summary>
+        public DateTime? FechaRechazo { get; set; }
+
+        /// <summary>
         /// Detalle de productos del kardex
         /// </summary>
         public ICollection<KardexCocinaDetalle> Detalles { get; set; } = new List<KardexCocinaDetalle>();
-        public DateTime FechaAprobacion { get; internal set; }
     }
 
     /// <summary>

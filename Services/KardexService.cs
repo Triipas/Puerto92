@@ -8,25 +8,28 @@ namespace Puerto92.Services
 {
     public class KardexService : IKardexService
     {
-        private readonly ApplicationDbContext _context;
-        private readonly ILogger<KardexService> _logger;
-        private readonly UserManager<Usuario> _userManager;
-        private readonly INotificationService _notificationService;
-        private readonly IAuditService _auditService;
+    private readonly ApplicationDbContext _context;
+    private readonly ILogger<KardexService> _logger;
+    private readonly UserManager<Usuario> _userManager;
+    private readonly INotificationService _notificationService;
+    private readonly IAuditService _auditService;
+    private readonly IStockService _stockService;
 
-        public KardexService(
-            ApplicationDbContext context,
-            ILogger<KardexService> logger,
-            UserManager<Usuario> userManager,
-            INotificationService notificationService,
-            IAuditService auditService)
-        {
-            _context = context;
-            _logger = logger;
-            _userManager = userManager;
-            _notificationService = notificationService;
-            _auditService = auditService;
-        }
+    public KardexService(
+        ApplicationDbContext context,
+        ILogger<KardexService> logger,
+        UserManager<Usuario> userManager,
+        INotificationService notificationService,
+        IAuditService auditService,
+        IStockService stockService)
+    {
+        _context = context;
+        _logger = logger;
+        _userManager = userManager;
+        _notificationService = notificationService;
+        _auditService = auditService;
+        _stockService = stockService;
+    }
 
         public async Task<bool> TieneAsignacionActivaAsync(string usuarioId)
         {
@@ -2450,6 +2453,562 @@ namespace Puerto92.Services
                 _ => null
             };
         }
+
+        // ==========================================
+        // APROBAR/RECHAZAR KARDEX
+        // ==========================================
+
+        public async Task<AprobarRechazarKardexResponse> AprobarRechazarKardexAsync(
+            AprobarRechazarKardexRequest request,
+            string administradorId)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                if (request.Accion == "Aprobar")
+                {
+                    return await AprobarKardexAsync(request, administradorId, transaction);
+                }
+                else if (request.Accion == "Rechazar")
+                {
+                    return await RechazarKardexAsync(request, administradorId, transaction);
+                }
+                else
+                {
+                    throw new Exception($"Acción no válida: {request.Accion}");
+                }
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error al procesar kardex");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Aprobar kardex
+        /// </summary>
+        private async Task<AprobarRechazarKardexResponse> AprobarKardexAsync(
+            AprobarRechazarKardexRequest request,
+            string administradorId,
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction)
+        {
+            _logger.LogInformation($"✅ Iniciando aprobación de kardex: {request.TipoKardex}");
+
+            // Determinar si es kardex consolidado de cocina
+            var esKardexConsolidado = request.KardexIdsConsolidados != null && 
+                                    request.KardexIdsConsolidados.Count > 1;
+
+            if (esKardexConsolidado)
+            {
+                // Aprobar los 3 kardex de cocina
+                return await AprobarKardexCocinaConsolidadoAsync(
+                    request.KardexIdsConsolidados!, 
+                    request.ObservacionesRevision, 
+                    administradorId, 
+                    transaction);
+            }
+            else
+            {
+                // Aprobar kardex individual
+                return await AprobarKardexIndividualAsync(
+                    request.KardexId, 
+                    request.TipoKardex, 
+                    request.ObservacionesRevision, 
+                    administradorId, 
+                    transaction);
+            }
+        }
+
+        /// <summary>
+        /// Aprobar kardex de cocina consolidado (3 cocineros)
+        /// </summary>
+        private async Task<AprobarRechazarKardexResponse> AprobarKardexCocinaConsolidadoAsync(
+            List<int> kardexIds,
+            string? observaciones,
+            string administradorId,
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction)
+        {
+            _logger.LogInformation($"📋 Aprobando {kardexIds.Count} kardex de cocina consolidados");
+
+            var empleadosNotificar = new List<(string EmpleadoId, string NombreCompleto, string TipoCocina, DateTime Fecha)>();
+
+            foreach (var kardexId in kardexIds)
+            {
+                var kardex = await _context.KardexCocina
+                    .Include(k => k.Empleado)
+                    .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+                if (kardex == null)
+                {
+                    throw new Exception($"Kardex de cocina {kardexId} no encontrado");
+                }
+
+                // Cambiar estado a Aprobado
+                kardex.Estado = EstadoKardex.Aprobado;
+                kardex.FechaAprobacion = DateTime.Now;
+                kardex.ObservacionesRevision = observaciones;
+
+                // Guardar para notificar después
+                empleadosNotificar.Add((
+                    kardex.EmpleadoId,
+                    kardex.Empleado?.NombreCompleto ?? "Desconocido",
+                    kardex.TipoCocina,
+                    kardex.Fecha
+                ));
+
+                _logger.LogInformation($"✅ Kardex {kardexId} ({kardex.TipoCocina}) aprobado");
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Actualizar stock desde los 3 kardex
+            _logger.LogInformation("📦 Actualizando stock desde kardex de cocina...");
+            
+            // El stock de cocina se maneja de forma especial porque hay productos compartidos
+            // y productos específicos. Necesitamos actualizar el stock consolidando los valores
+            await ActualizarStockDesdeCocinaConsolidadaAsync(kardexIds);
+
+            // Notificar a los 3 cocineros
+            foreach (var (empleadoId, nombreCompleto, tipoCocina, fecha) in empleadosNotificar)
+            {
+                await _notificationService.CrearNotificacionKardexAprobadoAsync(
+                    usuarioId: empleadoId,
+                    tipoKardex: tipoCocina,
+                    fecha: fecha,
+                    observaciones: observaciones
+                );
+
+                _logger.LogInformation($"📧 Notificación enviada a {nombreCompleto}");
+            }
+
+            await transaction.CommitAsync();
+
+            return new AprobarRechazarKardexResponse
+            {
+                Success = true,
+                Message = $"Los {kardexIds.Count} kardex de cocina han sido aprobados exitosamente"
+            };
+        }
+
+        /// <summary>
+        /// Aprobar kardex individual (Bebidas, Salón, Vajilla, o Cocina individual)
+        /// </summary>
+        private async Task<AprobarRechazarKardexResponse> AprobarKardexIndividualAsync(
+            int kardexId,
+            string tipoKardex,
+            string? observaciones,
+            string administradorId,
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction)
+        {
+            _logger.LogInformation($"📋 Aprobando kardex individual: {tipoKardex} - ID {kardexId}");
+
+            string empleadoId = "";
+            string empleadoNombre = "";
+            DateTime fecha = DateTime.Today;
+
+            if (tipoKardex == TipoKardex.MozoBebidas)
+            {
+                var kardex = await _context.KardexBebidas
+                    .Include(k => k.Empleado)
+                    .Include(k => k.Detalles)
+                    .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+                if (kardex == null)
+                    throw new Exception("Kardex de bebidas no encontrado");
+
+                kardex.Estado = EstadoKardex.Aprobado;
+                kardex.FechaAprobacion = DateTime.Now;
+                kardex.ObservacionesRevision = observaciones;
+
+                empleadoId = kardex.EmpleadoId;
+                empleadoNombre = kardex.Empleado?.NombreCompleto ?? "Desconocido";
+                fecha = kardex.Fecha;
+
+                await _context.SaveChangesAsync();
+
+                // ✅ ACTUALIZAR STOCK DE BEBIDAS
+                _logger.LogInformation("📦 Actualizando stock de bebidas...");
+                await _stockService.ActualizarStockDesdeKardexBebidasAsync(kardexId);
+            }
+            else if (tipoKardex == TipoKardex.MozoSalon)
+            {
+                var kardex = await _context.KardexSalon
+                    .Include(k => k.Empleado)
+                    .Include(k => k.Detalles)
+                    .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+                if (kardex == null)
+                    throw new Exception("Kardex de salón no encontrado");
+
+                kardex.Estado = EstadoKardex.Aprobado;
+                kardex.FechaAprobacion = DateTime.Now;
+                kardex.ObservacionesRevision = observaciones;
+
+                empleadoId = kardex.EmpleadoId;
+                empleadoNombre = kardex.Empleado?.NombreCompleto ?? "Desconocido";
+                fecha = kardex.Fecha;
+
+                await _context.SaveChangesAsync();
+
+                // ✅ ACTUALIZAR STOCK DE SALÓN
+                _logger.LogInformation("📦 Actualizando stock de utensilios de salón...");
+                await _stockService.ActualizarStockDesdeKardexSalonAsync(kardexId);
+            }
+            else if (tipoKardex == TipoKardex.Vajilla)
+            {
+                var kardex = await _context.KardexVajilla
+                    .Include(k => k.Empleado)
+                    .Include(k => k.Detalles)
+                    .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+                if (kardex == null)
+                    throw new Exception("Kardex de vajilla no encontrado");
+
+                kardex.Estado = EstadoKardex.Aprobado;
+                kardex.FechaAprobacion = DateTime.Now;
+                kardex.ObservacionesRevision = observaciones;
+
+                empleadoId = kardex.EmpleadoId;
+                empleadoNombre = kardex.Empleado?.NombreCompleto ?? "Desconocido";
+                fecha = kardex.Fecha;
+
+                await _context.SaveChangesAsync();
+
+                // ✅ ACTUALIZAR STOCK DE VAJILLA
+                _logger.LogInformation("📦 Actualizando stock de utensilios de vajilla...");
+                await _stockService.ActualizarStockDesdeKardexVajillaAsync(kardexId);
+            }
+            else if (tipoKardex == TipoKardex.CocinaFria || 
+                    tipoKardex == TipoKardex.CocinaCaliente || 
+                    tipoKardex == TipoKardex.Parrilla)
+            {
+                var kardex = await _context.KardexCocina
+                    .Include(k => k.Empleado)
+                    .Include(k => k.Detalles)
+                    .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+                if (kardex == null)
+                    throw new Exception($"Kardex de {tipoKardex} no encontrado");
+
+                kardex.Estado = EstadoKardex.Aprobado;
+                kardex.FechaAprobacion = DateTime.Now;
+                kardex.ObservacionesRevision = observaciones;
+
+                empleadoId = kardex.EmpleadoId;
+                empleadoNombre = kardex.Empleado?.NombreCompleto ?? "Desconocido";
+                fecha = kardex.Fecha;
+
+                await _context.SaveChangesAsync();
+
+                // ✅ ACTUALIZAR STOCK DE COCINA
+                _logger.LogInformation($"📦 Actualizando stock de {tipoKardex}...");
+                await _stockService.ActualizarStockDesdeKardexCocinaAsync(kardexId);
+            }
+            else
+            {
+                throw new Exception($"Tipo de kardex no soportado: {tipoKardex}");
+            }
+
+            // Notificar al empleado
+            await _notificationService.CrearNotificacionKardexAprobadoAsync(
+                usuarioId: empleadoId,
+                tipoKardex: tipoKardex,
+                fecha: fecha,
+                observaciones: observaciones
+            );
+
+            _logger.LogInformation($"📧 Notificación de aprobación enviada a {empleadoNombre}");
+
+            await transaction.CommitAsync();
+
+            return new AprobarRechazarKardexResponse
+            {
+                Success = true,
+                Message = $"Kardex de {tipoKardex} aprobado exitosamente"
+            };
+        }
+
+        /// <summary>
+        /// Actualizar stock desde cocina consolidada (manejo especial para productos compartidos)
+        /// </summary>
+        private async Task ActualizarStockDesdeCocinaConsolidadaAsync(List<int> kardexIds)
+        {
+            
+            // Obtener todos los kardex
+            var kardexList = await _context.KardexCocina
+                .Include(k => k.Detalles)
+                    .ThenInclude(d => d.Producto)
+                        .ThenInclude(p => p.Categoria)
+                .Where(k => kardexIds.Contains(k.Id))
+                .ToListAsync();
+
+            if (!kardexList.Any())
+                return;
+
+            var localId = kardexList.First().LocalId;
+
+            // Agrupar productos por ProductoId
+            var productosAgrupados = kardexList
+                .SelectMany(k => k.Detalles)
+                .Where(d => d.StockFinal.HasValue)
+                .GroupBy(d => d.ProductoId)
+                .ToList();
+
+            foreach (var grupoProducto in productosAgrupados)
+            {
+                var productoId = grupoProducto.Key;
+                var detalles = grupoProducto.ToList();
+
+                // Determinar si es producto compartido o específico
+                var producto = detalles.First().Producto;
+                var esEspecifico = producto?.Categoria?.TipoCocinaEspecial != null;
+
+                decimal stockFinal;
+
+                if (esEspecifico)
+                {
+                    // Producto específico: usar el valor del cocinero responsable
+                    stockFinal = detalles.First().StockFinal!.Value;
+                }
+                else
+                {
+                    // Producto compartido: usar promedio de los 3 cocineros
+                    stockFinal = detalles.Average(d => d.StockFinal!.Value);
+                }
+
+                // ✅ ACTUALIZAR STOCK USANDO EL SERVICIO INYECTADO
+                await _stockService.ActualizarStockProductoAsync(
+                    productoId: productoId,
+                    localId: localId,
+                    nuevaCantidad: stockFinal,
+                    kardexId: kardexIds.First(),
+                    kardexTipo: "Cocina Consolidada",
+                    observaciones: $"Aprobación de kardex de cocina consolidado - {detalles.Count} cocinero(s)"
+                );
+
+                _logger.LogInformation($"📦 Stock actualizado: Producto {productoId} = {stockFinal:F2}");
+            }
+        }
+
+        /// <summary>
+        /// Rechazar kardex
+        /// </summary>
+        private async Task<AprobarRechazarKardexResponse> RechazarKardexAsync(
+            AprobarRechazarKardexRequest request,
+            string administradorId,
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction)
+        {
+            _logger.LogInformation($"❌ Rechazando kardex: {request.TipoKardex}");
+
+            if (string.IsNullOrWhiteSpace(request.MotivoRechazo))
+            {
+                throw new Exception("Debe especificar el motivo del rechazo");
+            }
+
+            // Determinar si es kardex consolidado de cocina
+            var esKardexConsolidado = request.KardexIdsConsolidados != null && 
+                                    request.KardexIdsConsolidados.Count > 1;
+
+            if (esKardexConsolidado)
+            {
+                // Rechazar los 3 kardex de cocina
+                return await RechazarKardexCocinaConsolidadoAsync(
+                    request.KardexIdsConsolidados!, 
+                    request.MotivoRechazo, 
+                    administradorId, 
+                    transaction);
+            }
+            else
+            {
+                // Rechazar kardex individual
+                return await RechazarKardexIndividualAsync(
+                    request.KardexId, 
+                    request.TipoKardex, 
+                    request.MotivoRechazo, 
+                    administradorId, 
+                    transaction);
+            }
+        }
+
+        /// <summary>
+        /// Rechazar kardex de cocina consolidado
+        /// </summary>
+        private async Task<AprobarRechazarKardexResponse> RechazarKardexCocinaConsolidadoAsync(
+            List<int> kardexIds,
+            string motivoRechazo,
+            string administradorId,
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction)
+        {
+            _logger.LogInformation($"📋 Rechazando {kardexIds.Count} kardex de cocina consolidados");
+
+            var empleadosNotificar = new List<(string EmpleadoId, string NombreCompleto, string TipoCocina, DateTime Fecha)>();
+
+            foreach (var kardexId in kardexIds)
+            {
+                var kardex = await _context.KardexCocina
+                    .Include(k => k.Empleado)
+                    .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+                if (kardex == null)
+                {
+                    throw new Exception($"Kardex de cocina {kardexId} no encontrado");
+                }
+
+                // Cambiar estado a Rechazado
+                kardex.Estado = EstadoKardex.Rechazado;
+                kardex.MotivoRechazo = motivoRechazo;
+                kardex.FechaRechazo = DateTime.Now;
+
+                // Guardar para notificar después
+                empleadosNotificar.Add((
+                    kardex.EmpleadoId,
+                    kardex.Empleado?.NombreCompleto ?? "Desconocido",
+                    kardex.TipoCocina,
+                    kardex.Fecha
+                ));
+
+                _logger.LogInformation($"❌ Kardex {kardexId} ({kardex.TipoCocina}) rechazado");
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Notificar a los 3 cocineros
+            foreach (var (empleadoId, nombreCompleto, tipoCocina, fecha) in empleadosNotificar)
+            {
+                await _notificationService.CrearNotificacionKardexRechazadoAsync(
+                    usuarioId: empleadoId,
+                    tipoKardex: tipoCocina,
+                    fecha: fecha,
+                    motivo: motivoRechazo
+                );
+
+                _logger.LogInformation($"📧 Notificación de rechazo enviada a {nombreCompleto}");
+            }
+
+            await transaction.CommitAsync();
+
+            return new AprobarRechazarKardexResponse
+            {
+                Success = true,
+                Message = $"Los {kardexIds.Count} kardex de cocina han sido rechazados"
+            };
+        }
+
+        /// <summary>
+        /// Rechazar kardex individual
+        /// </summary>
+        private async Task<AprobarRechazarKardexResponse> RechazarKardexIndividualAsync(
+            int kardexId,
+            string tipoKardex,
+            string motivoRechazo,
+            string administradorId,
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction)
+        {
+            _logger.LogInformation($"📋 Rechazando kardex individual: {tipoKardex} - ID {kardexId}");
+
+            string empleadoId = "";
+            string empleadoNombre = "";
+            DateTime fecha = DateTime.Today;
+
+            if (tipoKardex == TipoKardex.MozoBebidas)
+            {
+                var kardex = await _context.KardexBebidas
+                    .Include(k => k.Empleado)
+                    .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+                if (kardex == null)
+                    throw new Exception("Kardex de bebidas no encontrado");
+
+                kardex.Estado = EstadoKardex.Rechazado;
+                kardex.MotivoRechazo = motivoRechazo;
+                kardex.FechaRechazo = DateTime.Now;
+
+                empleadoId = kardex.EmpleadoId;
+                empleadoNombre = kardex.Empleado?.NombreCompleto ?? "Desconocido";
+                fecha = kardex.Fecha;
+            }
+            else if (tipoKardex == TipoKardex.MozoSalon)
+            {
+                var kardex = await _context.KardexSalon
+                    .Include(k => k.Empleado)
+                    .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+                if (kardex == null)
+                    throw new Exception("Kardex de salón no encontrado");
+
+                kardex.Estado = EstadoKardex.Rechazado;
+                kardex.MotivoRechazo = motivoRechazo;
+                kardex.FechaRechazo = DateTime.Now;
+
+                empleadoId = kardex.EmpleadoId;
+                empleadoNombre = kardex.Empleado?.NombreCompleto ?? "Desconocido";
+                fecha = kardex.Fecha;
+            }
+            else if (tipoKardex == TipoKardex.Vajilla)
+            {
+                var kardex = await _context.KardexVajilla
+                    .Include(k => k.Empleado)
+                    .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+                if (kardex == null)
+                    throw new Exception("Kardex de vajilla no encontrado");
+
+                kardex.Estado = EstadoKardex.Rechazado;
+                kardex.MotivoRechazo = motivoRechazo;
+                kardex.FechaRechazo = DateTime.Now;
+
+                empleadoId = kardex.EmpleadoId;
+                empleadoNombre = kardex.Empleado?.NombreCompleto ?? "Desconocido";
+                fecha = kardex.Fecha;
+            }
+            else if (tipoKardex == TipoKardex.CocinaFria || 
+                    tipoKardex == TipoKardex.CocinaCaliente || 
+                    tipoKardex == TipoKardex.Parrilla)
+            {
+                var kardex = await _context.KardexCocina
+                    .Include(k => k.Empleado)
+                    .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+                if (kardex == null)
+                    throw new Exception($"Kardex de {tipoKardex} no encontrado");
+
+                kardex.Estado = EstadoKardex.Rechazado;
+                kardex.MotivoRechazo = motivoRechazo;
+                kardex.FechaRechazo = DateTime.Now;
+
+                empleadoId = kardex.EmpleadoId;
+                empleadoNombre = kardex.Empleado?.NombreCompleto ?? "Desconocido";
+                fecha = kardex.Fecha;
+            }
+            else
+            {
+                throw new Exception($"Tipo de kardex no soportado: {tipoKardex}");
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Notificar al empleado
+            await _notificationService.CrearNotificacionKardexRechazadoAsync(
+                usuarioId: empleadoId,
+                tipoKardex: tipoKardex,
+                fecha: fecha,
+                motivo: motivoRechazo
+            );
+
+            _logger.LogInformation($"📧 Notificación de rechazo enviada a {empleadoNombre}");
+
+            await transaction.CommitAsync();
+
+            return new AprobarRechazarKardexResponse
+            {
+                Success = true,
+                Message = $"Kardex de {tipoKardex} rechazado"
+            };
+        }
+
     }
 }
 /// <summary>

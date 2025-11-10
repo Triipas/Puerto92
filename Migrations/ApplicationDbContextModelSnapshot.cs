@@ -357,6 +357,62 @@ namespace Puerto92.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Puerto92.Models.HistorialStock", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("CantidadAnterior")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("CantidadNueva")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Diferencia")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("FechaHora")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("KardexId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("KardexTipo")
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("LocalId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Observaciones")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TipoItem")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TipoMovimiento")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UsuarioId")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LocalId");
+
+                    b.ToTable("HistorialStock");
+                });
+
             modelBuilder.Entity("Puerto92.Models.KardexBebidas", b =>
                 {
                     b.Property<int>("Id")
@@ -378,6 +434,9 @@ namespace Puerto92.Migrations
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FechaAprobacion")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("FechaEnvio")
                         .HasColumnType("TEXT");
 
@@ -387,10 +446,21 @@ namespace Puerto92.Migrations
                     b.Property<DateTime?>("FechaInicio")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FechaRechazo")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("LocalId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("MotivoRechazo")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Observaciones")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ObservacionesRevision")
+                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -485,6 +555,9 @@ namespace Puerto92.Migrations
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FechaAprobacion")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("FechaEnvio")
                         .HasColumnType("TEXT");
 
@@ -494,10 +567,21 @@ namespace Puerto92.Migrations
                     b.Property<DateTime?>("FechaInicio")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FechaRechazo")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("LocalId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("MotivoRechazo")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Observaciones")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ObservacionesRevision")
+                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("TipoCocina")
@@ -583,6 +667,9 @@ namespace Puerto92.Migrations
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FechaAprobacion")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("FechaEnvio")
                         .HasColumnType("TEXT");
 
@@ -592,10 +679,21 @@ namespace Puerto92.Migrations
                     b.Property<DateTime?>("FechaInicio")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FechaRechazo")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("LocalId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("MotivoRechazo")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Observaciones")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ObservacionesRevision")
+                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -680,6 +778,9 @@ namespace Puerto92.Migrations
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FechaAprobacion")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("FechaEnvio")
                         .HasColumnType("TEXT");
 
@@ -689,10 +790,21 @@ namespace Puerto92.Migrations
                     b.Property<DateTime?>("FechaInicio")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FechaRechazo")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("LocalId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("MotivoRechazo")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Observaciones")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ObservacionesRevision")
+                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -1050,6 +1162,74 @@ namespace Puerto92.Migrations
                     b.ToTable("Proveedores", (string)null);
                 });
 
+            modelBuilder.Entity("Puerto92.Models.StockProducto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("CantidadActual")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("FechaUltimaActualizacion")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("LocalId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ProductoId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("UltimoKardexId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UltimoKardexTipo")
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LocalId");
+
+                    b.HasIndex("ProductoId");
+
+                    b.ToTable("StockProductos");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.StockUtensilio", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CantidadActual")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("FechaUltimaActualizacion")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("LocalId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("UltimoKardexId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UltimoKardexTipo")
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UtensilioId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LocalId");
+
+                    b.HasIndex("UtensilioId");
+
+                    b.ToTable("StockUtensilios");
+                });
+
             modelBuilder.Entity("Puerto92.Models.Usuario", b =>
                 {
                     b.Property<string>("Id")
@@ -1273,6 +1453,17 @@ namespace Puerto92.Migrations
                     b.Navigation("Local");
                 });
 
+            modelBuilder.Entity("Puerto92.Models.HistorialStock", b =>
+                {
+                    b.HasOne("Puerto92.Models.Local", "Local")
+                        .WithMany()
+                        .HasForeignKey("LocalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Local");
+                });
+
             modelBuilder.Entity("Puerto92.Models.KardexBebidas", b =>
                 {
                     b.HasOne("Puerto92.Models.AsignacionKardex", "Asignacion")
@@ -1488,6 +1679,44 @@ namespace Puerto92.Migrations
                         .IsRequired();
 
                     b.Navigation("Categoria");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.StockProducto", b =>
+                {
+                    b.HasOne("Puerto92.Models.Local", "Local")
+                        .WithMany()
+                        .HasForeignKey("LocalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Puerto92.Models.Producto", "Producto")
+                        .WithMany()
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Local");
+
+                    b.Navigation("Producto");
+                });
+
+            modelBuilder.Entity("Puerto92.Models.StockUtensilio", b =>
+                {
+                    b.HasOne("Puerto92.Models.Local", "Local")
+                        .WithMany()
+                        .HasForeignKey("LocalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Puerto92.Models.Utensilio", "Utensilio")
+                        .WithMany()
+                        .HasForeignKey("UtensilioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Local");
+
+                    b.Navigation("Utensilio");
                 });
 
             modelBuilder.Entity("Puerto92.Models.Usuario", b =>

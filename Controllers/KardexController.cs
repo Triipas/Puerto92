@@ -1114,5 +1114,55 @@ namespace Puerto92.Controllers
                 return RedirectToAction(nameof(PendientesDeRevision));
             }
         }
+
+        // ==========================================
+        // APROBAR/RECHAZAR KARDEX
+        // ==========================================
+
+        /// <summary>
+        /// Aprobar o rechazar kardex
+        /// </summary>
+        [Authorize(Roles = "Administrador Local")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AprobarRechazarKardex([FromBody] AprobarRechazarKardexRequest request)
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return Json(new { success = false, message = "Usuario no autenticado" });
+            }
+
+            try
+            {
+                _logger.LogInformation($"📋 {request.Accion} kardex: Tipo={request.TipoKardex}, ID={request.KardexId}");
+
+                var resultado = await _kardexService.AprobarRechazarKardexAsync(request, usuarioId);
+
+                if (resultado.Success)
+                {
+                    _logger.LogInformation($"✅ Kardex {request.Accion.ToLower()} exitosamente");
+                    
+                    return Json(new
+                    {
+                        success = true,
+                        message = resultado.Message
+                    });
+                }
+                else
+                {
+                    return Json(new { success = false, message = resultado.Message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ Error al {request.Accion.ToLower()} kardex");
+                return Json(new
+                {
+                    success = false,
+                    message = $"Error al {request.Accion.ToLower()} el kardex: {ex.Message}"
+                });
+            }
+        }
     }
 }
