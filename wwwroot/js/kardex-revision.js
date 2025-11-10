@@ -310,6 +310,54 @@ async function rechazarKardex() {
     }
 }
 
+/**
+ * Continuar a Personal Presente
+ */
+function continuarAPersonalPresente() {
+    // Validar que todos los campos estén completos
+    const rows = document.querySelectorAll('.kardex-cocina-table tbody tr:not([style*="display: none"])');
+    const incompletas = [];
+    
+    rows.forEach((row, index) => {
+        const input = row.querySelector('.input-stock');
+        
+        if (!input.value || input.value === '') {
+            const nombre = row.querySelector('.td-nombre')?.textContent || `Producto ${index + 1}`;
+            incompletas.push(nombre);
+            row.classList.add('row-incomplete');
+        }
+    });
+    
+    if (incompletas.length > 0) {
+        showNotification(
+            `Hay ${incompletas.length} producto(s) sin registrar. Por favor complete todos los campos antes de continuar.`,
+            'warning'
+        );
+        
+        // Scroll a la primera fila incompleta
+        const primeraIncompleta = document.querySelector('.row-incomplete');
+        if (primeraIncompleta) {
+            primeraIncompleta.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        return;
+    }
+    
+    // ⭐ ASEGURAR QUE LAS VARIABLES ESTÉN DEFINIDAS
+    if (typeof KARDEX_ID === 'undefined' || typeof TIPO_KARDEX === 'undefined') {
+        showNotification('Error: Variables no definidas. Recargue la página.', 'error');
+        console.error('❌ Variables no definidas:', { KARDEX_ID: typeof KARDEX_ID, TIPO_KARDEX: typeof TIPO_KARDEX });
+        return;
+    }
+    
+    // Redirigir a Personal Presente (URL encode el tipo para manejar caracteres especiales)
+    console.log('✅ Redirigiendo a Personal Presente...');
+    console.log(`   KARDEX_ID: ${KARDEX_ID}`);
+    console.log(`   TIPO_KARDEX: ${TIPO_KARDEX}`);
+    
+    window.location.href = `/Kardex/PersonalPresente?id=${KARDEX_ID}&tipo=${encodeURIComponent(TIPO_KARDEX)}`;
+}
+
 // ==========================================
 // UTILIDADES
 // ==========================================

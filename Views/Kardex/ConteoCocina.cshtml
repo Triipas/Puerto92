@@ -196,20 +196,15 @@
 
 @section Scripts {
     <script>
-        // ⭐ CRÍTICO: Obtener los IDs de los 3 kardex de cocina
-        const KARDEX_IDS = [
-            @(Model.KardexCocinaFria?.Id ?? 0),
-            @(Model.KardexCocinaCaliente?.Id ?? 0),
-            @(Model.KardexParrilla?.Id ?? 0)
-        ].filter(id => id > 0); // Eliminar IDs inválidos (0)
-        
+        // ⭐ Variables para el kardex individual (NO consolidado)
+        const KARDEX_ID = @Model.Id;
+        const KARDEX_IDS = [KARDEX_ID]; // Array con un solo elemento para compatibilidad
         const TIPO_KARDEX = '@Html.Raw(Model.TipoCocina)';
         
         // Debug: Verificar valores
         console.log('🔍 DEBUG - Variables inicializadas:');
-        console.log('   KARDEX_IDS:', KARDEX_IDS);
+        console.log('   KARDEX_ID:', KARDEX_ID);
         console.log('   TIPO_KARDEX:', TIPO_KARDEX);
-        console.log('   Es consolidado:', KARDEX_IDS.length > 1);
     </script>
-    <script src="~/js/kardex-revision.js" asp-append-version="true"></script>
+    <script src="~/js/kardex-cocina.js" asp-append-version="true"></script>
 }
