@@ -582,6 +582,23 @@ namespace Puerto92.Services
                 viewModel.EmpleadoResponsableId = kardex.EmpleadoId;
                 viewModel.EmpleadoResponsableNombre = kardex.Empleado?.NombreCompleto ?? "";
             }
+             else if (tipoKardex == TipoKardex.Vajilla)
+            {
+                var kardex = await _context.KardexSalon
+                    .Include(k => k.Empleado)
+                    .Include(k => k.Local)
+                    .FirstOrDefaultAsync(k => k.Id == kardexId);
+
+                if (kardex == null)
+                {
+                    throw new Exception("Kardex no encontrado");
+                }
+
+                viewModel.Fecha = kardex.Fecha;
+                viewModel.LocalId = kardex.LocalId;
+                viewModel.EmpleadoResponsableId = kardex.EmpleadoId;
+                viewModel.EmpleadoResponsableNombre = kardex.Empleado?.NombreCompleto ?? "";
+            }
 
 
             
@@ -1371,17 +1388,15 @@ public async Task<KardexVajillaViewModel> IniciarKardexVajillaAsync(int asignaci
     }
 
     // Obtener utensilios de categorías: Utensilios Cocina, Menajería Cocina, Equipos
-    var categoriasVajilla = new[] { "Utensilios Cocina", "Menajería Cocina", "Equipos" };
-    
-    var utensiliosVajilla = await _context.Utensilios
-        .Include(u => u.Categoria)
-        .Where(u => u.Activo && 
-                u.Categoria!.Tipo == TipoCategoria.Utensilios &&
-                categoriasVajilla.Contains(u.Categoria.Nombre) &&
-                u.Categoria.Activo)
-        .OrderBy(u => u.Categoria!.Orden)
-        .ThenBy(u => u.Codigo)
-        .ToListAsync();
+   // Obtener utensilios de categoría "Mozo" activos
+            var utensiliosVajilla = await _context.Utensilios
+                .Include(u => u.Categoria)
+                .Where(u => u.Activo &&
+                        u.Categoria!.Tipo == TipoCategoria.Utensilios &&
+                        u.Categoria.Nombre == "Cocina" &&
+                        u.Categoria.Activo)
+                .OrderBy(u => u.Codigo)
+                .ToListAsync();
 
     _logger.LogInformation($"📦 {utensiliosVajilla.Count} utensilios encontrados para el kardex de vajilla");
 
