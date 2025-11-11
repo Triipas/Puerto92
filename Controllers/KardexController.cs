@@ -1098,13 +1098,13 @@ namespace Puerto92.Controllers
             {
                 return RedirectToAction("Login", "Account");
             }
-            
+
             try
             {
                 _logger.LogInformation($"📋 Revisando kardex de vajilla: {id}");
-                
+
                 var viewModel = await _kardexService.ObtenerKardexVajillaParaRevisionAsync(id);
-                
+
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -1114,5 +1114,117 @@ namespace Puerto92.Controllers
                 return RedirectToAction(nameof(PendientesDeRevision));
             }
         }
+        
+
+
+
+
+// Agregar al Controllers/KardexController.cs
+
+/// <summary>
+/// POST: Aprobar o rechazar kardex
+/// </summary>
+[Authorize(Roles = "Administrador Local")]
+[HttpPost]
+public async Task<IActionResult> AprobarRechazarKardex([FromBody] AprobarRechazarKardexRequest request)
+{
+    var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(usuarioId))
+    {
+        return Json(new { success = false, message = "Usuario no autenticado" });
+    }
+
+    try
+    {
+        _logger.LogInformation($"📋 {request.Accion} Kardex:");
+        _logger.LogInformation($"   TipoKardex: {request.TipoKardex}");
+        _logger.LogInformation($"   KardexId: {request.KardexId}");
+        _logger.LogInformation($"   Usuario: {User.Identity?.Name}");
+
+        (bool Success, string Message) result;
+
+        if (request.Accion == "Aprobar")
+        {
+            result = request.TipoKardex switch
+            {
+                "Cocina" => await _kardexService.AprobarKardexCocinaConsolidadoAsync(
+                    request.KardexIdsConsolidados ?? new List<int> { request.KardexId },
+                    request.ObservacionesRevision ?? "",
+                    usuarioId
+                ),
+                "Mozo Salón" => await _kardexService.AprobarKardexSalonAsync(
+                    request.KardexId,
+                    request.ObservacionesRevision ?? "",
+                    usuarioId
+                ),
+                "Mozo Bebidas" => await _kardexService.AprobarKardexBebidasAsync(
+                    request.KardexId,
+                    request.ObservacionesRevision ?? "",
+                    usuarioId
+                ),
+                "Vajilla" => await _kardexService.AprobarKardexVajillaAsync(
+                    request.KardexId,
+                    request.ObservacionesRevision ?? "",
+                    usuarioId
+                ),
+                _ => (false, "Tipo de kardex no soportado")
+            };
+        }
+        else if (request.Accion == "Rechazar")
+        {
+            result = request.TipoKardex switch
+            {
+                "Cocina" => await _kardexService.RechazarKardexCocinaConsolidadoAsync(
+                    request.KardexIdsConsolidados ?? new List<int> { request.KardexId },
+                    request.MotivoRechazo ?? "",
+                    usuarioId
+                ),
+                "Mozo Salón" => await _kardexService.RechazarKardexSalonAsync(
+                    request.KardexId,
+                    request.MotivoRechazo ?? "",
+                    usuarioId
+                ),
+                "Mozo Bebidas" => await _kardexService.RechazarKardexBebidasAsync(
+                    request.KardexId,
+                    request.MotivoRechazo ?? "",
+                    usuarioId
+                ),
+                "Vajilla" => await _kardexService.RechazarKardexVajillaAsync(
+                    request.KardexId,
+                    request.MotivoRechazo ?? "",
+                    usuarioId
+                ),
+                _ => (false, "Tipo de kardex no soportado")
+            };
+        }
+        else
+        {
+            return Json(new { success = false, message = "Acción no válida" });
+        }
+
+        if (result.Success)
+        {
+            _logger.LogInformation($"✅ {request.Accion} exitoso");
+            return Json(new { success = true, message = result.Message });
+        }
+        else
+        {
+            _logger.LogWarning($"⚠️ {request.Accion} fallido: {result.Message}");
+            return Json(new { success = false, message = result.Message });
+        }
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, $"Error al {request.Accion.ToLower()} kardex");
+        return Json(new { success = false, message = "Error al procesar la solicitud" });
+    }
+}
+
+
+
+
+
+
+        
     }
 }

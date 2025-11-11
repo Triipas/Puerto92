@@ -50,6 +50,25 @@ namespace Puerto92.Services
         Task<KardexSalonRevisionViewModel> ObtenerKardexSalonParaRevisionAsync(int kardexId);
         Task<KardexBebidasRevisionViewModel> ObtenerKardexBebidasParaRevisionAsync(int kardexId);
         Task<KardexVajillaRevisionViewModel> ObtenerKardexVajillaParaRevisionAsync(int kardexId);
+
+
+
+
+
+Task<(bool Success, string Message)> AprobarKardexCocinaConsolidadoAsync(List<int> kardexIds, string observaciones, string administradorId);
+    Task<(bool Success, string Message)> RechazarKardexCocinaConsolidadoAsync(List<int> kardexIds, string motivo, string administradorId);
+    Task<(bool Success, string Message)> AprobarKardexSalonAsync(int kardexId, string observaciones, string administradorId);
+    Task<(bool Success, string Message)> RechazarKardexSalonAsync(int kardexId, string motivo, string administradorId);
+    Task<(bool Success, string Message)> AprobarKardexBebidasAsync(int kardexId, string observaciones, string administradorId);
+    Task<(bool Success, string Message)> RechazarKardexBebidasAsync(int kardexId, string motivo, string administradorId);
+    Task<(bool Success, string Message)> AprobarKardexVajillaAsync(int kardexId, string observaciones, string administradorId);
+    Task<(bool Success, string Message)> RechazarKardexVajillaAsync(int kardexId, string motivo, string administradorId);
+
+
+
+
+
+
     
     }
 }

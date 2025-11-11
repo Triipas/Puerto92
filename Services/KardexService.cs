@@ -2450,6 +2450,616 @@ namespace Puerto92.Services
                 _ => null
             };
         }
+
+
+// Agregar al final de Services/KardexService.cs, antes del cierre de clase
+
+// ==========================================
+// APROBACIÓN Y RECHAZO DE KARDEX
+// ==========================================
+
+public async Task<(bool Success, string Message)> AprobarKardexCocinaConsolidadoAsync(List<int> kardexIds, string observaciones, string administradorId)
+{
+    using var transaction = await _context.Database.BeginTransactionAsync();
+    
+    try
+    {
+        var kardexList = await _context.KardexCocina
+            .Include(k => k.Empleado)
+            .Include(k => k.Detalles)
+                .ThenInclude(d => d.Producto)
+            .Where(k => kardexIds.Contains(k.Id))
+            .ToListAsync();
+        
+        if (!kardexList.Any())
+        {
+            return (false, "No se encontraron los kardex especificados");
+        }
+        
+        // Validar que todos estén en estado "Enviado"
+        if (kardexList.Any(k => k.Estado != EstadoKardex.Enviado))
+        {
+            return (false, "Solo se pueden aprobar kardex en estado 'Enviado'");
+        }
+        
+        foreach (var kardex in kardexList)
+        {
+            // Actualizar estado
+            kardex.Estado = EstadoKardex.Aprobado;
+            kardex.FechaAprobacion = DateTime.Now;
+            kardex.AprobadoPor = administradorId;
+            kardex.ObservacionesRevision = observaciones;
+            
+            // ⭐ TODO: Actualizar stock de productos
+            // Cuando se agregue el campo StockActual a Producto:
+            /*
+            foreach (var detalle in kardex.Detalles)
+            {
+                if (detalle.Producto != null && detalle.StockFinal.HasValue)
+                {
+                    detalle.Producto.StockActual = detalle.StockFinal.Value;
+                    detalle.Producto.FechaUltimaActualizacion = DateTime.Now;
+                }
+            }
+            */
+            
+            // Notificar al cocinero
+            await _notificationService.CrearNotificacionAsync(
+                usuarioId: kardex.EmpleadoId,
+                tipo: TipoNotificacion.KardexAprobado,
+                titulo: $"Kardex de {kardex.TipoCocina} Aprobado",
+                mensaje: $"Tu kardex del {kardex.Fecha:dd/MM/yyyy} ha sido aprobado por el administrador. {(!string.IsNullOrEmpty(observaciones) ? $"Observaciones: {observaciones}" : "")}",
+                urlAccion: "/Kardex/MiKardex",
+                textoAccion: "Ver Mi Kardex",
+                icono: "check-circle",
+                color: ColorNotificacion.Success,
+                prioridad: PrioridadNotificacion.Media,
+                mostrarPopup: true
+            );
+            
+            _logger.LogInformation($"✅ Kardex de {kardex.TipoCocina} aprobado: ID {kardex.Id} - {kardex.Empleado?.NombreCompleto}");
+        }
+        
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+        
+        // Registrar en auditoría
+        await _auditService.RegistrarAccionAsync(
+            accion: "Aprobar Kardex de Cocina Consolidado",
+            descripcion: $"Se aprobaron {kardexList.Count} kardex de cocina del {kardexList.First().Fecha:dd/MM/yyyy}",
+            modulo: "Kardex",
+            resultado: "Exitoso",
+            nivelSeveridad: "Info"
+        );
+        
+        return (true, $"Kardex de cocina consolidado aprobado exitosamente. {kardexList.Count} cocinero(s) notificado(s).");
+    }
+    catch (Exception ex)
+    {
+        await transaction.RollbackAsync();
+        _logger.LogError(ex, "Error al aprobar kardex de cocina consolidado");
+        return (false, $"Error al aprobar: {ex.Message}");
+    }
+}
+
+public async Task<(bool Success, string Message)> RechazarKardexCocinaConsolidadoAsync(List<int> kardexIds, string motivo, string administradorId)
+{
+    using var transaction = await _context.Database.BeginTransactionAsync();
+    
+    try
+    {
+        if (string.IsNullOrWhiteSpace(motivo))
+        {
+            return (false, "Debe especificar el motivo del rechazo");
+        }
+        
+        var kardexList = await _context.KardexCocina
+            .Include(k => k.Empleado)
+            .Where(k => kardexIds.Contains(k.Id))
+            .ToListAsync();
+        
+        if (!kardexList.Any())
+        {
+            return (false, "No se encontraron los kardex especificados");
+        }
+        
+        foreach (var kardex in kardexList)
+        {
+            // Cambiar estado a Rechazado
+            kardex.Estado = EstadoKardex.Rechazado;
+            kardex.FechaRechazo = DateTime.Now;
+            kardex.RechazadoPor = administradorId;
+            kardex.MotivoRechazo = motivo;
+            
+            // Notificar al cocinero
+            await _notificationService.CrearNotificacionAsync(
+                usuarioId: kardex.EmpleadoId,
+                tipo: TipoNotificacion.KardexRechazado,
+                titulo: $"Kardex de {kardex.TipoCocina} Rechazado",
+                mensaje: $"Tu kardex del {kardex.Fecha:dd/MM/yyyy} ha sido rechazado. Motivo: {motivo}. Debes corregirlo y volver a enviarlo.",
+                urlAccion: $"/Kardex/ConteoCocina/{kardex.Id}",
+                textoAccion: "Corregir Kardex",
+                icono: "exclamation-triangle",
+                color: ColorNotificacion.Danger,
+                prioridad: PrioridadNotificacion.Alta,
+                mostrarPopup: true
+            );
+            
+            _logger.LogWarning($"⚠️ Kardex de {kardex.TipoCocina} rechazado: ID {kardex.Id} - Motivo: {motivo}");
+        }
+        
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+        
+        // Registrar en auditoría
+        await _auditService.RegistrarAccionAsync(
+            accion: "Rechazar Kardex de Cocina Consolidado",
+            descripcion: $"Se rechazaron {kardexList.Count} kardex de cocina. Motivo: {motivo}",
+            modulo: "Kardex",
+            resultado: "Exitoso",
+            nivelSeveridad: "Warning"
+        );
+        
+        return (true, $"Kardex rechazado. {kardexList.Count} cocinero(s) notificado(s) para corrección.");
+    }
+    catch (Exception ex)
+    {
+        await transaction.RollbackAsync();
+        _logger.LogError(ex, "Error al rechazar kardex de cocina");
+        return (false, $"Error al rechazar: {ex.Message}");
+    }
+}
+
+public async Task<(bool Success, string Message)> AprobarKardexSalonAsync(int kardexId, string observaciones, string administradorId)
+{
+    using var transaction = await _context.Database.BeginTransactionAsync();
+    
+    try
+    {
+        var kardex = await _context.KardexSalon
+            .Include(k => k.Empleado)
+            .Include(k => k.Detalles)
+                .ThenInclude(d => d.Utensilio)
+            .FirstOrDefaultAsync(k => k.Id == kardexId);
+        
+        if (kardex == null)
+        {
+            return (false, "Kardex no encontrado");
+        }
+        
+        if (kardex.Estado != EstadoKardex.Enviado)
+        {
+            return (false, "Solo se pueden aprobar kardex en estado 'Enviado'");
+        }
+        
+        // Actualizar estado
+        kardex.Estado = EstadoKardex.Aprobado;
+        kardex.FechaAprobacion = DateTime.Now;
+        kardex.AprobadoPor = administradorId;
+        kardex.ObservacionesRevision = observaciones;
+        
+        // ⭐ TODO: Actualizar inventario de utensilios
+        /*
+        foreach (var detalle in kardex.Detalles)
+        {
+            if (detalle.Utensilio != null && detalle.UnidadesContadas.HasValue)
+            {
+                detalle.Utensilio.InventarioActual = detalle.UnidadesContadas.Value;
+                detalle.Utensilio.FechaUltimaActualizacion = DateTime.Now;
+            }
+        }
+        */
+        
+        // Notificar al mozo
+        await _notificationService.CrearNotificacionAsync(
+            usuarioId: kardex.EmpleadoId,
+            tipo: TipoNotificacion.KardexAprobado,
+            titulo: "Kardex de Salón Aprobado",
+            mensaje: $"Tu kardex de salón del {kardex.Fecha:dd/MM/yyyy} ha sido aprobado. {(!string.IsNullOrEmpty(observaciones) ? $"Observaciones: {observaciones}" : "")}",
+            urlAccion: "/Kardex/MiKardex",
+            textoAccion: "Ver Mi Kardex",
+            icono: "check-circle",
+            color: ColorNotificacion.Success,
+            prioridad: PrioridadNotificacion.Media,
+            mostrarPopup: true
+        );
+        
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+        
+        await _auditService.RegistrarAccionAsync(
+            accion: "Aprobar Kardex de Salón",
+            descripcion: $"Kardex de salón aprobado: {kardex.Empleado?.NombreCompleto} - {kardex.Fecha:dd/MM/yyyy}",
+            modulo: "Kardex",
+            resultado: "Exitoso",
+            nivelSeveridad: "Info"
+        );
+        
+        _logger.LogInformation($"✅ Kardex de Salón aprobado: ID {kardexId}");
+        
+        return (true, "Kardex de salón aprobado exitosamente. El mozo ha sido notificado.");
+    }
+    catch (Exception ex)
+    {
+        await transaction.RollbackAsync();
+        _logger.LogError(ex, "Error al aprobar kardex de salón");
+        return (false, $"Error al aprobar: {ex.Message}");
+    }
+}
+
+public async Task<(bool Success, string Message)> RechazarKardexSalonAsync(int kardexId, string motivo, string administradorId)
+{
+    using var transaction = await _context.Database.BeginTransactionAsync();
+    
+    try
+    {
+        if (string.IsNullOrWhiteSpace(motivo))
+        {
+            return (false, "Debe especificar el motivo del rechazo");
+        }
+        
+        var kardex = await _context.KardexSalon
+            .Include(k => k.Empleado)
+            .FirstOrDefaultAsync(k => k.Id == kardexId);
+        
+        if (kardex == null)
+        {
+            return (false, "Kardex no encontrado");
+        }
+        
+        // Cambiar estado
+        kardex.Estado = EstadoKardex.Rechazado;
+        kardex.FechaRechazo = DateTime.Now;
+        kardex.RechazadoPor = administradorId;
+        kardex.MotivoRechazo = motivo;
+        
+        // Notificar al mozo
+        await _notificationService.CrearNotificacionAsync(
+            usuarioId: kardex.EmpleadoId,
+            tipo: TipoNotificacion.KardexRechazado,
+            titulo: "Kardex de Salón Rechazado",
+            mensaje: $"Tu kardex de salón del {kardex.Fecha:dd/MM/yyyy} ha sido rechazado. Motivo: {motivo}. Debes corregirlo y volver a enviarlo.",
+            urlAccion: $"/Kardex/ConteoSalon/{kardexId}",
+            textoAccion: "Corregir Kardex",
+            icono: "exclamation-triangle",
+            color: ColorNotificacion.Danger,
+            prioridad: PrioridadNotificacion.Alta,
+            mostrarPopup: true
+        );
+        
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+        
+        await _auditService.RegistrarAccionAsync(
+            accion: "Rechazar Kardex de Salón",
+            descripcion: $"Kardex rechazado. Motivo: {motivo}",
+            modulo: "Kardex",
+            resultado: "Exitoso",
+            nivelSeveridad: "Warning"
+        );
+        
+        _logger.LogWarning($"⚠️ Kardex de Salón rechazado: ID {kardexId}");
+        
+        return (true, "Kardex rechazado. El mozo ha sido notificado para corrección.");
+    }
+    catch (Exception ex)
+    {
+        await transaction.RollbackAsync();
+        _logger.LogError(ex, "Error al rechazar kardex de salón");
+        return (false, $"Error al rechazar: {ex.Message}");
+    }
+}
+
+public async Task<(bool Success, string Message)> AprobarKardexBebidasAsync(int kardexId, string observaciones, string administradorId)
+{
+    using var transaction = await _context.Database.BeginTransactionAsync();
+    
+    try
+    {
+        var kardex = await _context.KardexBebidas
+            .Include(k => k.Empleado)
+            .Include(k => k.Detalles)
+                .ThenInclude(d => d.Producto)
+            .FirstOrDefaultAsync(k => k.Id == kardexId);
+        
+        if (kardex == null)
+        {
+            return (false, "Kardex no encontrado");
+        }
+        
+        if (kardex.Estado != EstadoKardex.Enviado)
+        {
+            return (false, "Solo se pueden aprobar kardex en estado 'Enviado'");
+        }
+        
+        // Actualizar estado
+        kardex.Estado = EstadoKardex.Aprobado;
+        kardex.FechaAprobacion = DateTime.Now;
+        kardex.AprobadoPor = administradorId;
+        kardex.ObservacionesRevision = observaciones;
+        
+        // ⭐ TODO: Actualizar stock de productos
+        /*
+        foreach (var detalle in kardex.Detalles)
+        {
+            if (detalle.Producto != null)
+            {
+                detalle.Producto.StockActual = detalle.ConteoFinal;
+                detalle.Producto.FechaUltimaActualizacion = DateTime.Now;
+            }
+        }
+        */
+        
+        // Notificar al mozo
+        await _notificationService.CrearNotificacionAsync(
+            usuarioId: kardex.EmpleadoId,
+            tipo: TipoNotificacion.KardexAprobado,
+            titulo: "Kardex de Bebidas Aprobado",
+            mensaje: $"Tu kardex de bebidas del {kardex.Fecha:dd/MM/yyyy} ha sido aprobado. {(!string.IsNullOrEmpty(observaciones) ? $"Observaciones: {observaciones}" : "")}",
+            urlAccion: "/Kardex/MiKardex",
+            textoAccion: "Ver Mi Kardex",
+            icono: "check-circle",
+            color: ColorNotificacion.Success,
+            prioridad: PrioridadNotificacion.Media,
+            mostrarPopup: true
+        );
+        
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+        
+        await _auditService.RegistrarAccionAsync(
+            accion: "Aprobar Kardex de Bebidas",
+            descripcion: $"Kardex de bebidas aprobado: {kardex.Empleado?.NombreCompleto} - {kardex.Fecha:dd/MM/yyyy}",
+            modulo: "Kardex",
+            resultado: "Exitoso",
+            nivelSeveridad: "Info"
+        );
+        
+        _logger.LogInformation($"✅ Kardex de Bebidas aprobado: ID {kardexId}");
+        
+        return (true, "Kardex de bebidas aprobado exitosamente. El mozo ha sido notificado.");
+    }
+    catch (Exception ex)
+    {
+        await transaction.RollbackAsync();
+        _logger.LogError(ex, "Error al aprobar kardex de bebidas");
+        return (false, $"Error al aprobar: {ex.Message}");
+    }
+}
+
+public async Task<(bool Success, string Message)> RechazarKardexBebidasAsync(int kardexId, string motivo, string administradorId)
+{
+    using var transaction = await _context.Database.BeginTransactionAsync();
+    
+    try
+    {
+        if (string.IsNullOrWhiteSpace(motivo))
+        {
+            return (false, "Debe especificar el motivo del rechazo");
+        }
+        
+        var kardex = await _context.KardexBebidas
+            .Include(k => k.Empleado)
+            .FirstOrDefaultAsync(k => k.Id == kardexId);
+        
+        if (kardex == null)
+        {
+            return (false, "Kardex no encontrado");
+        }
+        
+        // Cambiar estado
+        kardex.Estado = EstadoKardex.Rechazado;
+        kardex.FechaRechazo = DateTime.Now;
+        kardex.RechazadoPor = administradorId;
+        kardex.MotivoRechazo = motivo;
+        
+        // Notificar al mozo
+        await _notificationService.CrearNotificacionAsync(
+            usuarioId: kardex.EmpleadoId,
+            tipo: TipoNotificacion.KardexRechazado,
+            titulo: "Kardex de Bebidas Rechazado",
+            mensaje: $"Tu kardex de bebidas del {kardex.Fecha:dd/MM/yyyy} ha sido rechazado. Motivo: {motivo}. Debes corregirlo y volver a enviarlo.",
+            urlAccion: $"/Kardex/ConteoUbicacionBebidas/{kardexId}",
+            textoAccion: "Corregir Kardex",
+            icono: "exclamation-triangle",
+            color: ColorNotificacion.Danger,
+            prioridad: PrioridadNotificacion.Alta,
+            mostrarPopup: true
+        );
+        
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+        
+        await _auditService.RegistrarAccionAsync(
+            accion: "Rechazar Kardex de Bebidas",
+            descripcion: $"Kardex rechazado. Motivo: {motivo}",
+            modulo: "Kardex",
+            resultado: "Exitoso",
+            nivelSeveridad: "Warning"
+        );
+        
+        _logger.LogWarning($"⚠️ Kardex de Bebidas rechazado: ID {kardexId}");
+        
+        return (true, "Kardex rechazado. El mozo ha sido notificado para corrección.");
+    }
+    catch (Exception ex)
+    {
+        await transaction.RollbackAsync();
+        _logger.LogError(ex, "Error al rechazar kardex de bebidas");
+        return (false, $"Error al rechazar: {ex.Message}");
+    }
+}
+
+public async Task<(bool Success, string Message)> AprobarKardexVajillaAsync(int kardexId, string observaciones, string administradorId)
+{
+    using var transaction = await _context.Database.BeginTransactionAsync();
+    
+    try
+    {
+        var kardex = await _context.KardexVajilla
+            .Include(k => k.Empleado)
+            .Include(k => k.Detalles)
+                .ThenInclude(d => d.Utensilio)
+            .FirstOrDefaultAsync(k => k.Id == kardexId);
+        
+        if (kardex == null)
+        {
+            return (false, "Kardex no encontrado");
+        }
+        
+        if (kardex.Estado != EstadoKardex.Enviado)
+        {
+            return (false, "Solo se pueden aprobar kardex en estado 'Enviado'");
+        }
+        
+        // Actualizar estado
+        kardex.Estado = EstadoKardex.Aprobado;
+        kardex.FechaAprobacion = DateTime.Now;
+        kardex.AprobadoPor = administradorId;
+        kardex.ObservacionesRevision = observaciones;
+        
+        // ⭐ TODO: Actualizar inventario de utensilios
+        /*
+        foreach (var detalle in kardex.Detalles)
+        {
+            if (detalle.Utensilio != null && detalle.UnidadesContadas.HasValue)
+            {
+                detalle.Utensilio.InventarioActual = detalle.UnidadesContadas.Value;
+                detalle.Utensilio.FechaUltimaActualizacion = DateTime.Now;
+            }
+        }
+        */
+        
+        // Notificar al vajillero
+        await _notificationService.CrearNotificacionAsync(
+            usuarioId: kardex.EmpleadoId,
+            tipo: TipoNotificacion.KardexAprobado,
+            titulo: "Kardex de Vajilla Aprobado",
+            mensaje: $"Tu kardex de vajilla del {kardex.Fecha:dd/MM/yyyy} ha sido aprobado. {(!string.IsNullOrEmpty(observaciones) ? $"Observaciones: {observaciones}" : "")}",
+            urlAccion: "/Kardex/MiKardex",
+            textoAccion: "Ver Mi Kardex",
+            icono: "check-circle",
+            color: ColorNotificacion.Success,
+            prioridad: PrioridadNotificacion.Media,
+            mostrarPopup: true
+        );
+        
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+        
+        await _auditService.RegistrarAccionAsync(
+            accion: "Aprobar Kardex de Vajilla",
+            descripcion: $"Kardex de vajilla aprobado: {kardex.Empleado?.NombreCompleto} - {kardex.Fecha:dd/MM/yyyy}",
+            modulo: "Kardex",
+            resultado: "Exitoso",
+            nivelSeveridad: "Info"
+        );
+        
+        _logger.LogInformation($"✅ Kardex de Vajilla aprobado: ID {kardexId}");
+        
+        return (true, "Kardex de vajilla aprobado exitosamente. El vajillero ha sido notificado.");
+    }
+    catch (Exception ex)
+    {
+        await transaction.RollbackAsync();
+        _logger.LogError(ex, "Error al aprobar kardex de vajilla");
+        return (false, $"Error al aprobar: {ex.Message}");
+    }
+}
+
+public async Task<(bool Success, string Message)> RechazarKardexVajillaAsync(int kardexId, string motivo, string administradorId)
+{
+    using var transaction = await _context.Database.BeginTransactionAsync();
+    
+    try
+    {
+        if (string.IsNullOrWhiteSpace(motivo))
+        {
+            return (false, "Debe especificar el motivo del rechazo");
+        }
+        
+        var kardex = await _context.KardexVajilla
+            .Include(k => k.Empleado)
+            .FirstOrDefaultAsync(k => k.Id == kardexId);
+        
+        if (kardex == null)
+        {
+            return (false, "Kardex no encontrado");
+        }
+        
+        // Cambiar estado
+        kardex.Estado = EstadoKardex.Rechazado;
+        kardex.FechaRechazo = DateTime.Now;
+        kardex.RechazadoPor = administradorId;
+        kardex.MotivoRechazo = motivo;
+        
+        // Notificar al vajillero
+        await _notificationService.CrearNotificacionAsync(
+            usuarioId: kardex.EmpleadoId,
+            tipo: TipoNotificacion.KardexRechazado,
+            titulo: "Kardex de Vajilla Rechazado",
+            mensaje: $"Tu kardex de vajilla del {kardex.Fecha:dd/MM/yyyy} ha sido rechazado. Motivo: {motivo}. Debes corregirlo y volver a enviarlo.",
+            urlAccion: $"/Kardex/ConteoVajilla/{kardexId}",
+            textoAccion: "Corregir Kardex",
+            icono: "exclamation-triangle",
+            color: ColorNotificacion.Danger,
+            prioridad: PrioridadNotificacion.Alta,
+            mostrarPopup: true
+        );
+        
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+        
+        await _auditService.RegistrarAccionAsync(
+            accion: "Rechazar Kardex de Vajilla",
+            descripcion: $"Kardex rechazado. Motivo: {motivo}",
+            modulo: "Kardex",
+            resultado: "Exitoso",
+            nivelSeveridad: "Warning"
+        );
+        
+        _logger.LogWarning($"⚠️ Kardex de Vajilla rechazado: ID {kardexId}");
+        
+        return (true, "Kardex rechazado. El vajillero ha sido notificado para corrección.");
+    }
+    catch (Exception ex)
+    {
+        await transaction.RollbackAsync();
+        _logger.LogError(ex, "Error al rechazar kardex de vajilla");
+        return (false, $"Error al rechazar: {ex.Message}");
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
     }
 }
 /// <summary>

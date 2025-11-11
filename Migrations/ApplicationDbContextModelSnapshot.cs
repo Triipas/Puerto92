@@ -15,7 +15,7 @@ namespace Puerto92.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.7");
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -363,6 +363,9 @@ namespace Puerto92.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("AprobadoPor")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("AsignacionId")
                         .HasColumnType("INTEGER");
 
@@ -378,6 +381,9 @@ namespace Puerto92.Migrations
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FechaAprobacion")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("FechaEnvio")
                         .HasColumnType("TEXT");
 
@@ -387,10 +393,22 @@ namespace Puerto92.Migrations
                     b.Property<DateTime?>("FechaInicio")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FechaRechazo")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("LocalId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("MotivoRechazo")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Observaciones")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ObservacionesRevision")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RechazadoPor")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -468,6 +486,9 @@ namespace Puerto92.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("AprobadoPor")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("AsignacionId")
                         .HasColumnType("INTEGER");
 
@@ -485,6 +506,9 @@ namespace Puerto92.Migrations
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FechaAprobacion")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("FechaEnvio")
                         .HasColumnType("TEXT");
 
@@ -494,10 +518,22 @@ namespace Puerto92.Migrations
                     b.Property<DateTime?>("FechaInicio")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FechaRechazo")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("LocalId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("MotivoRechazo")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Observaciones")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ObservacionesRevision")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RechazadoPor")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("TipoCocina")
@@ -564,6 +600,9 @@ namespace Puerto92.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("AprobadoPor")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("AsignacionId")
                         .HasColumnType("INTEGER");
 
@@ -583,6 +622,9 @@ namespace Puerto92.Migrations
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FechaAprobacion")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("FechaEnvio")
                         .HasColumnType("TEXT");
 
@@ -592,10 +634,22 @@ namespace Puerto92.Migrations
                     b.Property<DateTime?>("FechaInicio")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FechaRechazo")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("LocalId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("MotivoRechazo")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Observaciones")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ObservacionesRevision")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RechazadoPor")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -655,6 +709,9 @@ namespace Puerto92.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("AprobadoPor")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("AsignacionId")
                         .HasColumnType("INTEGER");
 
@@ -680,6 +737,9 @@ namespace Puerto92.Migrations
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FechaAprobacion")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("FechaEnvio")
                         .HasColumnType("TEXT");
 
@@ -689,10 +749,22 @@ namespace Puerto92.Migrations
                     b.Property<DateTime?>("FechaInicio")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FechaRechazo")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("LocalId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("MotivoRechazo")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Observaciones")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ObservacionesRevision")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RechazadoPor")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
