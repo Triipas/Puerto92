@@ -1,0 +1,484 @@
+@model Puerto92.ViewModels.KardexCocinaConsolidadoViewModel
+@{
+    ViewData["Title"] = "Revisión de Kardex de Cocina Consolidado";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/kardex-revision.css" asp-append-version="true" />
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+            <i class="fa-solid fa-clipboard-check" style="color: #0092B8; font-size: 24px;"></i>
+            <h1 class="page-title">Revisión de Kardex de Cocina</h1>
+        </div>
+        <p class="page-subtitle">
+            @Model.Fecha.ToString("dddd, dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES")) - 
+            Vista Consolidada de los 3 Cocineros
+        </p>
+    </div>
+</div>
+
+<!-- Información de los Cocineros -->
+<div class="content-card" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Cocineros Responsables</h2>
+            <p class="card-subtitle">Personal asignado y estado de envío</p>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="cocineros-grid">
+            @if (Model.KardexCocinaFria != null)
+            {
+                <div class="cocinero-card card-cocina-fria">
+                    <div class="cocinero-header">
+                        <i class="fa-solid fa-snowflake"></i>
+                        <span>Cocina Fría</span>
+                    </div>
+                    <div class="cocinero-info">
+                        <div class="cocinero-nombre">@Model.KardexCocinaFria.EmpleadoNombre</div>
+                        <div class="cocinero-fecha">
+                            <i class="fa-regular fa-clock"></i>
+                            Enviado: @Model.KardexCocinaFria.FechaEnvio?.ToString("hh:mm tt")
+                        </div>
+                    </div>
+                </div>
+            }
+            
+            @if (Model.KardexCocinaCaliente != null)
+            {
+                <div class="cocinero-card card-cocina-caliente">
+                    <div class="cocinero-header">
+                        <i class="fa-solid fa-fire"></i>
+                        <span>Cocina Caliente</span>
+                    </div>
+                    <div class="cocinero-info">
+                        <div class="cocinero-nombre">@Model.KardexCocinaCaliente.EmpleadoNombre</div>
+                        <div class="cocinero-fecha">
+                            <i class="fa-regular fa-clock"></i>
+                            Enviado: @Model.KardexCocinaCaliente.FechaEnvio?.ToString("hh:mm tt")
+                        </div>
+                    </div>
+                </div>
+            }
+            
+            @if (Model.KardexParrilla != null)
+            {
+                <div class="cocinero-card card-parrilla">
+                    <div class="cocinero-header">
+                        <i class="fa-solid fa-fire-burner"></i>
+                        <span>Parrilla</span>
+                    </div>
+                    <div class="cocinero-info">
+                        <div class="cocinero-nombre">@Model.KardexParrilla.EmpleadoNombre</div>
+                        <div class="cocinero-fecha">
+                            <i class="fa-regular fa-clock"></i>
+                            Enviado: @Model.KardexParrilla.FechaEnvio?.ToString("hh:mm tt")
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="estadisticas-revision">
+    <div class="stat-card">
+        <div class="stat-icon stat-primary">
+            <i class="fa-solid fa-box"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">@Model.TotalProductos</div>
+            <div class="stat-label">Total de Productos</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon stat-warning">
+            <i class="fa-solid fa-exclamation-triangle"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">@Model.ProductosConDiferencia</div>
+            <div class="stat-label">Con Diferencias >10%</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon stat-info">
+            <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">@Model.PersonalPresenteTotal.Count</div>
+            <div class="stat-label">Personal Presente</div>
+        </div>
+    </div>
+</div>
+
+<!-- Instrucciones -->
+<div class="content-card" style="margin-bottom: 1.5rem;">
+    <div class="card-body" style="background: #EFF6FF; border-left: 3px solid #3B82F6;">
+        <div style="display: flex; align-items: start; gap: 0.75rem;">
+            <i class="fa-solid fa-info-circle" style="color: #3B82F6; font-size: 20px; margin-top: 2px;"></i>
+            <div style="flex: 1;">
+                <h3 style="font-size: 15px; font-weight: 600; color: #1E40AF; margin-bottom: 0.5rem;">
+                    Instrucciones de revisión
+                </h3>
+                <ul style="font-size: 13px; color: #1E40AF; line-height: 1.8; margin: 0; padding-left: 1.5rem;">
+                    <li><strong>Productos compartidos</strong> (Abarrotes, Verduras, Frutiver, Limpieza): Muestra el conteo de los 3 cocineros y su promedio</li>
+                    <li><strong>Productos específicos</strong> (Fríos, Calientes, Crocantes): Muestra solo el conteo del cocinero responsable de esa área</li>
+                    <li><strong>Diferencias significativas</strong>: Productos con diferencia >10% se resaltan en amarillo con ícono ⚠️</li>
+                    <li><strong>Secciones colapsables</strong>: Haga clic en el encabezado para expandir/contraer cada categoría</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Buscador -->
+<div class="content-card" style="margin-bottom: 1rem;">
+    <div class="card-body" style="padding: 1rem;">
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" 
+                   id="searchProducto" 
+                   class="form-control" 
+                   placeholder="Buscar producto por código o nombre..."
+                   style="padding-left: 2.5rem;" />
+        </div>
+    </div>
+</div>
+
+<!-- Categorías Consolidadas -->
+<div id="categoriasContainer">
+    @foreach (var categoria in Model.CategoriasConsolidadas)
+    {
+        var categoriaNormalizada = categoria.NombreCategoria.Replace(" ", "-").ToLower();
+        var iconoCategoria = categoria.EsEspecial ? "star" : "box";
+        var colorCategoria = categoria.EsEspecial ? "#F59E0B" : "#64748B";
+        
+        <div class="content-card categoria-card" data-categoria="@categoria.NombreCategoria" style="margin-bottom: 1rem;">
+            <div class="categoria-header-revision" onclick="toggleCategoria('@categoriaNormalizada')">
+                <div class="categoria-info">
+                    <div class="categoria-icono" style="background: @(categoria.EsEspecial ? "rgba(245, 158, 11, 0.1)" : "rgba(100, 116, 123, 0.1)")">
+                        <i class="fa-solid fa-@iconoCategoria" style="color: @colorCategoria;"></i>
+                    </div>
+                    <div>
+                        <h3 class="categoria-titulo">
+                            @categoria.NombreCategoria
+                            @if (categoria.EsEspecial)
+                            {
+                                <span class="badge-especial">
+                                    <i class="fa-solid fa-shield-check"></i>
+                                    Específico - @categoria.TipoCocinaResponsable
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge-compartido">
+                                    <i class="fa-solid fa-users"></i>
+                                    Compartido - 3 Cocineros
+                                </span>
+                            }
+                        </h3>
+                        <p class="categoria-subtitulo">
+                            @categoria.TotalProductos productos
+                            @if (categoria.ProductosConDiferencia > 0)
+                            {
+                                <span style="color: #F59E0B;">
+                                    • @categoria.ProductosConDiferencia con diferencias
+                                </span>
+                            }
+                        </p>
+                    </div>
+                </div>
+                <div class="categoria-toggle">
+                    <i class="fa-solid fa-chevron-up" id="toggle-icon-@categoriaNormalizada"></i>
+                </div>
+            </div>
+            
+            <div class="categoria-body @(categoria.Expandida ? "expanded" : "")" id="categoria-@categoriaNormalizada">
+                @if (categoria.EsEspecial)
+                {
+                    <!-- Tabla para productos específicos (1 cocinero) -->
+                    <table class="kardex-revision-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">Código</th>
+                                <th style="width: 300px;">Producto</th>
+                                <th style="width: 100px;">Unidad</th>
+                                <th style="width: 120px;">Cantidad a Pedir</th>
+                                <th style="width: 100px;">Ingresos</th>
+                                <th style="width: 150px;">Stock Contado</th>
+                                <th style="width: 100px;">Diferencia</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var producto in categoria.Productos)
+                            {
+                                var rowClass = producto.TieneDiferenciaSignificativa ? "row-diferencia" : "";
+                                
+                                <tr class="@rowClass" data-producto="@producto.NombreProducto">
+                                    <td class="td-codigo">@producto.Codigo</td>
+                                    <td class="td-nombre">@producto.NombreProducto</td>
+                                    <td class="td-unidad">@producto.UnidadMedida</td>
+                                    <td class="td-readonly">@producto.CantidadAPedir.ToString("0.##")</td>
+                                    <td class="td-readonly">@producto.Ingresos.ToString("0.##")</td>
+                                    <td class="td-stock">
+                                        <strong>@producto.StockFinalEspecifico?.ToString("0.##")</strong>
+                                    </td>
+                                    <td class="td-diferencia">
+                                        @if (producto.TieneDiferenciaSignificativa)
+                                        {
+                                            <span class="badge-diferencia">
+                                                <i class="fa-solid fa-exclamation-triangle"></i>
+                                                @producto.Diferencia.ToString("0.##") (@producto.DiferenciaPorcentual?.ToString("0.##")%)
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span>@producto.Diferencia.ToString("0.##")</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <!-- Tabla para productos compartidos (3 cocineros) -->
+                    <table class="kardex-revision-table kardex-consolidado-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">Código</th>
+                                <th style="width: 250px;">Producto</th>
+                                <th style="width: 80px;">Unidad</th>
+                                <th style="width: 100px;">Cant. a Pedir</th>
+                                <th style="width: 90px;">Ingresos</th>
+                                <th style="width: 110px;">
+                                    <div class="header-cocinero header-fria">
+                                        <i class="fa-solid fa-snowflake"></i>
+                                        Cocina Fría
+                                    </div>
+                                </th>
+                                <th style="width: 110px;">
+                                    <div class="header-cocinero header-caliente">
+                                        <i class="fa-solid fa-fire"></i>
+                                        Cocina Caliente
+                                    </div>
+                                </th>
+                                <th style="width: 110px;">
+                                    <div class="header-cocinero header-parrilla">
+                                        <i class="fa-solid fa-fire-burner"></i>
+                                        Parrilla
+                                    </div>
+                                </th>
+                                <th style="width: 110px;">Promedio</th>
+                                <th style="width: 100px;">Diferencia</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var producto in categoria.Productos)
+                            {
+                                var rowClass = producto.TieneDiferenciaSignificativa ? "row-diferencia" : "";
+                                
+                                <tr class="@rowClass" data-producto="@producto.NombreProducto">
+                                    <td class="td-codigo">@producto.Codigo</td>
+                                    <td class="td-nombre">@producto.NombreProducto</td>
+                                    <td class="td-unidad">@producto.UnidadMedida</td>
+                                    <td class="td-readonly">@producto.CantidadAPedir.ToString("0.##")</td>
+                                    <td class="td-readonly">@producto.Ingresos.ToString("0.##")</td>
+                                    <td class="td-stock td-stock-fria">
+                                        @(producto.StockFinalCocinaFria?.ToString("0.##") ?? "-")
+                                    </td>
+                                    <td class="td-stock td-stock-caliente">
+                                        @(producto.StockFinalCocinaCaliente?.ToString("0.##") ?? "-")
+                                    </td>
+                                    <td class="td-stock td-stock-parrilla">
+                                        @(producto.StockFinalParrilla?.ToString("0.##") ?? "-")
+                                    </td>
+                                    <td class="td-promedio">
+                                        <strong>@producto.StockFinalPromedio?.ToString("0.##")</strong>
+                                    </td>
+                                    <td class="td-diferencia">
+                                        @if (producto.TieneDiferenciaSignificativa)
+                                        {
+                                            <span class="badge-diferencia">
+                                                <i class="fa-solid fa-exclamation-triangle"></i>
+                                                @producto.Diferencia.ToString("0.##") (@producto.DiferenciaPorcentual?.ToString("0.##")%)
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span>@producto.Diferencia.ToString("0.##")</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Personal Presente -->
+<div class="content-card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Personal Presente</h2>
+            <p class="card-subtitle">Empleados que estuvieron durante el turno</p>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="personal-presente-list">
+            @foreach (var empleado in Model.PersonalPresenteTotal)
+            {
+                <div class="personal-presente-item @(empleado.EsResponsablePrincipal ? "responsable" : "")">
+                    <i class="fa-solid @(empleado.EsResponsablePrincipal ? "fa-star" : "fa-user")"></i>
+                    <div>
+                        <div class="personal-nombre">
+                            @empleado.NombreCompleto
+                            @if (empleado.EsResponsablePrincipal)
+                            {
+                                <span class="badge-responsable">Responsable</span>
+                            }
+                        </div>
+                        <div class="personal-rol">@empleado.Rol</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Botones de acción -->
+<div class="content-card" style="margin-top: 1.5rem;">
+    <div class="card-body">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+            <a asp-action="PendientesDeRevision" class="btn btn-secondary">
+                <i class="fa-solid fa-arrow-left"></i>
+                Volver a Pendientes
+            </a>
+            <div style="display: flex; gap: 0.75rem;">
+                <button type="button" class="btn btn-danger" onclick="abrirModalRechazar()">
+                    <i class="fa-solid fa-xmark"></i>
+                    Rechazar
+                </button>
+                <button type="button" class="btn btn-success" onclick="abrirModalAprobar()">
+                    <i class="fa-solid fa-check"></i>
+                    Aprobar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Aprobar -->
+<div id="modalAprobar" class="modal-overlay" style="display: none;">
+    <div class="modal-container" style="max-width: 500px;">
+        <div class="modal-header">
+            <div>
+                <h2 class="modal-title">Aprobar Kardex de Cocina</h2>
+                <p class="modal-subtitle">Confirme la aprobación del kardex consolidado</p>
+            </div>
+            <button class="modal-close" onclick="closeModal('modalAprobar')">&times;</button>
+        </div>
+        <form id="formAprobar">
+            <div class="modal-body">
+                <div style="background: #ECFDF5; border-left: 3px solid #10B981; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: start; gap: 0.75rem;">
+                        <i class="fa-solid fa-check-circle" style="color: #10B981; font-size: 20px; margin-top: 2px;"></i>
+                        <div>
+                            <strong style="color: #065F46; font-size: 14px; display: block; margin-bottom: 0.25rem;">
+                                Se aprobarán los 3 kardex de cocina
+                            </strong>
+                            <p style="color: #065F46; font-size: 13px; margin: 0;">
+                                Los 3 cocineros recibirán una notificación de aprobación
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Observaciones de revisión (opcional)</label>
+                    <textarea id="observacionesAprobacion" 
+                              class="form-control" 
+                              rows="3"
+                              placeholder="Ej: Todo en orden, aprobado sin observaciones..."
+                              maxlength="500"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeModal('modalAprobar')">Cancelar</button>
+                <button type="submit" class="btn btn-success">
+                    <i class="fa-solid fa-check"></i>
+                    Aprobar Kardex
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Rechazar -->
+<div id="modalRechazar" class="modal-overlay" style="display: none;">
+    <div class="modal-container" style="max-width: 500px;">
+        <div class="modal-header">
+            <div>
+                <h2 class="modal-title">Rechazar Kardex de Cocina</h2>
+                <p class="modal-subtitle">Especifique el motivo del rechazo</p>
+            </div>
+            <button class="modal-close" onclick="closeModal('modalRechazar')">&times;</button>
+        </div>
+        <form id="formRechazar">
+            <div class="modal-body">
+                <div style="background: #FEF2F2; border-left: 3px solid #EF4444; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: start; gap: 0.75rem;">
+                        <i class="fa-solid fa-exclamation-circle" style="color: #EF4444; font-size: 20px; margin-top: 2px;"></i>
+                        <div>
+                            <strong style="color: #991B1B; font-size: 14px; display: block; margin-bottom: 0.25rem;">
+                                Se rechazarán los 3 kardex de cocina
+                            </strong>
+                            <p style="color: #991B1B; font-size: 13px; margin: 0;">
+                                Los cocineros deberán corregir y reenviar el kardex
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        Motivo del rechazo <span style="color: #EF4444;">*</span>
+                    </label>
+                    <textarea id="motivoRechazo" 
+                              class="form-control" 
+                              rows="4"
+                              placeholder="Especifique claramente por qué se rechaza el kardex..."
+                              maxlength="1000"
+                              required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeModal('modalRechazar')">Cancelar</button>
+                <button type="submit" class="btn btn-danger">
+                    <i class="fa-solid fa-xmark"></i>
+                    Rechazar Kardex
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const KARDEX_IDS = [@string.Join(",", Model.CategoriasConsolidadas.FirstOrDefault()?.Productos.Select(_ => _.ProductoId) ?? new List<int>())];
+        const TIPO_KARDEX = 'Cocina';
+    </script>
+    <script src="~/js/kardex-revision.js" asp-append-version="true"></script>
+}

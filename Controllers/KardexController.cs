@@ -960,7 +960,7 @@ namespace Puerto92.Controllers
 
             return items;
         }
-        
+
         // ==========================================
         // MÉTODO AUXILIAR PRIVADO
         // ==========================================
@@ -972,16 +972,147 @@ namespace Puerto92.Controllers
         {
             if (string.IsNullOrEmpty(tipoKardex))
                 return string.Empty;
-            
+
             // Decodificar HTML (convierte &#xF3; a ó)
             var normalizado = WebUtility.HtmlDecode(tipoKardex);
-            
+
             // Trim
             normalizado = normalizado.Trim();
-            
+
             _logger.LogDebug($"🔄 TipoKardex normalizado: '{tipoKardex}' → '{normalizado}'");
-            
+
             return normalizado;
+        }
+        
+        // ==========================================
+        // ACCIONES DE REVISIÓN
+        // ==========================================
+
+        /// <summary>
+        /// GET: Revisar kardex consolidado de cocina
+        /// </summary>
+        [Authorize(Roles = "Administrador Local")]
+        [HttpGet]
+        public async Task<IActionResult> RevisarCocina(string ids)
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+            
+            try
+            {
+                _logger.LogInformation($"📋 Revisando kardex de cocina consolidado: {ids}");
+                
+                var kardexIds = ids.Split(',')
+                    .Select(id => int.TryParse(id.Trim(), out int result) ? result : 0)
+                    .Where(id => id > 0)
+                    .ToList();
+                
+                if (!kardexIds.Any())
+                {
+                    SetErrorMessage("IDs de kardex inválidos");
+                    return RedirectToAction(nameof(PendientesDeRevision));
+                }
+                
+                var viewModel = await _kardexService.ObtenerKardexCocinaConsolidadoAsync(kardexIds);
+                
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar kardex de cocina para revisión");
+                SetErrorMessage("Error al cargar el kardex de cocina");
+                return RedirectToAction(nameof(PendientesDeRevision));
+            }
+        }
+
+        /// <summary>
+        /// GET: Revisar kardex de salón
+        /// </summary>
+        [Authorize(Roles = "Administrador Local")]
+        [HttpGet]
+        public async Task<IActionResult> RevisarSalon(int id)
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+            
+            try
+            {
+                _logger.LogInformation($"📋 Revisando kardex de salón: {id}");
+                
+                var viewModel = await _kardexService.ObtenerKardexSalonParaRevisionAsync(id);
+                
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al cargar kardex de salón {id} para revisión");
+                SetErrorMessage("Error al cargar el kardex de salón");
+                return RedirectToAction(nameof(PendientesDeRevision));
+            }
+        }
+
+        /// <summary>
+        /// GET: Revisar kardex de bebidas
+        /// </summary>
+        [Authorize(Roles = "Administrador Local")]
+        [HttpGet]
+        public async Task<IActionResult> RevisarBebidas(int id)
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+            
+            try
+            {
+                _logger.LogInformation($"📋 Revisando kardex de bebidas: {id}");
+                
+                var viewModel = await _kardexService.ObtenerKardexBebidasParaRevisionAsync(id);
+                
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al cargar kardex de bebidas {id} para revisión");
+                SetErrorMessage("Error al cargar el kardex de bebidas");
+                return RedirectToAction(nameof(PendientesDeRevision));
+            }
+        }
+
+        /// <summary>
+        /// GET: Revisar kardex de vajilla
+        /// </summary>
+        [Authorize(Roles = "Administrador Local")]
+        [HttpGet]
+        public async Task<IActionResult> RevisarVajilla(int id)
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(usuarioId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+            
+            try
+            {
+                _logger.LogInformation($"📋 Revisando kardex de vajilla: {id}");
+                
+                var viewModel = await _kardexService.ObtenerKardexVajillaParaRevisionAsync(id);
+                
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al cargar kardex de vajilla {id} para revisión");
+                SetErrorMessage("Error al cargar el kardex de vajilla");
+                return RedirectToAction(nameof(PendientesDeRevision));
+            }
         }
     }
 }
