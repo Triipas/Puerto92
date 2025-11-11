@@ -1,0 +1,373 @@
+/* ========================================
+   KARDEX PENDIENTES DE REVISIÓN - ESTILOS
+   ======================================== */
+
+/* === CARD DE INSTRUCCIONES === */
+.instrucciones-card {
+    background: linear-gradient(135deg, #DBEAFE 0%, #EFF6FF 100%);
+    border-left: 4px solid #3B82F6;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.instrucciones-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #3B82F6, #2563EB);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.instrucciones-icon i {
+    font-size: 28px;
+    color: white;
+}
+
+.instrucciones-content h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1E40AF;
+    margin: 0 0 0.5rem 0;
+}
+
+.instrucciones-content p {
+    font-size: 14px;
+    color: #1E40AF;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* === TABS === */
+.kardex-tabs-container {
+    margin-bottom: 2rem;
+}
+
+.kardex-tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 2px solid #E5E7EB;
+    background: #F9FAFB;
+    padding: 0.5rem;
+    border-radius: 12px 12px 0 0;
+}
+
+.kardex-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #64748B;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.kardex-tab i {
+    font-size: 20px;
+}
+
+.kardex-tab:hover {
+    background: rgba(255, 255, 255, 0.8);
+    color: #1E293B;
+}
+
+.kardex-tab.active {
+    background: white;
+    color: #0092B8;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.kardex-tab.active i {
+    color: #0092B8;
+}
+
+/* Badge en tabs */
+.tab-badge {
+    background: #F97316;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 0.25rem 0.625rem;
+    border-radius: 20px;
+    min-width: 24px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(249, 115, 22, 0.3);
+}
+
+/* === CONTENIDO DE TABS === */
+.kardex-content {
+    position: relative;
+}
+
+.tab-panel {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* === TABLA DE KARDEX PENDIENTES === */
+.kardex-pendientes-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.kardex-pendientes-table thead th {
+    background: #F8FAFC;
+    padding: 1rem 1.25rem;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #E5E7EB;
+}
+
+.kardex-pendientes-table tbody td {
+    padding: 1.25rem 1.25rem;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: middle;
+}
+
+.kardex-pendientes-table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.kardex-pendientes-table tbody tr:hover {
+    background: #F8FAFC;
+}
+
+/* === FECHA CELL === */
+.fecha-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #1E293B;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.fecha-cell i {
+    color: #0092B8;
+    font-size: 16px;
+}
+
+/* === RESPONSABLES === */
+.responsables-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.responsable-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 14px;
+    color: #1E293B;
+}
+
+.responsable-item i {
+    color: #64748B;
+    font-size: 14px;
+}
+
+/* === PERSONAL PRESENTE === */
+.personal-presente-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    background: #F0F9FF;
+    border: 1px solid #BAE6FD;
+    border-radius: 8px;
+    color: #0369A1;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.personal-presente-badge i {
+    font-size: 15px;
+}
+
+/* === BADGES DE ESTADO === */
+.badge-pendiente {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    background: #FFF7ED;
+    border: 1px solid #FED7AA;
+    color: #C2410C;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+}
+
+.badge-pendiente i {
+    font-size: 14px;
+}
+
+/* === BADGES DE TIPO (MOZOS) === */
+.badge-tipo-salón,
+.badge-tipo-bebidas {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.75rem;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 6px;
+}
+
+.badge-tipo-salón {
+    background: #E0F2FE;
+    color: #0369A1;
+    border: 1px solid #7DD3FC;
+}
+
+.badge-tipo-bebidas {
+    background: #F3E8FF;
+    color: #7C3AED;
+    border: 1px solid #C4B5FD;
+}
+
+/* === BOTÓN VER/REVISAR === */
+.btn-revisar {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.25rem;
+    background: #0092B8;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0, 146, 184, 0.2);
+}
+
+.btn-revisar:hover {
+    background: #007595;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 146, 184, 0.3);
+    color: white;
+}
+
+.btn-revisar i {
+    font-size: 16px;
+}
+
+/* === ESTADO VACÍO === */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-state i {
+    font-size: 72px;
+    color: #CBD5E1;
+    margin-bottom: 1.5rem;
+}
+
+.empty-state h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    font-size: 14px;
+    color: #94A3B8;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 1024px) {
+    .kardex-tabs {
+        flex-direction: column;
+    }
+    
+    .kardex-tab {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .instrucciones-card {
+        flex-direction: column;
+    }
+    
+    .tabla-responsable {
+        overflow-x: auto;
+    }
+    
+    .kardex-pendientes-table {
+        min-width: 900px;
+    }
+    
+    .responsables-list {
+        max-width: 200px;
+    }
+}
+
+/* === ANIMACIONES === */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.kardex-pendientes-table tbody tr {
+    animation: slideIn 0.3s ease;
+}
+
+.kardex-pendientes-table tbody tr:nth-child(2) {
+    animation-delay: 0.05s;
+}
+
+.kardex-pendientes-table tbody tr:nth-child(3) {
+    animation-delay: 0.1s;
+}
+
+.kardex-pendientes-table tbody tr:nth-child(4) {
+    animation-delay: 0.15s;
+}
