@@ -11,7 +11,7 @@ using Puerto92.Data;
 namespace Puerto92.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251111053826_InitialCreate")]
+    [Migration("20251111123647_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -367,6 +367,7 @@ namespace Puerto92.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("AprobadoPor")
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("AsignacionId")
@@ -403,15 +404,18 @@ namespace Puerto92.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("MotivoRechazo")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Observaciones")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ObservacionesRevision")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("RechazadoPor")
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -490,6 +494,7 @@ namespace Puerto92.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("AprobadoPor")
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("AsignacionId")
@@ -528,15 +533,18 @@ namespace Puerto92.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("MotivoRechazo")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Observaciones")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ObservacionesRevision")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("RechazadoPor")
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("TipoCocina")
@@ -604,6 +612,7 @@ namespace Puerto92.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("AprobadoPor")
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("AsignacionId")
@@ -644,15 +653,18 @@ namespace Puerto92.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("MotivoRechazo")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Observaciones")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ObservacionesRevision")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("RechazadoPor")
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -713,6 +725,7 @@ namespace Puerto92.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("AprobadoPor")
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("AsignacionId")
@@ -759,15 +772,18 @@ namespace Puerto92.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("MotivoRechazo")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Observaciones")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ObservacionesRevision")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("RechazadoPor")
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");

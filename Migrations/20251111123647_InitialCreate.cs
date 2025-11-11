@@ -430,11 +430,11 @@ namespace Puerto92.Migrations
                     FechaEnvio = table.Column<DateTime>(type: "TEXT", nullable: true),
                     Observaciones = table.Column<string>(type: "TEXT", nullable: true),
                     FechaAprobacion = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    AprobadoPor = table.Column<string>(type: "TEXT", nullable: true),
-                    ObservacionesRevision = table.Column<string>(type: "TEXT", nullable: true),
+                    AprobadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    ObservacionesRevision = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
                     FechaRechazo = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    RechazadoPor = table.Column<string>(type: "TEXT", nullable: true),
-                    MotivoRechazo = table.Column<string>(type: "TEXT", nullable: true)
+                    RechazadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    MotivoRechazo = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -476,11 +476,11 @@ namespace Puerto92.Migrations
                     FechaEnvio = table.Column<DateTime>(type: "TEXT", nullable: true),
                     Observaciones = table.Column<string>(type: "TEXT", nullable: true),
                     FechaAprobacion = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    AprobadoPor = table.Column<string>(type: "TEXT", nullable: true),
-                    ObservacionesRevision = table.Column<string>(type: "TEXT", nullable: true),
+                    AprobadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    ObservacionesRevision = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
                     FechaRechazo = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    RechazadoPor = table.Column<string>(type: "TEXT", nullable: true),
-                    MotivoRechazo = table.Column<string>(type: "TEXT", nullable: true)
+                    RechazadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    MotivoRechazo = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -522,11 +522,11 @@ namespace Puerto92.Migrations
                     DescripcionFaltantes = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
                     Observaciones = table.Column<string>(type: "TEXT", nullable: true),
                     FechaAprobacion = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    AprobadoPor = table.Column<string>(type: "TEXT", nullable: true),
-                    ObservacionesRevision = table.Column<string>(type: "TEXT", nullable: true),
+                    AprobadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    ObservacionesRevision = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
                     FechaRechazo = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    RechazadoPor = table.Column<string>(type: "TEXT", nullable: true),
-                    MotivoRechazo = table.Column<string>(type: "TEXT", nullable: true)
+                    RechazadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    MotivoRechazo = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -570,11 +570,11 @@ namespace Puerto92.Migrations
                     CantidadExtraviados = table.Column<int>(type: "INTEGER", nullable: true),
                     Observaciones = table.Column<string>(type: "TEXT", nullable: true),
                     FechaAprobacion = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    AprobadoPor = table.Column<string>(type: "TEXT", nullable: true),
-                    ObservacionesRevision = table.Column<string>(type: "TEXT", nullable: true),
+                    AprobadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    ObservacionesRevision = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
                     FechaRechazo = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    RechazadoPor = table.Column<string>(type: "TEXT", nullable: true),
-                    MotivoRechazo = table.Column<string>(type: "TEXT", nullable: true)
+                    RechazadoPor = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    MotivoRechazo = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true)
                 },
                 constraints: table =>
                 {

@@ -364,6 +364,7 @@ namespace Puerto92.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("AprobadoPor")
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("AsignacionId")
@@ -400,15 +401,18 @@ namespace Puerto92.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("MotivoRechazo")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Observaciones")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ObservacionesRevision")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("RechazadoPor")
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -487,6 +491,7 @@ namespace Puerto92.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("AprobadoPor")
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("AsignacionId")
@@ -525,15 +530,18 @@ namespace Puerto92.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("MotivoRechazo")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Observaciones")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ObservacionesRevision")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("RechazadoPor")
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("TipoCocina")
@@ -601,6 +609,7 @@ namespace Puerto92.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("AprobadoPor")
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("AsignacionId")
@@ -641,15 +650,18 @@ namespace Puerto92.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("MotivoRechazo")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Observaciones")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ObservacionesRevision")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("RechazadoPor")
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -710,6 +722,7 @@ namespace Puerto92.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("AprobadoPor")
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("AsignacionId")
@@ -756,15 +769,18 @@ namespace Puerto92.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("MotivoRechazo")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Observaciones")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ObservacionesRevision")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("RechazadoPor")
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");

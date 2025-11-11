@@ -78,27 +78,81 @@ function toggleCategoria(categoriaNormalizada) {
 // ==========================================
 
 function abrirModalAprobar() {
+    console.log('🔓 Abriendo modal de aprobar...');
+    
     const modal = document.getElementById('modalAprobar');
-    if (modal) {
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
+    
+    if (!modal) {
+        console.error('❌ Modal #modalAprobar no encontrado en el DOM');
+        alert('Error: Modal no encontrado. Recarga la página.');
+        return;
     }
+    
+    console.log('✅ Modal encontrado:', modal);
+    
+    // Mostrar modal
+    modal.style.display = 'flex';
+    
+    // Pequeño delay para la animación
+    setTimeout(() => {
+        modal.classList.add('active');
+    }, 10);
+    
+    // Prevenir scroll del body
+    document.body.style.overflow = 'hidden';
+    
+    console.log('✅ Modal abierto correctamente');
 }
 
 function abrirModalRechazar() {
+    console.log('🔓 Abriendo modal de rechazar...');
+    
     const modal = document.getElementById('modalRechazar');
-    if (modal) {
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
+    
+    if (!modal) {
+        console.error('❌ Modal #modalRechazar no encontrado en el DOM');
+        alert('Error: Modal no encontrado. Recarga la página.');
+        return;
     }
+    
+    console.log('✅ Modal encontrado:', modal);
+    
+    // Mostrar modal
+    modal.style.display = 'flex';
+    
+    // Pequeño delay para la animación
+    setTimeout(() => {
+        modal.classList.add('active');
+    }, 10);
+    
+    // Prevenir scroll del body
+    document.body.style.overflow = 'hidden';
+    
+    console.log('✅ Modal abierto correctamente');
 }
 
 function closeModal(modalId) {
+    console.log('🔒 Cerrando modal:', modalId);
+    
     const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'none';
-        document.body.style.overflow = 'auto';
+    
+    if (!modal) {
+        console.warn('⚠️ Modal no encontrado:', modalId);
+        return;
     }
+    
+    // Quitar clase active para animación
+    modal.classList.remove('active');
+    
+    // Esperar a que termine la animación
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+    
+    // Restaurar scroll del body
+    document.body.style.overflow = 'auto';
+    
+    console.log('✅ Modal cerrado');
 }
 
 // ==========================================

@@ -402,11 +402,98 @@ namespace Puerto92.Data
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasIndex(d => new { d.KardexCocinaId, d.Orden });
-                
+
                 entity.Property(d => d.UnidadMedida)
                     .HasMaxLength(20)
                     .IsRequired();
             });
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            // Agregar después de las configuraciones existentes de KardexBebidas
+builder.Entity<KardexBebidas>(entity =>
+{
+    // ... configuraciones existentes ...
+    
+    entity.Property(k => k.AprobadoPor)
+        .HasMaxLength(100);
+    
+    entity.Property(k => k.RechazadoPor)
+        .HasMaxLength(100);
+    
+    entity.Property(k => k.ObservacionesRevision)
+        .HasMaxLength(1000);
+    
+    entity.Property(k => k.MotivoRechazo)
+        .HasMaxLength(1000);
+});
+
+// Repetir para KardexSalon, KardexCocina y KardexVajilla
+builder.Entity<KardexSalon>(entity =>
+{
+    // ... configuraciones existentes ...
+    
+    entity.Property(k => k.AprobadoPor)
+        .HasMaxLength(100);
+    
+    entity.Property(k => k.RechazadoPor)
+        .HasMaxLength(100);
+    
+    entity.Property(k => k.ObservacionesRevision)
+        .HasMaxLength(1000);
+    
+    entity.Property(k => k.MotivoRechazo)
+        .HasMaxLength(1000);
+});
+
+builder.Entity<KardexCocina>(entity =>
+{
+    // ... configuraciones existentes ...
+    
+    entity.Property(k => k.AprobadoPor)
+        .HasMaxLength(100);
+    
+    entity.Property(k => k.RechazadoPor)
+        .HasMaxLength(100);
+    
+    entity.Property(k => k.ObservacionesRevision)
+        .HasMaxLength(1000);
+    
+    entity.Property(k => k.MotivoRechazo)
+        .HasMaxLength(1000);
+});
+
+builder.Entity<KardexVajilla>(entity =>
+{
+    // ... configuraciones existentes ...
+    
+    entity.Property(k => k.AprobadoPor)
+        .HasMaxLength(100);
+    
+    entity.Property(k => k.RechazadoPor)
+        .HasMaxLength(100);
+    
+    entity.Property(k => k.ObservacionesRevision)
+        .HasMaxLength(1000);
+    
+    entity.Property(k => k.MotivoRechazo)
+        .HasMaxLength(1000);
+});
 
         }
     }
