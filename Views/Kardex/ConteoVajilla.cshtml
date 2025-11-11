@@ -1,0 +1,261 @@
+@model Puerto92.ViewModels.KardexVajillaViewModel
+@{
+    ViewData["Title"] = "Kardex de Vajilla y Utensilios de Cocina";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="page-header">
+    <div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+            <i class="fa-solid fa-plate-utensils" style="color: #06B6D4; font-size: 24px;"></i>
+            <h1 class="page-title">Kardex de Vajilla y Utensilios de Cocina</h1>
+        </div>
+        <p class="page-subtitle">
+            @Model.Fecha.ToString("dddd, dd 'de' MMMM 'de' yyyy") - @Model.EmpleadoNombre
+        </p>
+    </div>
+</div>
+
+<!-- Barra de progreso -->
+<div class="kardex-progress-bar">
+    <div class="progress-info">
+        <span class="progress-label">Progreso del registro</span>
+        <span class="progress-value">@Model.UtensiliosCompletos de @Model.TotalUtensilios utensilios</span>
+    </div>
+    <div class="progress-track">
+        <div class="progress-fill" style="width: @Model.PorcentajeAvance%"></div>
+    </div>
+    <div class="progress-stats">
+        <div class="stat-item">
+            <i class="fa-solid fa-check-circle" style="color: #10B981;"></i>
+            <span>@Model.UtensiliosCompletos completados</span>
+        </div>
+        @if (Model.UtensiliosConFaltantes > 0)
+        {
+            <div class="stat-item">
+                <i class="fa-solid fa-exclamation-triangle" style="color: #F59E0B;"></i>
+                <span>@Model.UtensiliosConFaltantes con faltantes</span>
+            </div>
+        }
+        <div class="stat-item">
+            <span id="autoguardadoIndicador" class="autoguardado-indicator">
+                <i class="fa-solid fa-circle-check"></i>
+                Guardado
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Instrucciones -->
+<div class="content-card" style="margin-bottom: 1.5rem;">
+    <div class="card-body" style="background: #ECFDF5; border-left: 3px solid #10B981;">
+        <div style="display: flex; align-items: start; gap: 0.75rem;">
+            <i class="fa-solid fa-info-circle" style="color: #059669; font-size: 20px; margin-top: 2px;"></i>
+            <div style="flex: 1;">
+                <h3 style="font-size: 15px; font-weight: 600; color: #065F46; margin-bottom: 0.5rem;">
+                    Instrucciones de conteo
+                </h3>
+                <ul style="font-size: 13px; color: #065F46; line-height: 1.8; margin: 0; padding-left: 1.5rem;">
+                    <li>Registre la cantidad exacta contada en la columna <strong>"Unidades"</strong></li>
+                    <li>Los cambios se guardan automáticamente después de 2 segundos</li>
+                    <li><strong>Si detecta utensilios rotos o extraviados</strong>, al finalizar deberá especificar qué pasó con ellos</li>
+                    <li>Use el buscador para encontrar utensilios rápidamente</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros y búsqueda -->
+<div class="content-card" style="margin-bottom: 1rem;">
+    <div class="card-body" style="padding: 1rem;">
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <div style="flex: 1; max-width: 400px;">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" 
+                           id="searchUtensilio" 
+                           class="form-control" 
+                           placeholder="Buscar por código o descripción..."
+                           style="padding-left: 2.5rem;" />
+                </div>
+            </div>
+            <div style="margin-left: auto;">
+                <button type="button" class="btn btn-secondary" onclick="recalcularTodo()">
+                    <i class="fa-solid fa-calculator"></i>
+                    Recalcular
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de conteo -->
+<div class="content-card">
+    <div class="kardex-salon-table-container">
+        <table class="kardex-salon-table" id="kardexVajillaTable">
+            <thead>
+                <tr>
+                    <th style="width: 60px;">#</th>
+                    <th style="width: 150px;">Categoría</th>
+                    <th style="width: 100px;">Código</th>
+                    <th style="width: 300px;">Descripción del Utensilio</th>
+                    <th style="width: 80px;">Unidad</th>
+                    <th style="width: 120px;">Inv. Inicial</th>
+                    <th style="width: 150px;">Unidades</th>
+                    <th style="width: 100px;">Diferencia</th>
+                </tr>
+            </thead>
+            <tbody id="kardexVajillaTableBody">
+                @foreach (var detalle in Model.Detalles)
+                {
+                    var rowClass = detalle.TieneFaltantes ? "row-faltante" : "";
+                    var completeClass = detalle.EstaCompleto ? "row-complete" : "";
+                    
+                    <tr class="@rowClass @completeClass" data-detalle-id="@detalle.Id">
+                        <td class="td-numero">@detalle.Orden</td>
+                        <td class="td-categoria">
+                            @if (detalle.Categoria == "Utensilios Cocina")
+                            {
+                                <span class="badge badge-warning">🍳 Utensilios Cocina</span>
+                            }
+                            else if (detalle.Categoria == "Menajería Cocina")
+                            {
+                                <span class="badge badge-info">🍽️ Menajería Cocina</span>
+                            }
+                            else if (detalle.Categoria == "Equipos")
+                            {
+                                <span class="badge badge-primary">⚙️ Equipos</span>
+                            }
+                            else
+                            {
+                                <span>@detalle.Categoria</span>
+                            }
+                        </td>
+                        <td class="td-codigo">@detalle.Codigo</td>
+                        <td class="td-descripcion">@detalle.Descripcion</td>
+                        <td class="td-unidad">@detalle.Unidad</td>
+                        <td class="td-readonly">@detalle.InventarioInicial</td>
+                        <td class="td-editable">
+                            <input type="number" 
+                                   class="input-conteo" 
+                                   data-detalle-id="@detalle.Id"
+                                   value="@(detalle.UnidadesContadas?.ToString() ?? "")"
+                                   step="1"
+                                   min="0"
+                                   placeholder="0" />
+                        </td>
+                        <td class="td-diferencia">
+                            <span class="diferencia-badge @(detalle.TieneFaltantes ? "faltante" : detalle.Diferencia > 0 ? "sobrante" : "exacto")">
+                                @(detalle.Diferencia > 0 ? "+" : "")@detalle.Diferencia
+                            </span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Botones de acción -->
+<div class="content-card" style="margin-top: 1rem;">
+    <div class="card-body">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <a asp-action="MiKardex" class="btn btn-secondary">
+                <i class="fa-solid fa-arrow-left"></i>
+                Volver
+            </a>
+            <button type="button" class="btn btn-primary" onclick="openSiguienteModal()" id="btnSiguiente">
+                <i class="fa-solid fa-arrow-right"></i>
+                Siguiente
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de descripción de faltantes -->
+<div id="descripcionFaltantesModal" class="modal-overlay" style="display: none;">
+    <div class="modal-container" style="max-width: 700px;">
+        <div class="modal-header">
+            <div>
+                <h2 class="modal-title">Descripción de Faltantes</h2>
+                <p class="modal-subtitle">Especifique qué pasó con los utensilios faltantes</p>
+            </div>
+            <button class="modal-close" onclick="closeModal('descripcionFaltantesModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <!-- Alerta de faltantes detectados -->
+            <div style="background: #FEF3C7; border-left: 3px solid #F59E0B; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                <div style="display: flex; align-items: start; gap: 0.75rem;">
+                    <i class="fa-solid fa-exclamation-triangle" style="color: #F59E0B; font-size: 20px; margin-top: 2px;"></i>
+                    <div>
+                        <strong style="color: #92400E; font-size: 14px; display: block; margin-bottom: 0.5rem;">
+                            Se detectaron faltantes en <span id="cantidadFaltantes">0</span> utensilio(s)
+                        </strong>
+                        <p style="color: #92400E; font-size: 13px; margin: 0;">
+                            Por favor, especifique detalladamente qué pasó con los utensilios faltantes
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de utensilios con faltantes -->
+            <div id="listaFaltantes" style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; max-height: 200px; overflow-y: auto;">
+                <!-- Se llena dinámicamente -->
+            </div>
+
+            <!-- Campos de descripción -->
+            <div class="form-group">
+                <label class="form-label">
+                    Cantidad Rotos
+                </label>
+                <input type="number" 
+                       id="cantidadRotos" 
+                       class="form-control" 
+                       min="0"
+                       placeholder="Ej: 5" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Cantidad Extraviados
+                </label>
+                <input type="number" 
+                       id="cantidadExtraviados" 
+                       class="form-control" 
+                       min="0"
+                       placeholder="Ej: 2" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Descripción Detallada <span style="color: red;">*</span>
+                </label>
+                <textarea id="descripcionFaltantesTexto" 
+                          class="form-control" 
+                          rows="5"
+                          placeholder="Ej: 5 platos hondos rotos durante el lavado por caída accidental, 2 tenedores extraviados en servicio de mesa 8..."
+                          maxlength="2000"
+                          required></textarea>
+                <small style="color: #64748B; font-size: 12px; margin-top: 0.25rem; display: block;">
+                    Máximo 2000 caracteres. Sea específico sobre qué pasó con cada utensilio.
+                </small>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-cancel" onclick="closeModal('descripcionFaltantesModal')">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="btnConfirmarFaltantes" onclick="continuarAPersonalPresente()">
+                <i class="fa-solid fa-arrow-right"></i>
+                Continuar
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const KARDEX_ID = @Model.Id;
+        const TIENE_FALTANTES = @(Model.RequiereDescripcionFaltantes ? "true" : "false");
+    </script>
+    <script src="~/js/kardex-vajilla.js" asp-append-version="true"></script>
+}
