@@ -71,6 +71,24 @@ namespace Puerto92.Services
             DateTime fecha);
 
         /// <summary>
+        /// Crear notificación cuando un kardex es aprobado
+        /// </summary>
+        Task<Notificacion> CrearNotificacionKardexAprobadoAsync(
+            string usuarioId,
+            string tipoKardex,
+            DateTime fecha,
+            string? observaciones = null);
+
+        /// <summary>
+        /// Crear notificación cuando un kardex es rechazado
+        /// </summary>
+        Task<Notificacion> CrearNotificacionKardexRechazadoAsync(
+            string usuarioId,
+            string tipoKardex,
+            DateTime fecha,
+            string motivo);
+
+        /// <summary>
         /// Obtener notificaciones de un usuario
         /// </summary>
         Task<List<Notificacion>> ObtenerNotificacionesUsuarioAsync(

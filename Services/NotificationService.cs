@@ -119,14 +119,14 @@ namespace Puerto92.Services
                 tipo: TipoNotificacion.AsignacionKardex,
                 titulo: titulo,
                 mensaje: mensaje,
-                urlAccion: "/Kardex/Registrar", // 👈 Ajustar según tu ruta
+                urlAccion: "/Kardex/Registrar",
                 textoAccion: "Ver Kardex",
                 icono: "clipboard-list",
                 color: ColorNotificacion.Primary,
                 prioridad: PrioridadNotificacion.Alta,
                 mostrarPopup: true,
                 datosAdicionales: datosAdicionales,
-                fechaExpiracion: fecha.AddDays(1) // Expira 1 día después de la fecha asignada
+                fechaExpiracion: fecha.AddDays(1)
             );
         }
 
@@ -162,6 +162,210 @@ namespace Puerto92.Services
                 mostrarPopup: true,
                 datosAdicionales: datosAdicionales,
                 fechaExpiracion: fecha.AddDays(1)
+            );
+        }
+
+        public async Task<Notificacion> CrearNotificacionCancelacionKardexAsync(
+            string usuarioId,
+            string tipoKardex,
+            DateTime fecha,
+            string motivo)
+        {
+            var fechaFormateada = fecha.ToString("dd/MM/yyyy");
+
+            var titulo = $"Asignación Cancelada - {tipoKardex}";
+            var mensaje = $"Tu asignación del Kardex de {tipoKardex} para el {fechaFormateada} ha sido cancelada. " +
+                         $"Motivo: {motivo}";
+
+            var datosAdicionales = JsonSerializer.Serialize(new
+            {
+                TipoKardex = tipoKardex,
+                Fecha = fechaFormateada,
+                Motivo = motivo,
+                AccionTomada = "Cancelación"
+            });
+
+            return await CrearNotificacionAsync(
+                usuarioId: usuarioId,
+                tipo: "CancelacionKardex",
+                titulo: titulo,
+                mensaje: mensaje,
+                urlAccion: null,
+                textoAccion: null,
+                icono: "ban",
+                color: ColorNotificacion.Warning,
+                prioridad: PrioridadNotificacion.Media,
+                mostrarPopup: true,
+                datosAdicionales: datosAdicionales,
+                fechaExpiracion: fecha.AddDays(1)
+            );
+        }
+
+        public async Task<Notificacion> CrearNotificacionKardexReasignadoAsync(
+            string usuarioId,
+            string tipoKardex,
+            DateTime fecha,
+            string nuevoResponsable,
+            string motivo)
+        {
+            var fechaFormateada = fecha.ToString("dd/MM/yyyy");
+
+            var titulo = $"Tu Kardex fue Reasignado - {tipoKardex}";
+            var mensaje = $"Tu responsabilidad del Kardex de {tipoKardex} para el {fechaFormateada} " +
+                         $"ha sido reasignada a {nuevoResponsable}. " +
+                         $"Motivo: {motivo}";
+
+            var datosAdicionales = JsonSerializer.Serialize(new
+            {
+                TipoKardex = tipoKardex,
+                Fecha = fechaFormateada,
+                NuevoResponsable = nuevoResponsable,
+                Motivo = motivo,
+                AccionTomada = "Reasignación"
+            });
+
+            return await CrearNotificacionAsync(
+                usuarioId: usuarioId,
+                tipo: TipoNotificacion.ReasignacionKardex,
+                titulo: titulo,
+                mensaje: mensaje,
+                urlAccion: null,
+                textoAccion: null,
+                icono: "arrows-rotate",
+                color: ColorNotificacion.Info,
+                prioridad: PrioridadNotificacion.Media,
+                mostrarPopup: true,
+                datosAdicionales: datosAdicionales,
+                fechaExpiracion: fecha.AddDays(1)
+            );
+        }
+
+        public async Task<Notificacion> CrearNotificacionKardexRecibidoAsync(
+            string administradorId,
+            string tipoKardex,
+            string empleadoResponsable,
+            DateTime fecha)
+        {
+            var fechaFormateada = fecha.ToString("dd/MM/yyyy");
+            var horaFormateada = DateTime.Now.ToString("hh:mm tt");
+
+            var titulo = $"Nuevo Kardex Recibido - {tipoKardex}";
+            var mensaje = $"{empleadoResponsable} ha enviado su Kardex de {tipoKardex} para el {fechaFormateada} a las {horaFormateada}. Pendiente de revisión.";
+
+            var datosAdicionales = JsonSerializer.Serialize(new
+            {
+                TipoKardex = tipoKardex,
+                EmpleadoResponsable = empleadoResponsable,
+                Fecha = fechaFormateada,
+                HoraEnvio = horaFormateada,
+                EstadoPendiente = true
+            });
+
+            _logger.LogInformation($"📝 Creando notificación KardexRecibido para: {administradorId}");
+            _logger.LogInformation($"   Título: {titulo}");
+            _logger.LogInformation($"   Mensaje: {mensaje}");
+
+            var notificacion = await CrearNotificacionAsync(
+                usuarioId: administradorId,
+                tipo: TipoNotificacion.KardexRecibido,
+                titulo: titulo,
+                mensaje: mensaje,
+                urlAccion: "/Kardex/PendientesDeRevision",
+                textoAccion: "Ver Pendientes",
+                icono: "clipboard-check",
+                color: ColorNotificacion.Success,
+                prioridad: PrioridadNotificacion.Alta,
+                mostrarPopup: true,
+                datosAdicionales: datosAdicionales,
+                fechaExpiracion: fecha.AddDays(7)
+            );
+
+            _logger.LogInformation($"✅ Notificación creada con ID: {notificacion.Id}");
+            
+            return notificacion;
+        }
+
+        public async Task<Notificacion> CrearNotificacionKardexAprobadoAsync(
+            string usuarioId,
+            string tipoKardex,
+            DateTime fecha,
+            string? observaciones = null)
+        {
+            var fechaFormateada = fecha.ToString("dd/MM/yyyy");
+            var horaFormateada = DateTime.Now.ToString("hh:mm tt");
+
+            var titulo = $"✅ Kardex Aprobado - {tipoKardex}";
+            var mensaje = $"Tu Kardex de {tipoKardex} para el {fechaFormateada} ha sido aprobado a las {horaFormateada}.";
+
+            if (!string.IsNullOrEmpty(observaciones))
+            {
+                mensaje += $" Observaciones: {observaciones}";
+            }
+
+            var datosAdicionales = JsonSerializer.Serialize(new
+            {
+                TipoKardex = tipoKardex,
+                Fecha = fechaFormateada,
+                HoraAprobacion = horaFormateada,
+                Observaciones = observaciones,
+                Estado = "Aprobado"
+            });
+
+            _logger.LogInformation($"✅ Creando notificación de aprobación para: {usuarioId}");
+
+            return await CrearNotificacionAsync(
+                usuarioId: usuarioId,
+                tipo: "KardexAprobado",
+                titulo: titulo,
+                mensaje: mensaje,
+                urlAccion: null,
+                textoAccion: null,
+                icono: "circle-check",
+                color: ColorNotificacion.Success,
+                prioridad: PrioridadNotificacion.Alta,
+                mostrarPopup: true,
+                datosAdicionales: datosAdicionales,
+                fechaExpiracion: fecha.AddDays(30)
+            );
+        }
+
+        public async Task<Notificacion> CrearNotificacionKardexRechazadoAsync(
+            string usuarioId,
+            string tipoKardex,
+            DateTime fecha,
+            string motivo)
+        {
+            var fechaFormateada = fecha.ToString("dd/MM/yyyy");
+            var horaFormateada = DateTime.Now.ToString("hh:mm tt");
+
+            var titulo = $"❌ Kardex Rechazado - {tipoKardex}";
+            var mensaje = $"Tu Kardex de {tipoKardex} para el {fechaFormateada} ha sido rechazado a las {horaFormateada}. " +
+                         $"Motivo: {motivo}. Por favor, corrige y reenvía.";
+
+            var datosAdicionales = JsonSerializer.Serialize(new
+            {
+                TipoKardex = tipoKardex,
+                Fecha = fechaFormateada,
+                HoraRechazo = horaFormateada,
+                Motivo = motivo,
+                Estado = "Rechazado"
+            });
+
+            _logger.LogInformation($"❌ Creando notificación de rechazo para: {usuarioId}");
+
+            return await CrearNotificacionAsync(
+                usuarioId: usuarioId,
+                tipo: "KardexRechazado",
+                titulo: titulo,
+                mensaje: mensaje,
+                urlAccion: "/Kardex/MiKardex",
+                textoAccion: "Ver Mi Kardex",
+                icono: "circle-xmark",
+                color: ColorNotificacion.Danger,
+                prioridad: PrioridadNotificacion.Alta,
+                mostrarPopup: true,
+                datosAdicionales: datosAdicionales,
+                fechaExpiracion: fecha.AddDays(30)
             );
         }
 
@@ -252,126 +456,5 @@ namespace Puerto92.Services
                 _logger.LogInformation($"✅ {notificacionesExpiradas.Count} notificación(es) expiradas eliminadas");
             }
         }
-
-        public async Task<Notificacion> CrearNotificacionCancelacionKardexAsync(
-            string usuarioId,
-            string tipoKardex,
-            DateTime fecha,
-            string motivo)
-        {
-            var fechaFormateada = fecha.ToString("dd/MM/yyyy");
-
-            var titulo = $"Asignación Cancelada - {tipoKardex}";
-            var mensaje = $"Tu asignación del Kardex de {tipoKardex} para el {fechaFormateada} ha sido cancelada. " +
-                         $"Motivo: {motivo}";
-
-            var datosAdicionales = JsonSerializer.Serialize(new
-            {
-                TipoKardex = tipoKardex,
-                Fecha = fechaFormateada,
-                Motivo = motivo,
-                AccionTomada = "Cancelación"
-            });
-
-            return await CrearNotificacionAsync(
-                usuarioId: usuarioId,
-                tipo: "CancelacionKardex", // Nuevo tipo
-                titulo: titulo,
-                mensaje: mensaje,
-                urlAccion: null, // No hay acción porque fue cancelada
-                textoAccion: null,
-                icono: "ban",
-                color: ColorNotificacion.Warning,
-                prioridad: PrioridadNotificacion.Media,
-                mostrarPopup: true,
-                datosAdicionales: datosAdicionales,
-                fechaExpiracion: fecha.AddDays(1) // Expira 1 día después de la fecha asignada
-            );
-        }
-
-        public async Task<Notificacion> CrearNotificacionKardexReasignadoAsync(
-            string usuarioId,
-            string tipoKardex,
-            DateTime fecha,
-            string nuevoResponsable,
-            string motivo)
-        {
-            var fechaFormateada = fecha.ToString("dd/MM/yyyy");
-
-            var titulo = $"Tu Kardex fue Reasignado - {tipoKardex}";
-            var mensaje = $"Tu responsabilidad del Kardex de {tipoKardex} para el {fechaFormateada} " +
-                         $"ha sido reasignada a {nuevoResponsable}. " +
-                         $"Motivo: {motivo}";
-
-            var datosAdicionales = JsonSerializer.Serialize(new
-            {
-                TipoKardex = tipoKardex,
-                Fecha = fechaFormateada,
-                NuevoResponsable = nuevoResponsable,
-                Motivo = motivo,
-                AccionTomada = "Reasignación"
-            });
-
-            return await CrearNotificacionAsync(
-                usuarioId: usuarioId,
-                tipo: TipoNotificacion.ReasignacionKardex, // Usar el tipo existente
-                titulo: titulo,
-                mensaje: mensaje,
-                urlAccion: null, // No hay acción porque ya no es su responsabilidad
-                textoAccion: null,
-                icono: "arrows-rotate",
-                color: ColorNotificacion.Info,
-                prioridad: PrioridadNotificacion.Media,
-                mostrarPopup: true,
-                datosAdicionales: datosAdicionales,
-                fechaExpiracion: fecha.AddDays(1)
-            );
-        }
-
-        public async Task<Notificacion> CrearNotificacionKardexRecibidoAsync(
-            string administradorId,
-            string tipoKardex,
-            string empleadoResponsable,
-            DateTime fecha)
-        {
-            var fechaFormateada = fecha.ToString("dd/MM/yyyy");
-            var horaFormateada = DateTime.Now.ToString("hh:mm tt");
-
-            var titulo = $"Nuevo Kardex Recibido - {tipoKardex}";
-            var mensaje = $"{empleadoResponsable} ha enviado su Kardex de {tipoKardex} para el {fechaFormateada} a las {horaFormateada}. Pendiente de revisión.";
-
-            var datosAdicionales = JsonSerializer.Serialize(new
-            {
-                TipoKardex = tipoKardex,
-                EmpleadoResponsable = empleadoResponsable,
-                Fecha = fechaFormateada,
-                HoraEnvio = horaFormateada,
-                EstadoPendiente = true
-            });
-
-            _logger.LogInformation($"📝 Creando notificación KardexRecibido para: {administradorId}");
-            _logger.LogInformation($"   Título: {titulo}");
-            _logger.LogInformation($"   Mensaje: {mensaje}");
-
-            var notificacion = await CrearNotificacionAsync(
-                usuarioId: administradorId,
-                tipo: TipoNotificacion.KardexRecibido,
-                titulo: titulo,
-                mensaje: mensaje,
-                urlAccion: "/Asignaciones/Index",
-                textoAccion: "Ver Asignaciones",
-                icono: "clipboard-check",
-                color: ColorNotificacion.Success,
-                prioridad: PrioridadNotificacion.Alta,
-                mostrarPopup: true,
-                datosAdicionales: datosAdicionales,
-                fechaExpiracion: fecha.AddDays(7)
-            );
-
-            _logger.LogInformation($"✅ Notificación creada con ID: {notificacion.Id}");
-            
-            return notificacion;
-        }
-
     }
 }

@@ -74,6 +74,7 @@ namespace Puerto92.Models
         /// Detalle de productos del kardex
         /// </summary>
         public ICollection<KardexCocinaDetalle> Detalles { get; set; } = new List<KardexCocinaDetalle>();
+        public DateTime FechaAprobacion { get; internal set; }
     }
 
     /// <summary>
