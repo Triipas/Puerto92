@@ -584,7 +584,7 @@ namespace Puerto92.Services
             }
              else if (tipoKardex == TipoKardex.Vajilla)
             {
-                var kardex = await _context.KardexSalon
+                var kardex = await _context.KardexVajilla
                     .Include(k => k.Empleado)
                     .Include(k => k.Local)
                     .FirstOrDefaultAsync(k => k.Id == kardexId);

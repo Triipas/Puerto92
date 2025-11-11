@@ -11,7 +11,7 @@ using Puerto92.Data;
 namespace Puerto92.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251110225036_InitialCreate")]
+    [Migration("20251111003048_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
