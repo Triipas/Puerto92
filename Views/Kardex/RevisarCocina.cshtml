@@ -293,7 +293,20 @@
 
 @section Scripts {
     <script>
-        const KARDEX_IDS = [@string.Join(",", Model.Categorias.FirstOrDefault()?.Productos.Select(p => p.ProductoId) ?? new List<int>())];
+        const KARDEX_IDS = [
+            @if (Model.KardexCocinaFria != null)
+            {
+                @:@Model.KardexCocinaFria.Id,
+            }
+            @if (Model.KardexCocinaCaliente != null)
+            {
+                @:@Model.KardexCocinaCaliente.Id,
+            }
+            @if (Model.KardexParrilla != null)
+            {
+                @:@Model.KardexParrilla.Id
+            }
+        ];
         const TIPO_KARDEX = 'Cocina';
     </script>
     <script src="~/js/kardex-revision.js" asp-append-version="true"></script>
